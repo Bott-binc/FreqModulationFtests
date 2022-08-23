@@ -1,0 +1,9 @@
+.Rproj.user
+.Rhistory
+.RData
+.Ruserdata
+*.txt
+*.csv
+*.RDS
+*.Rout
+testingEnv.R
