@@ -309,7 +309,7 @@ F3Test <- function(xt, N, k, p, deltat = 1, w = NULL, dpss = FALSE,
     F3 <-  matrix(nrow = nrow(fStuff$cHat), ncol = length(instFreqEigen$Freq))
     colnames(F3) <- Freq
     for(P in 1:nrow(fStuff$cHat)){ # this is 1:p as we are removing zero so P-1 is actually P
-
+        browser()
         normcHatWOutZeroSq <- normcHatWOutZeroSq + fStuff$cHat[P,]^2
         F3[P,] <- (fStuff$cHat[P,])^2/
           ((normPhiSq - normcHatWOutZeroSq)/(k - P))
@@ -523,3 +523,103 @@ FtestCombined <- function(xt, N, k, p, deltat = 1, w = NULL, dpss = FALSE,
                                           rp = fStuff$rp)))#(taperMat %*% (diag(k) - HWoutZero %*% t(HWoutZero)))%*% instFreqEigen$PHI )))
   }
 }
+
+#' F4Test
+#'
+#' @param xt time series
+#' @param N Total number of observations
+#' @param k Number of tapers
+#' @param p Highest degree polynomial you want to test for
+#' @param deltat Time interval between each observation
+#' @param w Only needed if dpss = TRUE
+#' @param dpss  = FALSE unless you want to use dpss, it will do sine tapers by default
+#' @param returnInstFreqAndRegression  = FALSE, this speeds up the other f tests so you can pass in information
+#' @param withoutZeroDegree TRUE if wanting modified test statistic that does not use zero degree polynomials (no undersampling if FALSE)
+#' @param undersample True or FALSE, allows for faster run time while maintaining most accuracy, note that this will
+#' also cause zero padding to take place.  the user DOES NOT need to manually zero pad
+#' @param undersampleNumber A numeric of the number the user wants to undersample, usually 100 is a good start
+#'
+#' @return $F4testStat, $Freq, $necessaryTestStuff (used to pass into another ftest function)
+#'
+#' @export
+F4Test <- function(xt, N, k, p, deltat = 1, w = NULL, dpss = FALSE, undersampleNumber = 100){
+  initial <- TRUE
+  loopNum <- 0
+  for(K in k){
+    loopNum <- loopNum + 1
+
+    if(is.null(undersampleNumber)){
+      stop("need to set undersample amount")
+    }
+    if(dpss){ #Use DPSS taper
+      if(is.null(w)){
+        stop("need to set w for dpss")
+      }
+      dp <- multitaper::dpss(n = N, k = K, nw = N*w)
+      dpUnder <- multitaper::dpss(n = undersampleNumber, k = K, nw = N*w)
+      instFreqEigen <- eigenSpectrumDPSSInstFrequency(xt = xt, N = N, k = K, w = w, deltat = deltat,
+                                                      returnDPSS = FALSE, passInDPSS = dp,
+                                                      passInDPSSUnder = dpUnder)
+      fStuff <- regressionDPSSInstFreq(N = N, k = K, w = w, instFreqEigen = instFreqEigen$PHI,
+                                       p = p, passInDPSS = dpUnder ,returnDPSS = FALSE,
+                                       returnRp = FALSE, withoutzeroPoly = TRUE)
+    }
+    else{ #Sine Tapers are used
+      sine <- sineTaperMatrix(N = N, k = K)
+      sineUnder <- sineTaperMatrix(N = undersampleNumber, k = K)
+      instFreqEigen <- eigenSpectrumSineInstFrequency(xt = xt, N = N, k = K,deltat = deltat,
+                                                      returnSineMat = FALSE, passInSineTapers = sine,
+                                                      passInSineUnder = sineUnder)
+
+      fStuff <- regressionSineInstFreq(N = N, k = K, instFreqEigen = instFreqEigen$PHI,
+                                       p = p, returnSineTapers = FALSE,
+                                       passInSineMat = sineUnder,
+                                       returnRp = FALSE, withoutzeroPoly = TRUE)
+    }
+
+
+    #removingzero and nyquist frequencies
+    zeroNyquist <- c(length(instFreqEigen$Freq),which(instFreqEigen$Freq == 0))
+    instFreqEigen$Freq <- instFreqEigen$Freq[-zeroNyquist]
+    Freq <- instFreqEigen$Freq
+    instFreqEigen$PHI <- instFreqEigen$PHI[,-zeroNyquist]
+    fStuff$cHat <- fStuff$cHat[,-zeroNyquist]
+
+
+    if(initial){                            # K iterations X P polynomials X zeroPadd size
+      normcHatWOutZeroSq <- array(0, dim = c(length(k), nrow(fStuff$cHat), ncol(fStuff$cHat)))
+      normPhiSq <- matrix(nrow = length(k), ncol = ncol(fStuff$cHat))
+      cHat <- array(0, dim=c(length(k), nrow(fStuff$cHat), ncol(fStuff$cHat)))
+      initial <- FALSE
+    }
+    normPhiSq[loopNum,] <- colSums(instFreqEigen$PHI^2)
+
+    #p = 1 th for loop iteration
+    normcHatWOutZeroSq[loopNum,1,] <-  fStuff$cHat[1,]^2
+    cHat[loopNum,1,] <- fStuff$cHat[1,]^2
+    # F3[1,] <- (fStuff$cHat[1,])^2/
+    #   ((normPhiSq - normcHatWOutZeroSq[k,1,])/(k - 1))
+    for(P in 2:nrow(fStuff$cHat)){ # this is 1:p as we are removing zero so P-1 is actually P
+      cHat[loopNum,P,] <- fStuff$cHat[P,]^2
+      normcHatWOutZeroSq[loopNum,P,] <- normcHatWOutZeroSq[loopNum,(P-1),] + fStuff$cHat[P,]^2
+      # F3[P,] <- (fStuff$cHat[P,])^2/
+      #   ((normPhiSq - normcHatWOutZeroSq[k,P,])/(k - P))
+
+    }
+  }
+  F3 <-  matrix(nrow = nrow(fStuff$cHat), ncol = length(instFreqEigen$Freq))
+  colnames(F3) <- Freq
+
+  for(P in 1:nrow(fStuff$cHat)){
+    F3[P,] <- (((colSums(cHat[,P,]))^2)/(length(k)))/
+      (((colSums(normPhiSq) - colSums(normcHatWOutZeroSq[,P,])))/(sum((k - rep(P, times=length(k))))))
+  }
+  #making the return
+  return(list(F3testStat = F3, Freq = Freq))
+}
+
+
+
+
+
+

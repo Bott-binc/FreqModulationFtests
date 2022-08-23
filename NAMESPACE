@@ -3,4 +3,5 @@
 export(F1Test)
 export(F2Test)
 export(F3Test)
+export(F4Test)
 export(FtestCombined)
