@@ -555,12 +555,13 @@ F4Test <- function(xt, N, k, p, deltat = 1, w = NULL, dpss = FALSE, undersampleN
       if(is.null(w)){
         stop("need to set w for dpss")
       }
-      dp <- multitaper::dpss(n = N, k = K, nw = N*w)
-      dpUnder <- multitaper::dpss(n = undersampleNumber, k = K, nw = N*w)
-      instFreqEigen <- eigenSpectrumDPSSInstFrequency(xt = xt, N = N, k = K, w = w, deltat = deltat,
+      dp <- multitaper::dpss(n = N, k = K, nw = N*w[loopNum])
+      dpUnder <- multitaper::dpss(n = undersampleNumber, k = K, nw = N*w[loopNum])
+      instFreqEigen <- eigenSpectrumDPSSInstFrequency(xt = xt, N = N, k = K, w = w[loopNum],
+                                                      deltat = deltat,
                                                       returnDPSS = FALSE, passInDPSS = dp,
                                                       passInDPSSUnder = dpUnder)
-      fStuff <- regressionDPSSInstFreq(N = N, k = K, w = w, instFreqEigen = instFreqEigen$PHI,
+      fStuff <- regressionDPSSInstFreq(N = N, k = K, w = w[loopNum], instFreqEigen = instFreqEigen$PHI,
                                        p = p, passInDPSS = dpUnder ,returnDPSS = FALSE,
                                        returnRp = FALSE, withoutzeroPoly = TRUE)
     }
@@ -607,15 +608,18 @@ F4Test <- function(xt, N, k, p, deltat = 1, w = NULL, dpss = FALSE, undersampleN
 
     }
   }
-  F3 <-  matrix(nrow = nrow(fStuff$cHat), ncol = length(instFreqEigen$Freq))
+  F3 <- F1 <- matrix(nrow = nrow(fStuff$cHat), ncol = length(instFreqEigen$Freq))
   colnames(F3) <- Freq
 
   for(P in 1:nrow(fStuff$cHat)){
+    F1[P,] <- (colSums(normcHatWOutZeroSq[,P,])/sum(rep(P, times = length(k))))/
+      (((colSums(normPhiSq - normcHatWOutZeroSq[,P,])))/(sum((k - rep(P, times=length(k))))))
     F3[P,] <- (((colSums(cHat[,P,]))^2)/(length(k)))/
-      (((colSums(normPhiSq) - colSums(normcHatWOutZeroSq[,P,])))/(sum((k - rep(P, times=length(k))))))
+      (((colSums(normPhiSq - normcHatWOutZeroSq[,P,])))/(sum((k - rep(P, times=length(k))))))
   }
   #making the return
-  return(list(F3testStat = F3, Freq = Freq))
+  return(list(F4testStat = F3, Freq = Freq,
+              f14testStat = F1 ))
 }
 
 
