@@ -6,9 +6,8 @@ Author: Benjamin Ott, with contributions from Kian Blanchette
 Maintainer: The package maintainer <benjaminOtt@trentu.ca>
 Description: Allows for testing of significant frequencies in a time series with 
     frequency modulation present.  
-License: file LICENCE
+License: GNU V2
 Encoding: UTF-8
 LazyData: true
-Imports: testthat, multitaper
 RoxygenNote: 7.2.1
 Depends: multitaper, parallel

@@ -678,7 +678,7 @@ UDpss <- function(N, k, p, w, round = 14){
 eigenSpectrumdpss <- function(n, k, w, Xt, f, deltat = 1, dpssRet = FALSE){
 
   eigenSpec <- vector(length = k)
-  dpFull <- dpss(n, k, n*w)
+  dpFull <- multitaper::dpss(n, k, n*w)
   dp <- dpFull$v
   for(i in 1:k){
     vec <- t(dp[,i]) %*% as.matrix(Xt * exp(-1i*2*pi*f*0:(n-1)*deltat))
@@ -706,7 +706,7 @@ eigenSpectrumdpss <- function(n, k, w, Xt, f, deltat = 1, dpssRet = FALSE){
 eigenSpectrumdpssFFT <- function(n, k, w, Xt, deltat = 1, passInDPSSMat = NULL, pad = FALSE){
   eigenSpec <- matrix(nrow = n,ncol = k)
   if(is.null(passInDPSSMat)){
-    dp <- dpss(n, k, n*w)$v
+    dp <- multitaper::dpss(n, k, n*w)$v
   }
   else{
     dp <- passInDPSSMat
@@ -755,7 +755,7 @@ eigenSpectrumdpssFFT <- function(n, k, w, Xt, deltat = 1, passInDPSSMat = NULL, 
 #' @return Standard Inverse vector for frequency f
 standardInverseDPSSSingleFreq <- function(xt, N, w, k, f, deltat = 1, FFT = FALSE, retDPSS = FALSE){
 
-  dp <- dpss(N, k, N*w)
+  dp <- multitaper::dpss(N, k, N*w)
   v <- dp$v
   if(!FFT){
     Xf <- xt * exp(-1i*2*pi*f*0:(N-1)*deltat)
@@ -790,7 +790,7 @@ standardInverseDPSS <- function(xt, N, k, w, deltat = 1, retDPSS = FALSE,
                                 passInDPSS = NULL, passInDPSSReduced = NULL){
 
   if(is.null(passInDPSS)){
-    dp <- dpss(N, k, N*w)
+    dp <- multitaper::dpss(N, k, N*w)
     v <- dp$v
   }
   else{
@@ -972,7 +972,7 @@ compInverseDpss <- function(N, k, w, xt, f, p, deltat = 1, polynomialOnly = FALS
 
 eigenFunctionDerDpss <- function(N, k, p, w, f){
   Der <- matrix(nrow = k, ncol = p)
-  Dpss <- dpss(N, k = k, nw = N*w)$v
+  Dpss <- multitaper::dpss(N, k = k, nw = N*w)$v
   for(i in 1:k){
     for(j in 1:p){
       sumVec <- vector(length = N)
@@ -1025,7 +1025,7 @@ FirstDerTimeDomSlepians <- function(N, w, k, passInFullDPSS = NULL, returnDPSS =
 
   if(is.null(passInFullDPSS)){
     dpMat <- matrix(nrow = N, ncol = k)
-    dp <- dpss(N, k, N*w)
+    dp <- multitaper::dpss(N, k, N*w)
     dpMat <- dp$v
   }
   else{
