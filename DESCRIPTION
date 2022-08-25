@@ -11,4 +11,4 @@ Encoding: UTF-8
 LazyData: true
 Imports: testthat, multitaper
 RoxygenNote: 7.2.1
-Depends: multitaper
+Depends: multitaper, parallel

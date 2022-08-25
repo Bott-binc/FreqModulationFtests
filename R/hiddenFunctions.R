@@ -1344,5 +1344,52 @@ GramSchmidtMod <- function(uMat, rMat){
   return(list(H = uMat, G = rMat))
 }
 
+# Inner Ftest Functions -------------------------
+
+singleIterationF4 <- function(xt, N, k, p, deltat = 1, w = NULL, dpss = FALSE, undersampleNumber = 100){
+
+
+  if(is.null(undersampleNumber)){
+    stop("need to set undersample amount")
+  }
+  if(dpss){ #Use DPSS taper
+    if(is.null(w)){
+      stop("need to set w for dpss")
+    }
+    dp <- multitaper::dpss(n = N, k = k, nw = N*w)
+    dpUnder <- multitaper::dpss(n = undersampleNumber, k = k, nw = N*w)
+    instFreqEigen <- eigenSpectrumDPSSInstFrequency(xt = xt, N = N, k = k, w = w,
+                                                    deltat = deltat,
+                                                    returnDPSS = FALSE, passInDPSS = dp,
+                                                    passInDPSSUnder = dpUnder)
+    fStuff <- regressionDPSSInstFreq(N = N, k = k, w = w, instFreqEigen = instFreqEigen$PHI,
+                                     p = p, passInDPSS = dpUnder ,returnDPSS = FALSE,
+                                     returnRp = FALSE, withoutzeroPoly = TRUE)
+  }
+  else{ #Sine Tapers are used
+    sine <- sineTaperMatrix(N = N, k = k)
+    sineUnder <- sineTaperMatrix(N = undersampleNumber, k = k)
+    instFreqEigen <- eigenSpectrumSineInstFrequency(xt = xt, N = N, k = k,deltat = deltat,
+                                                    returnSineMat = FALSE, passInSineTapers = sine,
+                                                    passInSineUnder = sineUnder)
+
+    fStuff <- regressionSineInstFreq(N = N, k = k, instFreqEigen = instFreqEigen$PHI,
+                                     p = p, returnSineTapers = FALSE,
+                                     passInSineMat = sineUnder,
+                                     returnRp = FALSE, withoutzeroPoly = TRUE)
+  }
+
+
+  #removingzero and nyquist frequencies
+  zeroNyquist <- c(length(instFreqEigen$Freq),which(instFreqEigen$Freq == 0))
+  instFreqEigen$Freq <- instFreqEigen$Freq[-zeroNyquist]
+  Freq <- instFreqEigen$Freq
+  instFreqEigen$PHI <- instFreqEigen$PHI[,-zeroNyquist]
+  fStuff$cHat <- fStuff$cHat[,-zeroNyquist]
+
+
+  return(list(cHat = fStuff$cHat, PHI = instFreqEigen$PHI, Freq = Freq, k = k))
+}
+
 
 

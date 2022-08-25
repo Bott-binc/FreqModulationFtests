@@ -533,13 +533,9 @@ FtestCombined <- function(xt, N, k, p, deltat = 1, w = NULL, dpss = FALSE,
 #' @param deltat Time interval between each observation
 #' @param w Only needed if dpss = TRUE
 #' @param dpss  = FALSE unless you want to use dpss, it will do sine tapers by default
-#' @param returnInstFreqAndRegression  = FALSE, this speeds up the other f tests so you can pass in information
-#' @param withoutZeroDegree TRUE if wanting modified test statistic that does not use zero degree polynomials (no undersampling if FALSE)
-#' @param undersample True or FALSE, allows for faster run time while maintaining most accuracy, note that this will
-#' also cause zero padding to take place.  the user DOES NOT need to manually zero pad
 #' @param undersampleNumber A numeric of the number the user wants to undersample, usually 100 is a good start
 #'
-#' @return $F4testStat, $Freq, $necessaryTestStuff (used to pass into another ftest function)
+#' @return $F4testStat, $Freq, $F14TestStat(this is the f1 not the f3 mod )
 #'
 #' @export
 F4Test <- function(xt, N, k, p, deltat = 1, w = NULL, dpss = FALSE, undersampleNumber = 100){
@@ -614,16 +610,85 @@ F4Test <- function(xt, N, k, p, deltat = 1, w = NULL, dpss = FALSE, undersampleN
   for(P in 1:nrow(fStuff$cHat)){
     F1[P,] <- (colSums(normcHatWOutZeroSq[,P,])/sum(rep(P, times = length(k))))/
       (((colSums(normPhiSq - normcHatWOutZeroSq[,P,])))/(sum((k - rep(P, times=length(k))))))
-    F3[P,] <- (((colSums(cHat[,P,]))^2)/(length(k)))/
+    F3[P,] <- (((colSums(cHat[,P,]^2)))/(length(k)))/
       (((colSums(normPhiSq - normcHatWOutZeroSq[,P,])))/(sum((k - rep(P, times=length(k))))))
   }
   #making the return
   return(list(F4testStat = F3, Freq = Freq,
-              f14testStat = F1 ))
+              F14testStat = F1 ))
 }
 
 
 
+#' F4Test
+#'
+#' w is chosen by shannons number based on k
+#'
+#' @param xt time series
+#' @param N Total number of observations
+#' @param p Highest degree polynomial you want to test for
+#' @param deltat Time interval between each observation
+#' @param w Only needed if dpss = TRUE
+#' @param dpss  = FALSE unless you want to use dpss, it will do sine tapers by default
+#' @param undersampleNumber A numeric of the number the user wants to undersample, usually 100 is a good start
+#'
+#' @return $F4testStat, $Freq, $F14TestStat(this is the f1 not the f3 mod )
+#'
+#' @export
+F4Testpar <- function(xt, N, k, p, deltat = 1, dpss = FALSE, undersampleNumber = 100){
 
+  if(is.null(undersampleNumber)){
+    stop("need to set undersample amount")
+  }
+
+  if(dpss){
+    fullDat <- mclapply(X = k,FUN = function(x){
+      return(singleIterationF4(xt = xt, N = N, k = x, w = ((x+1)/(2*length(xt))), p = p, deltat = 1,
+                               undersampleNumber = 100, dpss = TRUE))
+    })
+  }else{
+    fullDat <- mclapply(X = k,FUN = function(x){
+      return(singleIterationF4(xt = xt, N = N, k = x, p = p, deltat = 1,
+                               undersampleNumber = 100, dpss = FALSE))
+    })
+  }
+
+
+                               # K iterations X P polynomials X zeroPadd size
+  normcHatWOutZeroSq <- array(0, dim = c(length(k), nrow(fullDat[[1]]$cHat), ncol(fullDat[[1]]$cHat)))
+  normPhiSq <- matrix(nrow = length(k), ncol = ncol(fullDat[[1]]$cHat))
+  cHat <- array(0, dim=c(length(k), nrow(fullDat[[1]]$cHat), ncol(fullDat[[1]]$cHat)))
+
+  for(loopNum in 1:length(k)){
+
+    normPhiSq[loopNum,] <- colSums(fullDat[[loopNum]]$PHI^2)
+
+    #p = 1 th for loop iteration
+    normcHatWOutZeroSq[loopNum,1,] <-  fullDat[[loopNum]]$cHat[1,]^2
+    cHat[loopNum,1,] <- fullDat[[loopNum]]$cHat[1,]^2
+    # F3[1,] <- (fStuff$cHat[1,])^2/
+    #   ((normPhiSq - normcHatWOutZeroSq[k,1,])/(k - 1))
+    for(P in 2:nrow(fullDat[[loopNum]]$cHat)){ # this is 1:p as we are removing zero so P-1 is actually P
+      cHat[loopNum,P,] <- fullDat[[loopNum]]$cHat[P,]^2
+      normcHatWOutZeroSq[loopNum,P,] <- normcHatWOutZeroSq[loopNum,(P-1),] + fullDat[[loopNum]]$cHat[P,]^2
+      # F3[P,] <- (fStuff$cHat[P,])^2/
+      #   ((normPhiSq - normcHatWOutZeroSq[k,P,])/(k - P))
+
+    }
+  }
+  Freq <- fullDat[[1]]$Freq
+  F3 <- F1 <- matrix(nrow = nrow(fullDat[[1]]$cHat), ncol = length(Freq))
+  colnames(F3) <- Freq
+
+  for(P in 1:nrow(fullDat[[1]]$cHat)){
+    F1[P,] <- (colSums(normcHatWOutZeroSq[,P,])/sum(rep(P, times = length(k))))/
+      (((colSums(normPhiSq - normcHatWOutZeroSq[,P,])))/(sum((k - rep(P, times=length(k))))))
+    F3[P,] <- (((colSums(cHat[,P,]^2)))/(length(k)))/
+      (((colSums(normPhiSq - normcHatWOutZeroSq[,P,])))/(sum((k - rep(P, times=length(k))))))
+  }
+  #making the return
+  return(list(F4testStat = F3, Freq = Freq,
+              F14testStat = F1 ))
+}
 
 
