@@ -628,29 +628,30 @@ F4Test <- function(xt, N, k, p, deltat = 1, w = NULL, dpss = FALSE, undersampleN
 #' @param N Total number of observations
 #' @param p Highest degree polynomial you want to test for
 #' @param deltat Time interval between each observation
-#' @param w Only needed if dpss = TRUE
 #' @param dpss  = FALSE unless you want to use dpss, it will do sine tapers by default
 #' @param undersampleNumber A numeric of the number the user wants to undersample, usually 100 is a good start
+#' @param k vector of tapers used in the f test
+#' @param cores must be 1 if on windows, number of cores used for parallelization
 #'
 #' @return $F4testStat, $Freq, $F14TestStat(this is the f1 not the f3 mod )
 #'
 #' @export
-F4Testpar <- function(xt, N, k, p, deltat = 1, dpss = FALSE, undersampleNumber = 100){
+F4Testpar <- function(xt, N, k, p, deltat = 1, dpss = FALSE, undersampleNumber = 100, cores = 1){
 
   if(is.null(undersampleNumber)){
     stop("need to set undersample amount")
   }
 
   if(dpss){
-    fullDat <- mclapply(X = k,FUN = function(x){
+    fullDat <- parallel::mclapply(X = k,FUN = function(x){
       return(singleIterationF4(xt = xt, N = N, k = x, w = ((x+1)/(2*length(xt))), p = p, deltat = 1,
                                undersampleNumber = 100, dpss = TRUE))
-    })
+    }, mc.cores = cores, mc.cleanup = TRUE)
   }else{
-    fullDat <- mclapply(X = k,FUN = function(x){
+    fullDat <- parallel::mclapply(X = k,FUN = function(x){
       return(singleIterationF4(xt = xt, N = N, k = x, p = p, deltat = 1,
                                undersampleNumber = 100, dpss = FALSE))
-    })
+    }, mc.cores = cores, mc.cleanup = TRUE)
   }
 
 

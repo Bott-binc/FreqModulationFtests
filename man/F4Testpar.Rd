@@ -4,12 +4,23 @@
 \alias{F4Testpar}
 \title{F4Test}
 \usage{
-F4Testpar(xt, N, k, p, deltat = 1, dpss = FALSE, undersampleNumber = 100)
+F4Testpar(
+  xt,
+  N,
+  k,
+  p,
+  deltat = 1,
+  dpss = FALSE,
+  undersampleNumber = 100,
+  cores = 1
+)
 }
 \arguments{
 \item{xt}{time series}
 
 \item{N}{Total number of observations}
+
+\item{k}{vector of tapers used in the f test}
 
 \item{p}{Highest degree polynomial you want to test for}
 
@@ -19,7 +30,7 @@ F4Testpar(xt, N, k, p, deltat = 1, dpss = FALSE, undersampleNumber = 100)
 
 \item{undersampleNumber}{A numeric of the number the user wants to undersample, usually 100 is a good start}
 
-\item{w}{Only needed if dpss = TRUE}
+\item{cores}{must be 1 if on windows, number of cores used for parallelization}
 }
 \value{
 $F4testStat, $Freq, $F14TestStat(this is the f1 not the f3 mod )
