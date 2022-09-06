@@ -172,7 +172,7 @@ standardInverseSine <- function(xt, N, k, deltat = 1, passInSineMat = NULL,
   }
 
   if(is.null(passInSineUnder)){
-    Y <- eigenSpectrumSineFFT(N, k, xt, deltat = deltat, passInTaper = v)
+    Y <- eigenSpectrumSineFFT(N, k, xt, deltat = deltat, passInTaper = v, pad = FALSE)
   }else{
     Y <- eigenSpectrumSineFFT(N, k, xt, deltat = deltat, passInTaper = v, pad = TRUE)
   }
@@ -212,10 +212,10 @@ standardInverseSineDer <- function(xt, N, k, deltat = 1, passInSineMat = NULL,
     FirstDir <- FirstDerSineTaper(N, k)
     if(!returnSineMat){
       if(is.null(passInSineMat)){ # no tapers will be passed to eigenspecfft
-        Y <- eigenSpectrumSineFFT(N, k, xt, deltat = deltat)
+        Y <- eigenSpectrumSineFFT(N, k, xt, deltat = deltat, pad = FALSE)
       }
       else{ # passing in sine tapers from outside function
-        Y <- eigenSpectrumSineFFT(N, k, xt, deltat = deltat, passInTaper = passInSineMat)
+        Y <- eigenSpectrumSineFFT(N, k, xt, deltat = deltat, passInTaper = passInSineMat, pad = FALSE)
       }
     }
     else{

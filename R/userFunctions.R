@@ -350,7 +350,7 @@ F3Test <- function(xt, N, k, p, deltat = 1, w = NULL, dpss = FALSE,
 FtestCombined <- function(xt, N, k, p, deltat = 1, w = NULL, dpss = FALSE,
                           returnInstFreqAndRegression = FALSE,
                           undersample = FALSE, undersampleNumber = NULL){
-
+  browser()
   if(!returnInstFreqAndRegression){
     if(!undersample){
       if(dpss){ #Use DPSS taper
