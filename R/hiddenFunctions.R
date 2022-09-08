@@ -1346,7 +1346,8 @@ GramSchmidtMod <- function(uMat, rMat){
 
 # Inner Ftest Functions -------------------------
 
-singleIterationF4 <- function(xt, N, k, p, deltat = 1, w = NULL, dpss = FALSE, undersampleNumber = 100){
+
+singleIterationForParallel4 <- function(xt, N, k, p, deltat = 1, w = NULL, dpss = FALSE, undersampleNumber = 100){
 
 
   if(is.null(undersampleNumber)){
@@ -1391,5 +1392,86 @@ singleIterationF4 <- function(xt, N, k, p, deltat = 1, w = NULL, dpss = FALSE, u
   return(list(cHat = fStuff$cHat, PHI = instFreqEigen$PHI, Freq = Freq, k = k))
 }
 
+
+
+
+#' Single iteration of F3Mod for Parallel applications
+#'
+#' can be used inside mclapply.  note that there is no checks in here as they are assumed
+#' to be ran in the parent user function
+#'
+#' @param xt vector of time series observations
+#' @param k single k that will be used for the f test
+#' @param p largest degree of the polynomial modulation suspected
+#' @param deltat  = 1 by default
+#' @param w multitaper bandwidth parameter
+#' @param dpss = FALSE uses sine instead
+#' @param undersampleNumber = 100 by default ( this is the number used in undersampling the tapers)
+#'
+#' @return $F3Mod, $Freq, $significantFreq, $k
+
+singleIterationForParallel <- function(xt, k, p, deltat = 1, w = NULL, dpss = FALSE,
+                                       undersampleNumber = 100, confLevel = (1-(1/length(xt)))){
+  N = length(xt)
+
+  if(is.null(undersampleNumber)){
+    stop("need to set undersample amount")
+  }
+  if(dpss){ #Use DPSS taper
+    if(is.null(w)){
+      stop("need to set w for dpss")
+    }
+    dp <- multitaper::dpss(n = N, k = k, nw = N*w)
+    dpUnder <- multitaper::dpss(n = undersampleNumber, k = k, nw = N*w)
+    instFreqEigen <- eigenSpectrumDPSSInstFrequency(xt = xt, N = N, k = k, w = w,
+                                                    deltat = deltat,
+                                                    returnDPSS = FALSE, passInDPSS = dp,
+                                                    passInDPSSUnder = dpUnder)
+    fStuff <- regressionDPSSInstFreq(N = N, k = k, w = w, instFreqEigen = instFreqEigen$PHI,
+                                     p = p, passInDPSS = dpUnder ,returnDPSS = FALSE,
+                                     returnRp = FALSE, withoutzeroPoly = TRUE)
+  }
+  else{ #Sine Tapers are used
+    sine <- sineTaperMatrix(N = N, k = k)
+    sineUnder <- sineTaperMatrix(N = undersampleNumber, k = k)
+    instFreqEigen <- eigenSpectrumSineInstFrequency(xt = xt, N = N, k = k,deltat = deltat,
+                                                    returnSineMat = FALSE, passInSineTapers = sine,
+                                                    passInSineUnder = sineUnder)
+
+    fStuff <- regressionSineInstFreq(N = N, k = k, instFreqEigen = instFreqEigen$PHI,
+                                     p = p, returnSineTapers = FALSE,
+                                     passInSineMat = sineUnder,
+                                     returnRp = FALSE, withoutzeroPoly = TRUE)
+  }
+
+
+  #removingzero and nyquist frequencies
+  zeroNyquist <- c(length(instFreqEigen$Freq),which(instFreqEigen$Freq == 0))
+  instFreqEigen$Freq <- instFreqEigen$Freq[-zeroNyquist]
+  Freq <- instFreqEigen$Freq
+  instFreqEigen$PHI <- instFreqEigen$PHI[,-zeroNyquist]
+  fStuff$cHat <- fStuff$cHat[,-zeroNyquist]
+
+  normPhiSq <- colSums(instFreqEigen$PHI^2)
+  normcHatWOutZeroSq <- 0
+
+  F3 <-  matrix(nrow = nrow(fStuff$cHat), ncol = length(instFreqEigen$Freq))
+  colnames(F3) <- Freq
+  significantFreq <- list()
+  for(P in 1:nrow(fStuff$cHat)){ # this is 1:p as we are removing zero so P-1 is actually P
+
+    normcHatWOutZeroSq <- normcHatWOutZeroSq + fStuff$cHat[P,]^2
+    F3[P,] <- (fStuff$cHat[P,])^2/
+      ((normPhiSq - normcHatWOutZeroSq)/(k - P))
+    FcutOff <- qf(confLevel, df1 = 1, df2 = (k-P-1), lower.tail = TRUE)
+    significantFreq[[P]] <- Freq[which(F3[P,] >= FcutOff)]
+
+
+  }
+
+
+  return(list(F3Mod = F3, Freq = Freq, significantFreq = significantFreq,
+              k = k))
+}
 
 

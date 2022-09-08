@@ -309,7 +309,7 @@ F3Test <- function(xt, N, k, p, deltat = 1, w = NULL, dpss = FALSE,
     F3 <-  matrix(nrow = nrow(fStuff$cHat), ncol = length(instFreqEigen$Freq))
     colnames(F3) <- Freq
     for(P in 1:nrow(fStuff$cHat)){ # this is 1:p as we are removing zero so P-1 is actually P
-        browser()
+
         normcHatWOutZeroSq <- normcHatWOutZeroSq + fStuff$cHat[P,]^2
         F3[P,] <- (fStuff$cHat[P,])^2/
           ((normPhiSq - normcHatWOutZeroSq)/(k - P))
@@ -350,7 +350,7 @@ F3Test <- function(xt, N, k, p, deltat = 1, w = NULL, dpss = FALSE,
 FtestCombined <- function(xt, N, k, p, deltat = 1, w = NULL, dpss = FALSE,
                           returnInstFreqAndRegression = FALSE,
                           undersample = FALSE, undersampleNumber = NULL){
-  browser()
+
   if(!returnInstFreqAndRegression){
     if(!undersample){
       if(dpss){ #Use DPSS taper
@@ -644,21 +644,26 @@ F4Testpar <- function(xt, N, k, p, deltat = 1, dpss = FALSE, undersampleNumber =
 
   if(dpss){
     fullDat <- parallel::mclapply(X = k,FUN = function(x){
-      return(singleIterationF4(xt = xt, N = N, k = x, w = ((x+1)/(2*length(xt))), p = p, deltat = 1,
-                               undersampleNumber = 100, dpss = TRUE))
+      return(singleIterationForParallel4(xt = xt, N = N, k = x, w = ((x+1)/(2*length(xt))), p = p, deltat = deltat,
+                               undersampleNumber = undersampleNumber, dpss = TRUE))
     }, mc.cores = cores, mc.cleanup = TRUE)
   }else{
     fullDat <- parallel::mclapply(X = k,FUN = function(x){
-      return(singleIterationF4(xt = xt, N = N, k = x, p = p, deltat = 1,
-                               undersampleNumber = 100, dpss = FALSE))
+      return(singleIterationForParallel4(xt = xt, N = N, k = x, p = p, deltat = deltat,
+                               undersampleNumber = undersampleNumber, dpss = FALSE))
     }, mc.cores = cores, mc.cleanup = TRUE)
   }
 
-
+  if(p != 1){
                                # K iterations X P polynomials X zeroPadd size
   normcHatWOutZeroSq <- array(0, dim = c(length(k), nrow(fullDat[[1]]$cHat), ncol(fullDat[[1]]$cHat)))
   normPhiSq <- matrix(nrow = length(k), ncol = ncol(fullDat[[1]]$cHat))
   cHat <- array(0, dim=c(length(k), nrow(fullDat[[1]]$cHat), ncol(fullDat[[1]]$cHat)))
+  }else{
+    normcHatWOutZeroSq <- array(0, dim = c(length(k), length(fullDat[[1]]$cHat),1))
+    normPhiSq <- matrix(nrow = length(k), ncol = 1)
+    cHat <- array(0, dim=c(length(k), length(fullDat[[1]]$cHat), 1))
+  }
 
   for(loopNum in 1:length(k)){
 
@@ -692,4 +697,61 @@ F4Testpar <- function(xt, N, k, p, deltat = 1, dpss = FALSE, undersampleNumber =
               F14testStat = F1 ))
 }
 
+#' F3TestParallel
+#'
+#' w is chosen by shannons number based on k
+#'
+#' @param xt time series
+#' @param N Total number of observations
+#' @param p Highest degree polynomial you want to test for
+#' @param deltat Time interval between each observation
+#' @param dpss  = FALSE unless you want to use dpss, it will do sine tapers by default
+#' @param undersampleNumber A numeric of the number the user wants to undersample, usually 100 is a good start
+#' @param k vector of tapers used in the f test
+#' @param cores must be 1 if on windows, number of cores used for parallelization
+#'
+#' @return $F3testStat, $Freq, $significantFrequencies
+#'
+#' @export
+F3Testpar <- function(xt, N = length(xt), k, p, deltat = 1, dpss = FALSE, undersampleNumber = 100, cores = 1,
+                      confLevel = (1-(1/length(xt)))){
 
+  if(is.null(undersampleNumber)){
+    stop("need to set undersample amount")
+  }
+
+  if(dpss){
+    fullDat <- parallel::mclapply(X = k,FUN = function(x){
+      return(singleIterationForParallel(xt = xt, k = x, w = ((x+1)/(2*length(xt))), p = p, deltat = deltat,
+                                        undersampleNumber = undersampleNumber, dpss = TRUE,
+                                        confLevel = (1-(1/length(xt)))))
+    }, mc.cores = cores, mc.cleanup = TRUE)
+  }else{
+    fullDat <- parallel::mclapply(X = k,FUN = function(x){
+      return(singleIterationForParallel(xt = xt, k = x, p = p, deltat = deltat,
+                                        undersampleNumber = undersampleNumber, dpss = FALSE,
+                                        confLevel = (1-(1/length(xt)))))
+    }, mc.cores = cores, mc.cleanup = TRUE)
+  }
+  Freq = fullDat[[1]]$Freq
+  browser()
+  significantFrequencies<- matrix(nrow = p, ncol = length(Freq))
+  for(i in 1:length(k)){
+    for(j in 1:p){
+      if(length(as.vector(fullDat[[i]]$significantFreq[[P]])) == 0){
+
+      }else{
+        #apparently you have to check each sig freq separatly
+        significantFrequencies[j,which(Freq == fullDat[[i]]$significantFreq[[j]])] =
+          significantFrequencies[j,which(Freq == fullDat[[i]]$significantFreq[[j]])] + 1
+      }
+
+    }
+
+  }
+
+
+
+  #making the return
+  return(list(F3TestStat = fullDat, Freq = Freq, sigFreq = significantFrequencies))
+}
