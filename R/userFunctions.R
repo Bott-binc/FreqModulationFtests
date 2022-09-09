@@ -742,8 +742,9 @@ F3Testpar <- function(xt, N = length(xt), k, p, deltat = 1, dpss = FALSE, unders
 
       }else{
         #apparently you have to check each sig freq separatly
-        significantFrequencies[j,which(Freq == fullDat[[i]]$significantFreq[[j]])] =
-          significantFrequencies[j,which(Freq == fullDat[[i]]$significantFreq[[j]])] + 1
+        indexesOfSigFreq <- match(fullDat[[i]]$significantFreq[[j]], Freq)
+        significantFrequencies[j,indexesOfSigFreq] =
+          significantFrequencies[j,indexesOfSigFreq] + 1
       }
 
     }
