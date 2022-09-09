@@ -734,8 +734,8 @@ F3Testpar <- function(xt, N = length(xt), k, p, deltat = 1, dpss = FALSE, unders
     }, mc.cores = cores, mc.cleanup = TRUE)
   }
   Freq = fullDat[[1]]$Freq
-  browser()
-  significantFrequencies<- matrix(nrow = p, ncol = length(Freq))
+
+  significantFrequencies<- matrix(0,nrow = p, ncol = length(Freq))
   for(i in 1:length(k)){
     for(j in 1:p){
       if(length(as.vector(fullDat[[i]]$significantFreq[[P]])) == 0){
@@ -750,9 +750,11 @@ F3Testpar <- function(xt, N = length(xt), k, p, deltat = 1, dpss = FALSE, unders
     }
 
   }
+  prop <- significantFrequencies/length(k)
 
 
 
   #making the return
-  return(list(F3TestStat = fullDat, Freq = Freq, sigFreq = significantFrequencies))
+  return(list(F3TestStat = fullDat, Freq = Freq, sigFreq = significantFrequencies,
+              proportionSig = prop))
 }
