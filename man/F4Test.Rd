@@ -33,7 +33,7 @@ F4Test(
 \item{undersampleNumber}{A numeric of the number the user wants to undersample, usually 100 is a good start}
 }
 \value{
-$F4testStat, $Freq, $F14TestStat(this is the f1 not the f3 mod )
+$F4testStat, $Freq, $F14TestStat this is the f1 not the f3 mod
 }
 \description{
 F4Test

@@ -26,6 +26,8 @@ standardInverseSine(
 \item{passInSineMat}{If sine matrix was calculated already}
 
 \item{retSineTapers}{Will return calculated sine taper matrix for future use}
+
+\item{passInSineUnder}{If sine undersampling matrix was calculated already}
 }
 \value{
 returns matrix of standard inverse along with frequencies corresponding to the columns

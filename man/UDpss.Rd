@@ -9,7 +9,7 @@ UDpss(N, k, p, w, round = 14)
 \arguments{
 \item{N}{Total number of points in your series including zero pad}
 
-\item{k}{number of tapers used (0 to k-1)}
+\item{k}{number of tapers used 0 to k-1}
 
 \item{p}{highest derivative used/highest degree polynomial starts at 0}
 

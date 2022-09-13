@@ -14,7 +14,7 @@ HatMatGMatSine(N, k, p)
 \item{p}{Highest degree polynomial}
 }
 \value{
-List of H (hat matrix) and G (polynomial matrix)
+List of H hat matrix and G polynomial matrix
 }
 \description{
 GramShmidt Orthonormalized Hat and Polynomial Matrices for Sine

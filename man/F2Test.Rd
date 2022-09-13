@@ -36,7 +36,7 @@ F2Test(
 \item{returnInstFreqAndRegression}{= FALSE, this speeds up the other f tests so you can pass in information}
 }
 \value{
-$F2testStat $Freq and $necessaryTestStuff (used to pass into another ftest function)
+$F2testStat $Freq and $necessaryTestStuff used to pass into another ftest function
 }
 \description{
 F2 test statistic

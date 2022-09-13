@@ -23,7 +23,11 @@ standardInverseSineDer(
 
 \item{deltat}{default is 1 unless using different nyquist}
 
-\item{FirstDir}{= NULL, allows for the derivative for the sine taper to be passed in for faster calculation}
+\item{passInSineMat}{If sine matrix was calculated already}
+
+\item{returnSineMat}{will return the sine taper matrix back to the parent function}
+
+\item{passInSineUnder}{If sine undersampling matrix was calculated already}
 }
 \value{
 list of $StdInverse and $Freq which are the columns of StdInverse,

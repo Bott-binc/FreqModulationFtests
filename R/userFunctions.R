@@ -3,7 +3,7 @@
 #' Modulation Generation for grumble distribution
 #'
 #' @param N Length of series you want to create
-#' @param P Highest degree polynomial(will use all degrees less than P other than 0)
+#' @param P Highest degree polynomial will use all degrees less than P other than 0
 #' @param BLinear desired bandwidth for linear modulation
 #' @param linConstCoef linear constant term
 #' @param linCoef linear term coefficient
@@ -16,12 +16,12 @@
 #' @param cubeLinCoef cubic linear term coefficient
 #' @param cubeQuadCoef cubic quadratic term coefficient
 #' @param cubeCoef cubic term coefficient
-#' @param BQuart desired bandwidth for quartic modulation
 #' @param quartConstCoef quartic constant term
 #' @param quartLinCoef quartic linear term coefficient
 #' @param quartQuadCoef quartic quadratic term coefficient
 #' @param quartCubeCoef quartic cubic term coefficient
 #' @param quartCoef quartic term coefficient
+#' @param BQuartic desired bandwidth for quartic modulation
 #' @param AmpLinear amplitude of linear modulation
 #' @param AmpQuad amplitude of quadratic modulation
 #' @param AmpCube amplitide of cubic modulation
@@ -31,12 +31,12 @@
 #' @param fCube desired cubic modulation carrier frequency
 #' @param fQuart desired quartic modulation carrier frequency
 #' @param checkBandWidth def = FALSE  if TRUE will print out the bandwidths to check
-#' @param ar  = c(0.5, 0.3, -0.1) AR coef for noise generation
-#' @param ma  = c(0.6) MA coef for noise generation
+#' @param ar  =  0.5, 0.3, -0.1 AR coef for noise generation
+#' @param ma  = 0.6 MA coef for noise generation
 #' @param noiseScale = 1*6/pi^2 ratio of noise to pure signal
 #' @param plotXt def = FALSE, will plot xt with noise if needed
 #'
-#' @return
+#' @return $xt for noisy data and $xtNoNoise for signal without noise and $noise for just the pure noise that was used
 #' @export
 grumbleModulationGeneration <- function(N,P,
                                         BLinear, linConstCoef, linCoef,
@@ -45,19 +45,18 @@ grumbleModulationGeneration <- function(N,P,
                                         AmpQuad = 0,
                                         BCubic = 0, cubeConstCoef = 0, cubeLinCoef = 0, cubeQuadCoef = 0, cubeCoef = 0,
                                         AmpCube = 0,
-                                        BQuart = 0, quartConstCoef = 0, quartLinCoef = 0, quartQuadCoef = 0, quartCubeCoef = 0, quartCoef = 0,
+                                        BQuartic = 0, quartConstCoef = 0, quartLinCoef = 0, quartQuadCoef = 0, quartCubeCoef = 0, quartCoef = 0,
                                         AmpQuart = 0,
                                         fLin = 0.1, fQuad = 0.3, fCube = 0.31, fQuart = 0.4,
                                         checkBandWidth = FALSE, ar = c(0.5, 0.3, -0.1),
                                         ma = c(0.6), noiseScale = 1*6/pi^2, plotXt = FALSE
 
                                         ){
-
+  browser()
   if(P %in% 1:4){
 
     n <- 0:(N-1)
     nFFT <- 2^ceiling(log2(2*N))
-    nfreqs <- nFFT/2-1
     freq <- seq(1/nFFT,0.5, by = 1/nFFT)
 
     # To ensure we are choosing a frequency that will be contained in the series
@@ -83,9 +82,9 @@ grumbleModulationGeneration <- function(N,P,
     bwQuart <- max(abs(Quartic))
 
     correctionLinearbw <- bwLin/(ceiling((bwLin/BLinear)*100)/100) # finds closest correction factor to three digits below the desired bandwidth
-    correctionQuadbw <- bwQuad/(ceiling((bwQuad/BQuad)*100)/100)
-    correctionCubebw <- bwCube/(ceiling((bwCube/BCube)*100)/100)
-    correctionQuartbw <- bwQuart/(ceiling((bwQuart/BQuart)*100)/100)
+    correctionQuadbw <- bwQuad/(ceiling((bwQuad/BQuadratic)*100)/100)
+    correctionCubebw <- bwCube/(ceiling((bwCube/BCubic)*100)/100)
+    correctionQuartbw <- bwQuart/(ceiling((bwQuart/BQuartic)*100)/100)
 
     FMLinear <- Linear/correctionLinearbw
     FMQuadratic <- Quadratic/correctionQuadbw
@@ -112,21 +111,118 @@ grumbleModulationGeneration <- function(N,P,
     InnerCosQuart <- 2*pi*f4*n + modulationQuartic
 
     if(P == 1){
-      modulation <- A1*cos(InnerCosLin)
+      correctionLinearbw <- bwLin/(ceiling((bwLin/BLinear)*100)/100) # finds closest correction factor to three digits below the desired bandwidth
+
+      FMLinear <- Linear/correctionLinearbw
+
+      if(checkBandWidth){
+        print(paste0("linear = " ,max(abs(FMLinear)))) # just smaller than the w0
+      }
+
+      #then computing the 'integrals'
+
+      modulationLinear <- cumsum(FMLinear)*2*pi
+      InnerCosLin <- 2*pi*f1*n + modulationLinear
+
+      modulation <- AmpLinear*cos(InnerCosLin)
     }
     else if(P == 2){
-      modulation <- A1*cos(InnerCosLin) + A2*cos(InnerCosQuad)
+
+      correctionLinearbw <- bwLin/(ceiling((bwLin/BLinear)*100)/100) # finds closest correction factor to three digits below the desired bandwidth
+      correctionQuadbw <- bwQuad/(ceiling((bwQuad/BQuadratic)*100)/100)
+
+
+      FMLinear <- Linear/correctionLinearbw
+      FMQuadratic <- Quadratic/correctionQuadbw
+
+
+      if(checkBandWidth){
+        print(paste0("linear = " ,max(abs(FMLinear)))) # just smaller than the w0
+        print(paste0("Quadratic = ",max(abs(FMQuadratic))))
+
+      }
+
+      #then computing the 'integrals'
+
+      modulationLinear <- cumsum(FMLinear)*2*pi
+      modulationQuadratic <- cumsum(FMQuadratic)*2*pi
+
+      InnerCosLin <- 2*pi*f1*n + modulationLinear
+      InnerCosQuad <- 2*pi*f2*n + modulationQuadratic
+
+      modulation <- AmpLinear*cos(InnerCosLin) + AmpQuad*cos(InnerCosQuad)
+
     }
     else if(P == 3){
-      modulation <- A1*cos(InnerCosLin) + A2*cos(InnerCosQuad) +
-                    A3*cos(InnerCosCube)
-    }else{
-      modulation <- A1*cos(InnerCosLin) + A2*cos(InnerCosQuad) +
-        A3*cos(InnerCosCube) + A4*cos(InnerCosQuart)
+
+      correctionLinearbw <- bwLin/(ceiling((bwLin/BLinear)*100)/100) # finds closest correction factor to three digits below the desired bandwidth
+      correctionQuadbw <- bwQuad/(ceiling((bwQuad/BQuadratic)*100)/100)
+      correctionCubebw <- bwCube/(ceiling((bwCube/BCubic)*100)/100)
+
+
+      FMLinear <- Linear/correctionLinearbw
+      FMQuadratic <- Quadratic/correctionQuadbw
+      FMCubic <- Cubic/correctionCubebw
+
+
+      if(checkBandWidth){
+        print(paste0("linear = " ,max(abs(FMLinear)))) # just smaller than the w0
+        print(paste0("Quadratic = ",max(abs(FMQuadratic))))
+        print(paste0("Cubic = ",max(abs(FMCubic))))
+
+      }
+
+      #then computing the 'integrals'
+
+      modulationLinear <- cumsum(FMLinear)*2*pi
+      modulationQuadratic <- cumsum(FMQuadratic)*2*pi
+      modulationCubic <- cumsum(FMCubic)*2*pi
+
+
+      InnerCosLin <- 2*pi*f1*n + modulationLinear
+      InnerCosQuad <- 2*pi*f2*n + modulationQuadratic
+      InnerCosCube <- 2*pi*f3*n + modulationCubic
+
+      modulation <- AmpLinear*cos(InnerCosLin) + AmpQuad*cos(InnerCosQuad) +
+                    AmpCube*cos(InnerCosCube)
+    }
+    else{
+      correctionLinearbw <- bwLin/(ceiling((bwLin/BLinear)*100)/100) # finds closest correction factor to three digits below the desired bandwidth
+      correctionQuadbw <- bwQuad/(ceiling((bwQuad/BQuadratic)*100)/100)
+      correctionCubebw <- bwCube/(ceiling((bwCube/BCubic)*100)/100)
+      correctionQuartbw <- bwQuart/(ceiling((bwQuart/BQuartic)*100)/100)
+
+      FMLinear <- Linear/correctionLinearbw
+      FMQuadratic <- Quadratic/correctionQuadbw
+      FMCubic <- Cubic/correctionCubebw
+      FMQuartic <- Quartic/correctionQuartbw
+
+      if(checkBandWidth){
+        print(paste0("linear = " ,max(abs(FMLinear)))) # just smaller than the w0
+        print(paste0("Quadratic = ",max(abs(FMQuadratic))))
+        print(paste0("Cubic = ",max(abs(FMCubic))))
+        print(paste0("Quartic = ",max(abs(FMQuartic))))
+      }
+
+      #then computing the 'integrals'
+
+      modulationLinear <- cumsum(FMLinear)*2*pi
+      modulationQuadratic <- cumsum(FMQuadratic)*2*pi
+      modulationCubic <- cumsum(FMCubic)*2*pi
+      modulationQuartic <- cumsum(FMQuartic)*2*pi
+
+      InnerCosLin <- 2*pi*f1*n + modulationLinear
+      InnerCosQuad <- 2*pi*f2*n + modulationQuadratic
+      InnerCosCube <- 2*pi*f3*n + modulationCubic
+      InnerCosQuart <- 2*pi*f4*n + modulationQuartic
+
+      modulation <- AmpLinear*cos(InnerCosLin) + AmpQuad*cos(InnerCosQuad) +
+        AmpCube*cos(InnerCosCube) + AmpQuart*cos(InnerCosQuart)
     }
 
-    noiseInnov <- rgumble(N, scale = noiseScale)
-    noise <- arima.sim(model = ARMA, n = N, innov = noiseInnov)
+    ARMA <- list(ar = ar, ma = ma)
+    noiseInnov <- VGAM::rgumble(N, scale = noiseScale)
+    noise <- stats::arima.sim(model = ARMA, n = N, innov = noiseInnov)
     xt <- modulation + as.numeric(noise)
 
   }else{
@@ -137,7 +233,7 @@ grumbleModulationGeneration <- function(N,P,
     plot(xt, x = 1:N, type = "l")
   }
 
-  return(xt, xtNoNoise = modulation)
+  return(list(xt = xt, xtNoNoise = modulation, noise = noise))
 }
 
 
@@ -260,7 +356,7 @@ F1Test <- function(xt, N, k, p, deltat = 1, w = NULL, dpss = FALSE, returnInstFr
 #' @param returnInstFreqAndRegression  = FALSE, this speeds up the other f tests so you can pass in information
 #' @param passInInstFreqAndRegression leave null unless trying to simultainously do all test statistics
 #'
-#' @return $F2testStat $Freq and $necessaryTestStuff (used to pass into another ftest function)
+#' @return $F2testStat $Freq and $necessaryTestStuff used to pass into another ftest function
 #'
 #' @export
 F2Test <- function(xt, N, k, p, deltat = 1, w = NULL, dpss = FALSE, passInInstFreqAndRegression = NULL,
@@ -336,7 +432,7 @@ F2Test <- function(xt, N, k, p, deltat = 1, w = NULL, dpss = FALSE, passInInstFr
 #' also cause zero padding to take place.  the user DOES NOT need to manually zero pad
 #' @param undersampleNumber A numeric of the number the user wants to undersample, usually 100 is a good start
 #'
-#' @return $F3testStat, $Freq, $necessaryTestStuff (used to pass into another ftest function)
+#' @return $F3testStat, $Freq, $necessaryTestStuff used to pass into another ftest function
 #'
 #' @export
 F3Test <- function(xt, N, k, p, deltat = 1, w = NULL, dpss = FALSE,
@@ -472,8 +568,8 @@ F3Test <- function(xt, N, k, p, deltat = 1, w = NULL, dpss = FALSE,
 }
 
 
-#' A combined F test that returns F1 modified, F3 modified and non modified (modified referring to removing the
-#' zero polynomial test)  It is the fastest version if you want all three tests at the same time
+#' A combined F test that returns F1 modified, F3 modified and non modified modified referring to removing the
+#' zero polynomial test  It is the fastest version if you want all three tests at the same time
 #'
 #' @param xt time series
 #' @param N Total number of observations
@@ -679,7 +775,7 @@ FtestCombined <- function(xt, N, k, p, deltat = 1, w = NULL, dpss = FALSE,
 #' @param dpss  = FALSE unless you want to use dpss, it will do sine tapers by default
 #' @param undersampleNumber A numeric of the number the user wants to undersample, usually 100 is a good start
 #'
-#' @return $F4testStat, $Freq, $F14TestStat(this is the f1 not the f3 mod )
+#' @return $F4testStat, $Freq, $F14TestStat this is the f1 not the f3 mod
 #'
 #' @export
 F4Test <- function(xt, N, k, p, deltat = 1, w = NULL, dpss = FALSE, undersampleNumber = 100){
@@ -777,7 +873,7 @@ F4Test <- function(xt, N, k, p, deltat = 1, w = NULL, dpss = FALSE, undersampleN
 #' @param k vector of tapers used in the f test
 #' @param cores must be 1 if on windows, number of cores used for parallelization
 #'
-#' @return $F4testStat, $Freq, $F14TestStat(this is the f1 not the f3 mod )
+#' @return $F4testStat, $Freq, $F14TestStat this is the f1 not the f3 mod
 #'
 #' @export
 F4Testpar <- function(xt, N, k, p, deltat = 1, dpss = FALSE, undersampleNumber = 100, cores = 1){
@@ -853,6 +949,7 @@ F4Testpar <- function(xt, N, k, p, deltat = 1, dpss = FALSE, undersampleNumber =
 #' @param undersampleNumber A numeric of the number the user wants to undersample, usually 100 is a good start
 #' @param k vector of tapers used in the f test
 #' @param cores must be 1 if on windows, number of cores used for parallelization
+#' @param confLevel default is 1-1/N, level of confidence used in the Ftest
 #'
 #' @return $F3testStat, $Freq, $significantFrequencies
 #'

@@ -2,8 +2,8 @@
 % Please edit documentation in R/userFunctions.R
 \name{FtestCombined}
 \alias{FtestCombined}
-\title{A combined F test that returns F1 modified, F3 modified and non modified (modified referring to removing the
-zero polynomial test)  It is the fastest version if you want all three tests at the same time}
+\title{A combined F test that returns F1 modified, F3 modified and non modified modified referring to removing the
+zero polynomial test  It is the fastest version if you want all three tests at the same time}
 \usage{
 FtestCombined(
   xt,
@@ -45,6 +45,6 @@ $F1Mod $F3Mod without 0Poly and $F3 with 0 poly, as well as the frequencies.  if
 it will also reuturn all things needed to run the other test stats.
 }
 \description{
-A combined F test that returns F1 modified, F3 modified and non modified (modified referring to removing the
-zero polynomial test)  It is the fastest version if you want all three tests at the same time
+A combined F test that returns F1 modified, F3 modified and non modified modified referring to removing the
+zero polynomial test  It is the fastest version if you want all three tests at the same time
 }

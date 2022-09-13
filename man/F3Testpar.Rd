@@ -32,6 +32,8 @@ F3Testpar(
 \item{undersampleNumber}{A numeric of the number the user wants to undersample, usually 100 is a good start}
 
 \item{cores}{must be 1 if on windows, number of cores used for parallelization}
+
+\item{confLevel}{default is 1-1/N, level of confidence used in the Ftest}
 }
 \value{
 $F3testStat, $Freq, $significantFrequencies

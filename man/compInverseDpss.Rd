@@ -21,7 +21,7 @@ compInverseDpss(
 
 \item{k}{Number of tapers}
 
-\item{w}{Width that gets passed into dpss()}
+\item{w}{Width that gets passed into dpss}
 
 \item{xt}{Time series}
 
@@ -31,7 +31,7 @@ compInverseDpss(
 
 \item{deltat}{= 1 if not specified}
 
-\item{polynomialOnly}{If you only want the polynomial part (GH^tY == G_pC^hat_p) used in ftest}
+\item{polynomialOnly}{If you only want the polynomial part GH^tY == G_pC^hat_p used in ftest}
 
 \item{returnHG}{Will return H and G along with the Z/includes in list if poly is true}
 }

@@ -2,7 +2,7 @@
 % Please edit documentation in R/hiddenFunctions.R
 \name{standardInverseDPSS}
 \alias{standardInverseDPSS}
-\title{Standard Inverse with fft() for all frequencies using DPSS}
+\title{Standard Inverse with fft for all frequencies using DPSS}
 \usage{
 standardInverseDPSS(
   xt,
@@ -22,18 +22,20 @@ standardInverseDPSS(
 
 \item{k}{Number of tapers}
 
-\item{w}{Width that gets passed into dpss()}
+\item{w}{Width that gets passed into dpss}
 
 \item{deltat}{default is 1, used for nyquist calculation}
 
 \item{retDPSS}{If true, will return the dpss for pass into other functions}
 
 \item{passInDPSS}{if dpss has already been calculated somewhere else this is the full
-object of dpss() both $v and $eigen}
+object of dpss both $v and $eigen}
+
+\item{passInDPSSReduced}{if dpss undersampling was calculated already}
 }
 \value{
 returns standard inverse along with frequencies that are the columns
 }
 \description{
-Standard Inverse with fft() for all frequencies using DPSS
+Standard Inverse with fft for all frequencies using DPSS
 }

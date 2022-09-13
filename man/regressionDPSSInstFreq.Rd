@@ -22,6 +22,8 @@ regressionDPSSInstFreq(
 
 \item{k}{Number of tapers}
 
+\item{w}{bandwidth for the multitaper}
+
 \item{instFreqEigen}{inst frequency eigen spectrum}
 
 \item{p}{Highest degree polynomial}
@@ -30,7 +32,11 @@ regressionDPSSInstFreq(
 
 \item{returnDPSS}{if you need the tapers for other functions}
 
+\item{returnRp}{will return the residuals if needed}
+
 \item{withoutzeroPoly}{used if using modified f tests without 0th order polynomial}
+
+\item{returnGCHatp}{will return GCHatP if needed}
 }
 \value{
 returnlist of $cHat and polynomialPart of composit inverse $GCHatp, $H and $G, \

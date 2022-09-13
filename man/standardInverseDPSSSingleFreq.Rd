@@ -20,7 +20,7 @@ standardInverseDPSSSingleFreq(
 
 \item{N}{Total number of observations}
 
-\item{w}{Width that gets passed into dpss()}
+\item{w}{Width that gets passed into dpss}
 
 \item{k}{Number of tapers}
 
@@ -28,7 +28,7 @@ standardInverseDPSSSingleFreq(
 
 \item{deltat}{= 1 if not specified, but is only used if not using FFT}
 
-\item{FFT}{if you want to use fft() to speed up or not have delta t = 1 with zero padding}
+\item{FFT}{if you want to use fft to speed up or not have delta t = 1 with zero padding}
 
 \item{retDPSS}{if TRUE, returns calculated DPSS for pass in to other functions}
 }

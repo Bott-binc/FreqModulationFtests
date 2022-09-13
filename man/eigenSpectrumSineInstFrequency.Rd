@@ -29,6 +29,8 @@ eigenSpectrumSineInstFrequency(
 \item{returnSineMat}{if you want to return SineTapers for use elsewhere}
 
 \item{passInSineTapers}{if sine matrix was calculated somewhere else}
+
+\item{passInSineUnder}{If sine undersampling matrix was calculated already}
 }
 \value{
 returns $PHI kxn matrix, $Freq which are the columns of PHI.  If

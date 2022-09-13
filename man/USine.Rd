@@ -11,7 +11,7 @@ USine(N, k, p, round = 15)
 
 \item{k}{the number of tapers 0 to k-1}
 
-\item{p}{Highest degree der used/ highest degree polynomial (0 to p)}
+\item{p}{Highest degree der used/ highest degree polynomial 0 to p}
 
 \item{round}{default 15 decimals to obtain exactly 0 in the non mod 2 points,
 I believe it has to do with the rounding on pi for why its not exactly zero.}

@@ -26,6 +26,8 @@ instFreqSine(
 \item{passInSineMat}{if sine matrix was calculated somewhere else}
 
 \item{returnSineMat}{if you want to return SineTapers for use elsewhere}
+
+\item{passInSineUnder}{If sine undersampling matrix was calculated already}
 }
 \value{
 list of $InstFreq and $Freq which is the column of instFreq

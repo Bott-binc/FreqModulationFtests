@@ -22,14 +22,16 @@ instFreqDPSS(
 
 \item{k}{Number of tapers}
 
-\item{w}{Width that gets passed into dpss()}
+\item{w}{Width that gets passed into dpss}
 
 \item{deltat}{default is 1, used for nyquist calculation}
 
 \item{passInDPSS}{if dpss has already been calculated somewhere else this is the full
-object of dpss() both $v and $eigen}
+object of dpss both $v and $eigen}
 
-\item{returnDPSS}{if you want to return dpss() for use elsewhere}
+\item{returnDPSS}{if you want to return dpss for use elsewhere}
+
+\item{passInDPSSUnder}{if dpss undersampling was calculated already}
 }
 \value{
 list of $InstFreq and $Freq which is the column of instFreq

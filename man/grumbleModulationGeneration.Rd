@@ -22,7 +22,7 @@ grumbleModulationGeneration(
   cubeQuadCoef = 0,
   cubeCoef = 0,
   AmpCube = 0,
-  BQuart = 0,
+  BQuartic = 0,
   quartConstCoef = 0,
   quartLinCoef = 0,
   quartQuadCoef = 0,
@@ -43,7 +43,7 @@ grumbleModulationGeneration(
 \arguments{
 \item{N}{Length of series you want to create}
 
-\item{P}{Highest degree polynomial(will use all degrees less than P other than 0)}
+\item{P}{Highest degree polynomial will use all degrees less than P other than 0}
 
 \item{BLinear}{desired bandwidth for linear modulation}
 
@@ -75,7 +75,7 @@ grumbleModulationGeneration(
 
 \item{AmpCube}{amplitide of cubic modulation}
 
-\item{BQuart}{desired bandwidth for quartic modulation}
+\item{BQuartic}{desired bandwidth for quartic modulation}
 
 \item{quartConstCoef}{quartic constant term}
 
@@ -99,13 +99,16 @@ grumbleModulationGeneration(
 
 \item{checkBandWidth}{def = FALSE  if TRUE will print out the bandwidths to check}
 
-\item{ar}{= c(0.5, 0.3, -0.1) AR coef for noise generation}
+\item{ar}{=  0.5, 0.3, -0.1 AR coef for noise generation}
 
-\item{ma}{= c(0.6) MA coef for noise generation}
+\item{ma}{= 0.6 MA coef for noise generation}
 
 \item{noiseScale}{= 1*6/pi^2 ratio of noise to pure signal}
 
 \item{plotXt}{def = FALSE, will plot xt with noise if needed}
+}
+\value{
+$xt for noisy data and $xtNoNoise for signal without noise and $noise for just the pure noise that was used
 }
 \description{
 Modulation Generation for grumble distribution

@@ -26,6 +26,8 @@ eigenSpectrumSineFFT(
 \item{passInTaper}{leave as null unless you are passing in a taper matrix for sine}
 
 \item{returnSineMat}{if you want to use Sine taper matrix outside function can return if TRUE}
+
+\item{pad}{if true, will automatically zero padd the fft}
 }
 \value{
 Matrix of $EigenSpec for each frequency, as well as the frequencies under $Freq in the list

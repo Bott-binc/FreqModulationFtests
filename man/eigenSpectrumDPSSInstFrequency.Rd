@@ -23,16 +23,18 @@ eigenSpectrumDPSSInstFrequency(
 
 \item{k}{Number of tapers}
 
-\item{w}{Width that gets passed into dpss()}
+\item{w}{Width that gets passed into dpss}
 
 \item{deltat}{default is 1, used for nyquist calculation}
 
 \item{nu}{note nu = 0 is only working right now, implimentation is there for nu != 0 but not running parallel}
 
-\item{returnDPSS}{if you want to return dpss() for use elsewhere}
+\item{returnDPSS}{if you want to return dpssfor use elsewhere}
 
 \item{passInDPSS}{if dpss has already been calculated somewhere else this is the full
-object of dpss() both $v and $eigen}
+object of dpss both $v and $eigen}
+
+\item{passInDPSSUnder}{if dpss undersampling was calculated already}
 }
 \value{
 returns $PHI kxn matrix, $Freq which are the columns of PHI.  If

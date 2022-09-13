@@ -12,7 +12,7 @@ sineTaperMatrix(N, k)
 \item{k}{Number of tapers starting at 0}
 }
 \value{
-Matrix of tapers for the given N and k values, N columns (starting at n = 0 )
+Matrix of tapers for the given N and k values, N columns starting at n = 0
 }
 \description{
 This is the same as the one Ben and Yatharth added to multitaper but is returned in the same orientation as the one used in Percival and Walden

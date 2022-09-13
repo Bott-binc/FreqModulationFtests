@@ -8,7 +8,7 @@ library("multitaper")
 #'
 #' @param N Length of time series
 #' @param k Number of tapers
-#' @param t Specific time point that you are interested in (t starts at zero)
+#' @param t Specific time point that you are interested in t starts at zero
 #'
 #' @return Only the one sin taper that you are interested in at the single point
 sinTaperSingle <- function(N, k, t){
@@ -24,7 +24,7 @@ sinTaperSingle <- function(N, k, t){
 #' @param N Length of Time series
 #' @param k Number of tapers starting at 0
 #'
-#' @return Matrix of tapers for the given N and k values, N columns (starting at n = 0 )
+#' @return Matrix of tapers for the given N and k values, N columns starting at n = 0
 
 sineTaperMatrix <- function(N, k){
   stopifnot(N >= 8, k >= 1)
@@ -46,7 +46,7 @@ sineTaperMatrix <- function(N, k){
 #' @param deltat default is 1 unless otherwise inputted
 #' @param sineRet = FALSE , allows for the tapers to be returned for computational efficiency
 #'
-#' @return Vector of the eigenspectrum for each k (0, ..., K-1)
+#' @return Vector of the eigenspectrum for each k 0, ..., K-1
 eigenSpectrumSine <- function(n, k, Xt, f, deltat = 1, sineRet = FALSE){
 
   eigenSpec <- vector(length = k)
@@ -73,6 +73,7 @@ eigenSpectrumSine <- function(n, k, Xt, f, deltat = 1, sineRet = FALSE){
 #' @param passInTaper leave as null unless you are passing in a taper matrix for sine
 #' @param deltat default is one, changes the nyquist if altered
 #' @param returnSineMat if you want to use Sine taper matrix outside function can return if TRUE
+#' @param pad if true, will automatically zero padd the fft
 #'
 #' @return Matrix of $EigenSpec for each frequency, as well as the frequencies under $Freq in the list
 #' if returnSineMat = TRUE, will also return $SineMat
@@ -129,7 +130,7 @@ eigenSpectrumSineFFT <- function(N, k, Xt, deltat = 1, passInTaper = NULL, retur
 #' @param N Total number of observations
 #' @param k Number of tapers
 #' @param f specified frequency you want to look at
-#' @param FFT if you want to use fft() to speed up or not have delta t = 1 with zero padding
+#' @param FFT if you want to use fft to speed up or not have delta t = 1 with zero padding
 #' @param deltat  = 1 if not specified, but is only used if not using FFT
 #'
 #' @return Standard Inverse vector for frequency f
@@ -159,6 +160,7 @@ standardInverseSineSingleFreq <- function(xt, N, k, f, deltat = 1, FFT = FALSE){
 #' @param retSineTapers Will return calculated sine taper matrix for future use
 #' @param deltat default is 1 unless using different nyquist
 #' @param passInSineMat If sine matrix was calculated already
+#' @param passInSineUnder If sine undersampling matrix was calculated already
 #'
 #' @return returns matrix of standard inverse along with frequencies corresponding to the columns
 standardInverseSine <- function(xt, N, k, deltat = 1, passInSineMat = NULL,
@@ -201,8 +203,10 @@ standardInverseSine <- function(xt, N, k, deltat = 1, passInSineMat = NULL,
 #' @param xt time series
 #' @param N Total number of observations
 #' @param k Number of tapers
-#' @param FirstDir = NULL, allows for the derivative for the sine taper to be passed in for faster calculation
 #' @param deltat default is 1 unless using different nyquist
+#' @param returnSineMat will return the sine taper matrix back to the parent function
+#' @param passInSineMat If sine matrix was calculated already
+#' @param passInSineUnder If sine undersampling matrix was calculated already
 #'
 #' @return list of $StdInverse and $Freq which are the columns of StdInverse,
 #' if returnSineMat = TRUE then will also return $SineMat
@@ -266,6 +270,7 @@ standardInverseSineDer <- function(xt, N, k, deltat = 1, passInSineMat = NULL,
   }
 }
 
+
 #' Composite inverse for Sine Tapers using Gram schmidt hat matrix
 #'
 #' @param N Total number of observations
@@ -273,7 +278,7 @@ standardInverseSineDer <- function(xt, N, k, deltat = 1, passInSineMat = NULL,
 #' @param xt Time series
 #' @param f Specified frequency
 #' @param p Highest degree polynomial
-#' @param polynomialPart If you only want the polynomial part (GH^tY == G_pC^hat_p) used in ftest
+#' @param polynomialPart If you only want the polynomial part GH^tY == G_pC^hat_p used in ftest
 #' @param returnHG Will return H and G along with the Z/includes in list if poly is true
 #' @param deltat  = 1 if not specified
 #'
@@ -321,7 +326,7 @@ compInverseSine <- function(N, k, xt, f, p, deltat = 1, polynomialPart = FALSE, 
 #'
 #' @param N Total number of observations
 #' @param k the number of tapers 0 to k-1
-#' @param p Highest degree der used/ highest degree polynomial (0 to p)
+#' @param p Highest degree der used/ highest degree polynomial 0 to p
 #' @param round default 15 decimals to obtain exactly 0 in the non mod 2 points,
 #' I believe it has to do with the rounding on pi for why its not exactly zero.
 #'
@@ -344,7 +349,7 @@ USine <- function(N, k, p, round = 15){
 #' @param k Number of tapers
 #' @param p Highest degree polynomial
 #'
-#' @return List of H (hat matrix) and G (polynomial matrix)
+#' @return List of H hat matrix and G polynomial matrix
 HatMatGMatSine <- function(N, k, p){
 
   Umat <- USine(N, k, p)
@@ -378,6 +383,7 @@ FirstDerSineTaper <- function(N,k){
 #' @param deltat default is 1, used for nyquist calculation
 #' @param passInSineMat if sine matrix was calculated somewhere else
 #' @param returnSineMat if you want to return SineTapers for use elsewhere
+#' @param passInSineUnder If sine undersampling matrix was calculated already
 #'
 #' @return list of $InstFreq and $Freq which is the column of instFreq
 #' if returnSineMat = TRUE then list of $InstFreq, $Freq, and $SineMat
@@ -444,6 +450,7 @@ instFreqSine <- function(xt, N, k, deltat, passInSineMat = NULL, returnSineMat =
 #' @param nu = 0 default, code is in dpss version but not parallelized yet
 #' @param returnSineMat if you want to return SineTapers for use elsewhere
 #' @param passInSineTapers  if sine matrix was calculated somewhere else
+#' @param passInSineUnder If sine undersampling matrix was calculated already
 #'
 #' @return returns $PHI kxn matrix, $Freq which are the columns of PHI.  If
 #' returnSineMat = TRUE, will also return tapers for future use
@@ -512,6 +519,7 @@ eigenSpectrumSineInstFrequency <- function(xt, N, k, deltat, nu = 0,
 #' @param instFreqEigen inst frequency eigen spectrum
 #' @param returnRp if you want residuals to be returned and calculated as well
 #' @param withoutzeroPoly if you dont want zeroth order polynomials to be in test statistics
+#' @param returnGCHatp will return GCHatp to the user if needed
 #'
 #' @return returnlist of $cHat and polynomialPart of composit inverse $GCHatp, $H and $G, \
 #'if returnSineTapers = TRUE then will return tapers as well $sineTapers
@@ -605,10 +613,10 @@ regressionSineInstFreq <- function(N, k, instFreqEigen, p,
 # Polynomial Related --------------------------------------
 
 
-#' Matrix whos pth column is the unscaled monomial of degree p on the interval [-1 to 1]
+#' Matrix whos pth column is the unscaled monomial of degree p on the interval -1 to 1
 #'
-#' @param n the nth point in the series (0 to N-1)
-#' @param p the degree of the polynomial (0 to P)
+#' @param n the nth point in the series 0 to N-1
+#' @param p the degree of the polynomial 0 to P
 #' @param N The total number of observations
 #'
 #' @return signle n,pth element from the matrix
@@ -644,7 +652,7 @@ RnpMat <- function(N,P){
 #' Matrix of Ukp's defined by 2.36 in Kians thesis for the DPSS
 #'
 #' @param N Total number of points in your series including zero pad
-#' @param k number of tapers used (0 to k-1)
+#' @param k number of tapers used 0 to k-1
 #' @param p highest derivative used/highest degree polynomial starts at 0
 #' @param w bandwidth parameter, usually found with Shannons number
 #' @param round if 16 you will obtain not zero in k != p mod 2
@@ -667,14 +675,14 @@ UDpss <- function(N, k, p, w, round = 14){
 #'
 #' @param n Total number of observations
 #' @param k Number of tapers
-#' @param w Width that gets passed into dpss()
-#' @param Xt Time series (
+#' @param w Width that gets passed into dpss
+#' @param Xt Time series
 #' @param f Specific frequency you are looking at
 #' @param deltat = 1 unless otherwise inputted
-#' @param dpssRet  = FALSE, will not return dpss() use true to help not
+#' @param dpssRet  = FALSE, will not return dpss use true to help not
 #' re-computing dpss multiple times in program
 #'
-#' @return Vector of the eigenspectrum for each k (0, ..., K-1)
+#' @return Vector of the eigenspectrum for each k 0, ..., K-1
 eigenSpectrumdpss <- function(n, k, w, Xt, f, deltat = 1, dpssRet = FALSE){
 
   eigenSpec <- vector(length = k)
@@ -697,10 +705,11 @@ eigenSpectrumdpss <- function(n, k, w, Xt, f, deltat = 1, dpssRet = FALSE){
 #'
 #' @param n Total number of observations
 #' @param k Number of tapers
-#' @param w Width that gets passed into dpss()
+#' @param w Width that gets passed into dpss
 #' @param Xt Time series
-#' @param passInDPSSMat For limiting the number of calculations of DPSS this is dpss()$v
+#' @param passInDPSSMat For limiting the number of calculations of DPSS this is dpss$v
 #' @param deltat = 1 by default
+#' @param pad if true will zero padd automatically the Xt that is inputted into the function
 #'
 #' @return Matrix of EigenSpec for each frequency, as well as the frequencies under Freq in the list
 eigenSpectrumdpssFFT <- function(n, k, w, Xt, deltat = 1, passInDPSSMat = NULL, pad = FALSE){
@@ -746,9 +755,9 @@ eigenSpectrumdpssFFT <- function(n, k, w, Xt, deltat = 1, passInDPSSMat = NULL, 
 #' @param xt time series
 #' @param N Total number of observations
 #' @param k Number of tapers
-#' @param w Width that gets passed into dpss()
+#' @param w Width that gets passed into dpss
 #' @param f specified frequency you want to look at
-#' @param FFT if you want to use fft() to speed up or not have delta t = 1 with zero padding
+#' @param FFT if you want to use fft to speed up or not have delta t = 1 with zero padding
 #' @param deltat  = 1 if not specified, but is only used if not using FFT
 #' @param retDPSS if TRUE, returns calculated DPSS for pass in to other functions
 #'
@@ -774,16 +783,17 @@ standardInverseDPSSSingleFreq <- function(xt, N, w, k, f, deltat = 1, FFT = FALS
   }
 }
 
-#' Standard Inverse with fft() for all frequencies using DPSS
+#' Standard Inverse with fft for all frequencies using DPSS
 #'
 #' @param xt time series
 #' @param N Total number of observations
 #' @param k Number of tapers
-#' @param w Width that gets passed into dpss()
+#' @param w Width that gets passed into dpss
 #' @param retDPSS If true, will return the dpss for pass into other functions
 #' @param deltat default is 1, used for nyquist calculation
 #' @param passInDPSS if dpss has already been calculated somewhere else this is the full
-#' object of dpss() both $v and $eigen
+#' object of dpss both $v and $eigen
+#' @param passInDPSSReduced if dpss undersampling was calculated already
 #'
 #' @return returns standard inverse along with frequencies that are the columns
 standardInverseDPSS <- function(xt, N, k, w, deltat = 1, retDPSS = FALSE,
@@ -828,14 +838,15 @@ standardInverseDPSS <- function(xt, N, k, w, deltat = 1, retDPSS = FALSE,
 #' @param xt time series
 #' @param N Total number of observations
 #' @param k Number of tapers
-#' @param w Width that gets passed into dpss()
+#' @param w Width that gets passed into dpss
 #' @param deltat default is 1 used for nyquist
 #' @param passInDPSS used for speed if you have already calculated the dpss object somewhere else
 #' this includes both $v and $eigen
 #' @param returnDPSS returns dpss if needed outside function
+#' @param passInDPSSReduced if dpss undersampling was calculated already
 #'
 #' @return Standard Inverse Derivative Z' vector $StdInverse as well as $Freq which are the columns of stdInverse
-#' if returnDPSS = TRUE will also return $DPSS which is the dpss() object
+#' if returnDPSS = TRUE will also return $DPSS which is the dpss object
 standardInverseDPSSFirstDir <- function(xt, N, w, k, deltat = 1, passInDPSS = NULL,
                                         returnDPSS = FALSE, passInDPSSReduced = NULL){#, FirstDir = NULL){
   if(is.null(passInDPSSReduced)){
@@ -910,12 +921,12 @@ standardInverseDPSSFirstDir <- function(xt, N, w, k, deltat = 1, passInDPSS = NU
 #'
 #' @param N Total number of observations
 #' @param k Number of tapers
-#' @param w Width that gets passed into dpss()
+#' @param w Width that gets passed into dpss
 #' @param xt Time series
 #' @param f Specified frequency
 #' @param p Highest degree polynomial
 #' @param deltat  = 1 if not specified
-#' @param polynomialOnly If you only want the polynomial part (GH^tY == G_pC^hat_p) used in ftest
+#' @param polynomialOnly If you only want the polynomial part GH^tY == G_pC^hat_p used in ftest
 #' @param returnHG Will return H and G along with the Z/includes in list if poly is true
 #'
 #' @return Vector of compInverse for freq f, if polynomialOnly, it will return
@@ -997,9 +1008,9 @@ eigenFunctionDerDpss <- function(N, k, p, w, f){
 #' @param N Total Number of Observations
 #' @param k Number of tapers
 #' @param p Highest degree polynomial
-#' @param w Band Width parameter passed into dpss()
+#' @param w Band Width parameter passed into dpss
 #'
-#' @return List of H (hat matrix) and G (polynomial matrix)
+#' @return List of H hat matrix and G polynomial matrix
 HatMatGMatDpss <- function(N, k, p, w){
 
   Umat <- UDpss(N = N, k = k, p = p, w = w)
@@ -1077,11 +1088,12 @@ FirstDerTimeDomSlepians <- function(N, w, k, passInFullDPSS = NULL, returnDPSS =
 #' @param xt time series
 #' @param N Total number of observations
 #' @param k Number of tapers
-#' @param w Width that gets passed into dpss()
+#' @param w Width that gets passed into dpss
 #' @param deltat default is 1, used for nyquist calculation
 #' @param passInDPSS if dpss has already been calculated somewhere else this is the full
-#' object of dpss() both $v and $eigen
-#' @param returnDPSS if you want to return dpss() for use elsewhere
+#' object of dpss both $v and $eigen
+#' @param passInDPSSUnder if dpss undersampling was calculated already
+#' @param returnDPSS if you want to return dpss for use elsewhere
 #'
 #' @return list of $InstFreq and $Freq which is the column of instFreq
 #' if returnDPSS = TRUE then list of $InstFreq, $Freq, and $DPSS
@@ -1150,12 +1162,13 @@ instFreqDPSS <- function(xt, N, k, w, deltat, passInDPSS = NULL, returnDPSS = FA
 #' @param xt time series
 #' @param N Total number of observations
 #' @param k Number of tapers
-#' @param w Width that gets passed into dpss()
+#' @param w Width that gets passed into dpss
 #' @param deltat default is 1, used for nyquist calculation
 #' @param nu note nu = 0 is only working right now, implimentation is there for nu != 0 but not running parallel
-#' @param returnDPSS if you want to return dpss() for use elsewhere
+#' @param returnDPSS if you want to return dpssfor use elsewhere
 #' @param passInDPSS  if dpss has already been calculated somewhere else this is the full
-#' object of dpss() both $v and $eigen
+#' object of dpss both $v and $eigen
+#' @param passInDPSSUnder if dpss undersampling was calculated already
 #'
 #' @return returns $PHI kxn matrix, $Freq which are the columns of PHI.  If
 #' returnDPSS = TRUE, will also return tapers $v and $eigen for future use
@@ -1217,6 +1230,9 @@ eigenSpectrumDPSSInstFrequency <- function(xt, N, k, w, deltat, nu = 0, returnDP
 #' @param returnDPSS if you need the tapers for other functions
 #' @param instFreqEigen inst frequency eigen spectrum
 #' @param withoutzeroPoly used if using modified f tests without 0th order polynomial
+#' @param w bandwidth for the multitaper
+#' @param returnRp will return the residuals if needed
+#' @param returnGCHatp will return GCHatP if needed
 #'
 #' @return returnlist of $cHat and polynomialPart of composit inverse $GCHatp, $H and $G, \
 #'if returnDPSS = TRUE then will return tapers as well $DPSS
@@ -1347,6 +1363,21 @@ GramSchmidtMod <- function(uMat, rMat){
 # Inner Ftest Functions -------------------------
 
 
+#' Single iteration of F4Mod for Parallel applications
+#'
+#' can be used inside mclapply.  note that there is no checks in here as they are assumed
+#' to be ran in the parent user function
+#'
+#' @param xt vector of time series observations
+#' @param k single k that will be used for the f test
+#' @param p largest degree of the polynomial modulation suspected
+#' @param deltat  = 1 by default
+#' @param w multitaper bandwidth parameter
+#' @param dpss = FALSE uses sine instead
+#' @param undersampleNumber = 100 by default  this is the number used in undersampling the tapers
+#' @param N length of Xt
+#'
+#' @return $cHat chat used in caluclation of f , $PHI capital PHI , $Freq vector of frequencies , $k number of tapers used
 singleIterationForParallel4 <- function(xt, N, k, p, deltat = 1, w = NULL, dpss = FALSE, undersampleNumber = 100){
 
 
@@ -1406,7 +1437,8 @@ singleIterationForParallel4 <- function(xt, N, k, p, deltat = 1, w = NULL, dpss 
 #' @param deltat  = 1 by default
 #' @param w multitaper bandwidth parameter
 #' @param dpss = FALSE uses sine instead
-#' @param undersampleNumber = 100 by default ( this is the number used in undersampling the tapers)
+#' @param undersampleNumber = 100 by default  this is the number used in undersampling the tapers
+#' @param confLevel level of confidence used in F3Mod, default is 1-1/N
 #'
 #' @return $F3Mod, $Freq, $significantFreq, $k
 

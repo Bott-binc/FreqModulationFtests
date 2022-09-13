@@ -2,14 +2,14 @@
 % Please edit documentation in R/hiddenFunctions.R
 \name{Rnp}
 \alias{Rnp}
-\title{Matrix whos pth column is the unscaled monomial of degree p on the interval [-1 to 1]}
+\title{Matrix whos pth column is the unscaled monomial of degree p on the interval -1 to 1}
 \usage{
 Rnp(n, p, N)
 }
 \arguments{
-\item{n}{the nth point in the series (0 to N-1)}
+\item{n}{the nth point in the series 0 to N-1}
 
-\item{p}{the degree of the polynomial (0 to P)}
+\item{p}{the degree of the polynomial 0 to P}
 
 \item{N}{The total number of observations}
 }
@@ -17,5 +17,5 @@ Rnp(n, p, N)
 signle n,pth element from the matrix
 }
 \description{
-Matrix whos pth column is the unscaled monomial of degree p on the interval [-1 to 1]
+Matrix whos pth column is the unscaled monomial of degree p on the interval -1 to 1
 }

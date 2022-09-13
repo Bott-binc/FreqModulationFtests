@@ -20,7 +20,7 @@ eigenSpectrumSine(n, k, Xt, f, deltat = 1, sineRet = FALSE)
 \item{sineRet}{= FALSE , allows for the tapers to be returned for computational efficiency}
 }
 \value{
-Vector of the eigenspectrum for each k (0, ..., K-1)
+Vector of the eigenspectrum for each k 0, ..., K-1
 }
 \description{
 Non Centered Eigenspectrum for Sine Tapers

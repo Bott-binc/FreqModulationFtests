@@ -33,7 +33,7 @@ F4Testpar(
 \item{cores}{must be 1 if on windows, number of cores used for parallelization}
 }
 \value{
-$F4testStat, $Freq, $F14TestStat(this is the f1 not the f3 mod )
+$F4testStat, $Freq, $F14TestStat this is the f1 not the f3 mod
 }
 \description{
 w is chosen by shannons number based on k

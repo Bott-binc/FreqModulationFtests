@@ -32,6 +32,8 @@ regressionSineInstFreq(
 \item{returnRp}{if you want residuals to be returned and calculated as well}
 
 \item{withoutzeroPoly}{if you dont want zeroth order polynomials to be in test statistics}
+
+\item{returnGCHatp}{will return GCHatp to the user if needed}
 }
 \value{
 returnlist of $cHat and polynomialPart of composit inverse $GCHatp, $H and $G, \

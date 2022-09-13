@@ -13,10 +13,10 @@ HatMatGMatDpss(N, k, p, w)
 
 \item{p}{Highest degree polynomial}
 
-\item{w}{Band Width parameter passed into dpss()}
+\item{w}{Band Width parameter passed into dpss}
 }
 \value{
-List of H (hat matrix) and G (polynomial matrix)
+List of H hat matrix and G polynomial matrix
 }
 \description{
 GramShmidt Orthonormalized Hat and Polynomial Matrices for Dpss

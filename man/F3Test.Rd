@@ -43,7 +43,7 @@ also cause zero padding to take place.  the user DOES NOT need to manually zero 
 \item{undersampleNumber}{A numeric of the number the user wants to undersample, usually 100 is a good start}
 }
 \value{
-$F3testStat, $Freq, $necessaryTestStuff (used to pass into another ftest function)
+$F3testStat, $Freq, $necessaryTestStuff used to pass into another ftest function
 }
 \description{
 F3 test statistic

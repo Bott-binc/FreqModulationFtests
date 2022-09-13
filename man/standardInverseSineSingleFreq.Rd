@@ -17,7 +17,7 @@ standardInverseSineSingleFreq(xt, N, k, f, deltat = 1, FFT = FALSE)
 
 \item{deltat}{= 1 if not specified, but is only used if not using FFT}
 
-\item{FFT}{if you want to use fft() to speed up or not have delta t = 1 with zero padding}
+\item{FFT}{if you want to use fft to speed up or not have delta t = 1 with zero padding}
 }
 \value{
 Standard Inverse vector for frequency f

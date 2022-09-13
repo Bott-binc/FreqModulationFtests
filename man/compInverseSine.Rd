@@ -28,7 +28,7 @@ compInverseSine(
 
 \item{deltat}{= 1 if not specified}
 
-\item{polynomialPart}{If you only want the polynomial part (GH^tY == G_pC^hat_p) used in ftest}
+\item{polynomialPart}{If you only want the polynomial part GH^tY == G_pC^hat_p used in ftest}
 
 \item{returnHG}{Will return H and G along with the Z/includes in list if poly is true}
 }

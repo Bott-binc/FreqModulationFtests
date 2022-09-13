@@ -11,19 +11,19 @@ eigenSpectrumdpss(n, k, w, Xt, f, deltat = 1, dpssRet = FALSE)
 
 \item{k}{Number of tapers}
 
-\item{w}{Width that gets passed into dpss()}
+\item{w}{Width that gets passed into dpss}
 
-\item{Xt}{Time series (}
+\item{Xt}{Time series}
 
 \item{f}{Specific frequency you are looking at}
 
 \item{deltat}{= 1 unless otherwise inputted}
 
-\item{dpssRet}{= FALSE, will not return dpss() use true to help not
+\item{dpssRet}{= FALSE, will not return dpss use true to help not
 re-computing dpss multiple times in program}
 }
 \value{
-Vector of the eigenspectrum for each k (0, ..., K-1)
+Vector of the eigenspectrum for each k 0, ..., K-1
 }
 \description{
 Non Centered Eigenspectrum Using DPSS

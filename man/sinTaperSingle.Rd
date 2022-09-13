@@ -11,7 +11,7 @@ sinTaperSingle(N, k, t)
 
 \item{k}{Number of tapers}
 
-\item{t}{Specific time point that you are interested in (t starts at zero)}
+\item{t}{Specific time point that you are interested in t starts at zero}
 }
 \value{
 Only the one sin taper that you are interested in at the single point

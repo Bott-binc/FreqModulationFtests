@@ -20,7 +20,7 @@ standardInverseDPSSFirstDir(
 
 \item{N}{Total number of observations}
 
-\item{w}{Width that gets passed into dpss()}
+\item{w}{Width that gets passed into dpss}
 
 \item{k}{Number of tapers}
 
@@ -30,10 +30,12 @@ standardInverseDPSSFirstDir(
 this includes both $v and $eigen}
 
 \item{returnDPSS}{returns dpss if needed outside function}
+
+\item{passInDPSSReduced}{if dpss undersampling was calculated already}
 }
 \value{
 Standard Inverse Derivative Z' vector $StdInverse as well as $Freq which are the columns of stdInverse
-if returnDPSS = TRUE will also return $DPSS which is the dpss() object
+if returnDPSS = TRUE will also return $DPSS which is the dpss object
 }
 \description{
 Standard Inversion for Polynomial Projection Filter First Derivative DPSS

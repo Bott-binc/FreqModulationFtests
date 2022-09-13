@@ -19,13 +19,15 @@ eigenSpectrumdpssFFT(
 
 \item{k}{Number of tapers}
 
-\item{w}{Width that gets passed into dpss()}
+\item{w}{Width that gets passed into dpss}
 
 \item{Xt}{Time series}
 
 \item{deltat}{= 1 by default}
 
-\item{passInDPSSMat}{For limiting the number of calculations of DPSS this is dpss()$v}
+\item{passInDPSSMat}{For limiting the number of calculations of DPSS this is dpss$v}
+
+\item{pad}{if true will zero padd automatically the Xt that is inputted into the function}
 }
 \value{
 Matrix of EigenSpec for each frequency, as well as the frequencies under Freq in the list
