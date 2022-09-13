@@ -1,3 +1,147 @@
+# Data Generation ----------------------------------------
+
+#' Modulation Generation for grumble distribution
+#'
+#' @param N Length of series you want to create
+#' @param P Highest degree polynomial(will use all degrees less than P other than 0)
+#' @param BLinear desired bandwidth for linear modulation
+#' @param linConstCoef linear constant term
+#' @param linCoef linear term coefficient
+#' @param BQuadratic desired bandwidth for quadratic modulation
+#' @param quadConstCoef quadratic constant term
+#' @param quadLinCoef quadratic linear term coefficient
+#' @param quadCoef quadratic term coefficient
+#' @param BCubic desired bandwidth for cubic modulation
+#' @param cubeConstCoef cubic constant term
+#' @param cubeLinCoef cubic linear term coefficient
+#' @param cubeQuadCoef cubic quadratic term coefficient
+#' @param cubeCoef cubic term coefficient
+#' @param BQuart desired bandwidth for quartic modulation
+#' @param quartConstCoef quartic constant term
+#' @param quartLinCoef quartic linear term coefficient
+#' @param quartQuadCoef quartic quadratic term coefficient
+#' @param quartCubeCoef quartic cubic term coefficient
+#' @param quartCoef quartic term coefficient
+#' @param AmpLinear amplitude of linear modulation
+#' @param AmpQuad amplitude of quadratic modulation
+#' @param AmpCube amplitide of cubic modulation
+#' @param AmpQuart amplitude of quartic modulation
+#' @param fLin desired linear modulation carrier frequency
+#' @param fQuad desired quadratic modulation carrier frequency
+#' @param fCube desired cubic modulation carrier frequency
+#' @param fQuart desired quartic modulation carrier frequency
+#' @param checkBandWidth def = FALSE  if TRUE will print out the bandwidths to check
+#' @param ar  = c(0.5, 0.3, -0.1) AR coef for noise generation
+#' @param ma  = c(0.6) MA coef for noise generation
+#' @param noiseScale = 1*6/pi^2 ratio of noise to pure signal
+#' @param plotXt def = FALSE, will plot xt with noise if needed
+#'
+#' @return
+#' @export
+grumbleModulationGeneration <- function(N,P,
+                                        BLinear, linConstCoef, linCoef,
+                                        AmpLinear,
+                                        BQuadratic = 0, quadConstCoef = 0, quadLinCoef = 0, quadCoef = 0,
+                                        AmpQuad = 0,
+                                        BCubic = 0, cubeConstCoef = 0, cubeLinCoef = 0, cubeQuadCoef = 0, cubeCoef = 0,
+                                        AmpCube = 0,
+                                        BQuart = 0, quartConstCoef = 0, quartLinCoef = 0, quartQuadCoef = 0, quartCubeCoef = 0, quartCoef = 0,
+                                        AmpQuart = 0,
+                                        fLin = 0.1, fQuad = 0.3, fCube = 0.31, fQuart = 0.4,
+                                        checkBandWidth = FALSE, ar = c(0.5, 0.3, -0.1),
+                                        ma = c(0.6), noiseScale = 1*6/pi^2, plotXt = FALSE
+
+                                        ){
+
+  if(P %in% 1:4){
+
+    n <- 0:(N-1)
+    nFFT <- 2^ceiling(log2(2*N))
+    nfreqs <- nFFT/2-1
+    freq <- seq(1/nFFT,0.5, by = 1/nFFT)
+
+    # To ensure we are choosing a frequency that will be contained in the series
+    f1 <- freq[which.min(abs(freq-fLin))]
+    f2 <- freq[which.min(abs(freq-fQuad))]
+    f3 <- freq[which.min(abs(freq-fCube))]
+    f4 <- freq[which.min(abs(freq-fQuart))]
+
+    # creating time indexes
+    tstep <- 2.0/(N-1) # creates the step for the specific N so we end up with t in -1 to 1
+    tt <- n * tstep - 1.0  # this runs from -1 to 1
+
+    #modulating functions
+    Linear <-  (linConstCoef + linCoef * tt)   #linear
+    Quadratic <-  (quadConstCoef + quadLinCoef * tt + quadCoef * tt^2)     #quadratic
+    Cubic <-  (cubeConstCoef + cubeLinCoef*tt + cubeQuadCoef*tt^2 + cubeCoef*tt^3) #cubic
+    Quartic <-  (quartConstCoef + quartLinCoef*tt + quartQuadCoef*tt^2 +
+                           quartCubeCoef*tt^3 + quartCoef*tt^4) # quartic
+
+    bwLin <- max(abs(Linear))
+    bwQuad <- max(abs(Quadratic))
+    bwCube <- max(abs(Cubic))
+    bwQuart <- max(abs(Quartic))
+
+    correctionLinearbw <- bwLin/(ceiling((bwLin/BLinear)*100)/100) # finds closest correction factor to three digits below the desired bandwidth
+    correctionQuadbw <- bwQuad/(ceiling((bwQuad/BQuad)*100)/100)
+    correctionCubebw <- bwCube/(ceiling((bwCube/BCube)*100)/100)
+    correctionQuartbw <- bwQuart/(ceiling((bwQuart/BQuart)*100)/100)
+
+    FMLinear <- Linear/correctionLinearbw
+    FMQuadratic <- Quadratic/correctionQuadbw
+    FMCubic <- Cubic/correctionCubebw
+    FMQuartic <- Quartic/correctionQuartbw
+
+    if(checkBandWidth){
+      print(paste0("linear = " ,max(abs(FMLinear)))) # just smaller than the w0
+      print(paste0("Quadratic = ",max(abs(FMQuadratic))))
+      print(paste0("Cubic = ",max(abs(FMCubic))))
+      print(paste0("Quartic = ",max(abs(FMQuartic))))
+    }
+
+    #then computing the 'integrals'
+
+    modulationLinear <- cumsum(FMLinear)*2*pi
+    modulationQuadratic <- cumsum(FMQuadratic)*2*pi
+    modulationCubic <- cumsum(FMCubic)*2*pi
+    modulationQuartic <- cumsum(FMQuartic)*2*pi
+
+    InnerCosLin <- 2*pi*f1*n + modulationLinear
+    InnerCosQuad <- 2*pi*f2*n + modulationQuadratic
+    InnerCosCube <- 2*pi*f3*n + modulationCubic
+    InnerCosQuart <- 2*pi*f4*n + modulationQuartic
+
+    if(P == 1){
+      modulation <- A1*cos(InnerCosLin)
+    }
+    else if(P == 2){
+      modulation <- A1*cos(InnerCosLin) + A2*cos(InnerCosQuad)
+    }
+    else if(P == 3){
+      modulation <- A1*cos(InnerCosLin) + A2*cos(InnerCosQuad) +
+                    A3*cos(InnerCosCube)
+    }else{
+      modulation <- A1*cos(InnerCosLin) + A2*cos(InnerCosQuad) +
+        A3*cos(InnerCosCube) + A4*cos(InnerCosQuart)
+    }
+
+    noiseInnov <- rgumble(N, scale = noiseScale)
+    noise <- arima.sim(model = ARMA, n = N, innov = noiseInnov)
+    xt <- modulation + as.numeric(noise)
+
+  }else{
+    stop("P can only be up to degree 4")
+  }
+
+  if(plotXt){
+    plot(xt, x = 1:N, type = "l")
+  }
+
+  return(xt, xtNoNoise = modulation)
+}
+
+
+
 # F Tests -------------------------------------------------
 
 
