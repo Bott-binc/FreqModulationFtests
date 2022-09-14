@@ -1487,18 +1487,32 @@ singleIterationForParallel <- function(xt, k, p, deltat = 1, w = NULL, dpss = FA
   normPhiSq <- colSums(instFreqEigen$PHI^2)
   normcHatWOutZeroSq <- 0
 
-  F3 <-  matrix(nrow = nrow(fStuff$cHat), ncol = length(instFreqEigen$Freq))
-  colnames(F3) <- Freq
-  significantFreq <- list()
-  for(P in 1:nrow(fStuff$cHat)){ # this is 1:p as we are removing zero so P-1 is actually P
 
-    normcHatWOutZeroSq <- normcHatWOutZeroSq + fStuff$cHat[P,]^2
-    F3[P,] <- (fStuff$cHat[P,])^2/
-      ((normPhiSq - normcHatWOutZeroSq)/(k - P))
-    FcutOff <- qf(confLevel, df1 = 1, df2 = (k-P-1), lower.tail = TRUE)
-    significantFreq[[P]] <- Freq[which(F3[P,] >= FcutOff)]
+  if(p ==1){
+    F3 <-  matrix(nrow = 1, ncol = length(instFreqEigen$Freq))
+    colnames(F3) <- Freq
+    significantFreq <- list()
+
+      normcHatWOutZeroSq <- normcHatWOutZeroSq + fStuff$cHat^2
+      F3[p,] <- (fStuff$cHat)^2/
+        ((normPhiSq - normcHatWOutZeroSq)/(k - p))
+      FcutOff <- qf(confLevel, df1 = 1, df2 = (k-p-1), lower.tail = TRUE)
+      significantFreq[[p]] <- Freq[which(F3[p,] >= FcutOff)]
+
+  }else{
+    F3 <-  matrix(nrow = nrow(fStuff$cHat), ncol = length(instFreqEigen$Freq))
+    colnames(F3) <- Freq
+    significantFreq <- list()
+    for(P in 1:nrow(fStuff$cHat)){ # this is 1:p as we are removing zero so P-1 is actually P
+
+      normcHatWOutZeroSq <- normcHatWOutZeroSq + fStuff$cHat[P,]^2
+      F3[P,] <- (fStuff$cHat[P,])^2/
+        ((normPhiSq - normcHatWOutZeroSq)/(k - P))
+      FcutOff <- qf(confLevel, df1 = 1, df2 = (k-P-1), lower.tail = TRUE)
+      significantFreq[[P]] <- Freq[which(F3[P,] >= FcutOff)]
 
 
+    }
   }
 
 

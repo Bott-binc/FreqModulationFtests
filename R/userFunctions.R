@@ -38,7 +38,7 @@
 #'
 #' @return $xt for noisy data and $xtNoNoise for signal without noise and $noise for just the pure noise that was used
 #' @export
-grumbleModulationGeneration <- function(N,P,
+grumbelModulationGeneration <- function(N,P,
                                         BLinear, linConstCoef, linCoef,
                                         AmpLinear,
                                         BQuadratic = 0, quadConstCoef = 0, quadLinCoef = 0, quadCoef = 0,
@@ -49,10 +49,10 @@ grumbleModulationGeneration <- function(N,P,
                                         AmpQuart = 0,
                                         fLin = 0.1, fQuad = 0.3, fCube = 0.31, fQuart = 0.4,
                                         checkBandWidth = FALSE, ar = c(0.5, 0.3, -0.1),
-                                        ma = c(0.6), noiseScale = 1*6/pi^2, plotXt = FALSE
+                                        ma = c(0.6), noiseScale = 1*6/pi^2, plotXt = FALSE, seed = NULL
 
                                         ){
-  browser()
+
   if(P %in% 1:4){
 
     n <- 0:(N-1)
@@ -81,39 +81,10 @@ grumbleModulationGeneration <- function(N,P,
     bwCube <- max(abs(Cubic))
     bwQuart <- max(abs(Quartic))
 
-    correctionLinearbw <- bwLin/(ceiling((bwLin/BLinear)*100)/100) # finds closest correction factor to three digits below the desired bandwidth
-    correctionQuadbw <- bwQuad/(ceiling((bwQuad/BQuadratic)*100)/100)
-    correctionCubebw <- bwCube/(ceiling((bwCube/BCubic)*100)/100)
-    correctionQuartbw <- bwQuart/(ceiling((bwQuart/BQuartic)*100)/100)
-
-    FMLinear <- Linear/correctionLinearbw
-    FMQuadratic <- Quadratic/correctionQuadbw
-    FMCubic <- Cubic/correctionCubebw
-    FMQuartic <- Quartic/correctionQuartbw
-
-    if(checkBandWidth){
-      print(paste0("linear = " ,max(abs(FMLinear)))) # just smaller than the w0
-      print(paste0("Quadratic = ",max(abs(FMQuadratic))))
-      print(paste0("Cubic = ",max(abs(FMCubic))))
-      print(paste0("Quartic = ",max(abs(FMQuartic))))
-    }
-
-    #then computing the 'integrals'
-
-    modulationLinear <- cumsum(FMLinear)*2*pi
-    modulationQuadratic <- cumsum(FMQuadratic)*2*pi
-    modulationCubic <- cumsum(FMCubic)*2*pi
-    modulationQuartic <- cumsum(FMQuartic)*2*pi
-
-    InnerCosLin <- 2*pi*f1*n + modulationLinear
-    InnerCosQuad <- 2*pi*f2*n + modulationQuadratic
-    InnerCosCube <- 2*pi*f3*n + modulationCubic
-    InnerCosQuart <- 2*pi*f4*n + modulationQuartic
-
     if(P == 1){
-      correctionLinearbw <- bwLin/(ceiling((bwLin/BLinear)*100)/100) # finds closest correction factor to three digits below the desired bandwidth
+      correctionLinearbw <- BLinear/(ceiling((bwLin)*100)/100) # finds closest correction factor to three digits below the desired bandwidth
 
-      FMLinear <- Linear/correctionLinearbw
+      FMLinear <- Linear*correctionLinearbw
 
       if(checkBandWidth){
         print(paste0("linear = " ,max(abs(FMLinear)))) # just smaller than the w0
@@ -128,12 +99,11 @@ grumbleModulationGeneration <- function(N,P,
     }
     else if(P == 2){
 
-      correctionLinearbw <- bwLin/(ceiling((bwLin/BLinear)*100)/100) # finds closest correction factor to three digits below the desired bandwidth
-      correctionQuadbw <- bwQuad/(ceiling((bwQuad/BQuadratic)*100)/100)
+      correctionLinearbw <- BLinear/(ceiling((bwLin)*100)/100) # finds closest correction factor to three digits below the desired bandwidth
+      correctionQuadbw <- BQuadratic/(ceiling((bwQuad)*100)/100)
 
-
-      FMLinear <- Linear/correctionLinearbw
-      FMQuadratic <- Quadratic/correctionQuadbw
+      FMLinear <- Linear*correctionLinearbw
+      FMQuadratic <- Quadratic*correctionQuadbw
 
 
       if(checkBandWidth){
@@ -155,14 +125,13 @@ grumbleModulationGeneration <- function(N,P,
     }
     else if(P == 3){
 
-      correctionLinearbw <- bwLin/(ceiling((bwLin/BLinear)*100)/100) # finds closest correction factor to three digits below the desired bandwidth
-      correctionQuadbw <- bwQuad/(ceiling((bwQuad/BQuadratic)*100)/100)
-      correctionCubebw <- bwCube/(ceiling((bwCube/BCubic)*100)/100)
+      correctionLinearbw <- BLinear/(ceiling((bwLin)*100)/100) # finds closest correction factor to three digits below the desired bandwidth
+      correctionQuadbw <- BQuadratic/(ceiling((bwQuad)*100)/100)
+      correctionCubebw <- BCubic/(ceiling((bwCube)*100)/100)
 
-
-      FMLinear <- Linear/correctionLinearbw
-      FMQuadratic <- Quadratic/correctionQuadbw
-      FMCubic <- Cubic/correctionCubebw
+      FMLinear <- Linear*correctionLinearbw
+      FMQuadratic <- Quadratic*correctionQuadbw
+      FMCubic <- Cubic*correctionCubebw
 
 
       if(checkBandWidth){
@@ -187,15 +156,15 @@ grumbleModulationGeneration <- function(N,P,
                     AmpCube*cos(InnerCosCube)
     }
     else{
-      correctionLinearbw <- bwLin/(ceiling((bwLin/BLinear)*100)/100) # finds closest correction factor to three digits below the desired bandwidth
-      correctionQuadbw <- bwQuad/(ceiling((bwQuad/BQuadratic)*100)/100)
-      correctionCubebw <- bwCube/(ceiling((bwCube/BCubic)*100)/100)
-      correctionQuartbw <- bwQuart/(ceiling((bwQuart/BQuartic)*100)/100)
+      correctionLinearbw <- BLinear/(ceiling((bwLin)*100)/100) # finds closest correction factor to three digits below the desired bandwidth
+      correctionQuadbw <- BQuadratic/(ceiling((bwQuad)*100)/100)
+      correctionCubebw <- BCubic/(ceiling((bwCube)*100)/100)
+      correctionQuartbw <- BQuartic/(ceiling((bwQuart)*100)/100)
 
-      FMLinear <- Linear/correctionLinearbw
-      FMQuadratic <- Quadratic/correctionQuadbw
-      FMCubic <- Cubic/correctionCubebw
-      FMQuartic <- Quartic/correctionQuartbw
+      FMLinear <- Linear*correctionLinearbw
+      FMQuadratic <- Quadratic*correctionQuadbw
+      FMCubic <- Cubic*correctionCubebw
+      FMQuartic <- Quartic*correctionQuartbw
 
       if(checkBandWidth){
         print(paste0("linear = " ,max(abs(FMLinear)))) # just smaller than the w0
@@ -220,8 +189,11 @@ grumbleModulationGeneration <- function(N,P,
         AmpCube*cos(InnerCosCube) + AmpQuart*cos(InnerCosQuart)
     }
 
+    if(!is.null(seed)){ # allows the user to keep the noise generation the same
+      set.seed(seed)
+    }
     ARMA <- list(ar = ar, ma = ma)
-    noiseInnov <- VGAM::rgumble(N, scale = noiseScale)
+    noiseInnov <- VGAM::rgumbel(N, scale = noiseScale)
     noise <- stats::arima.sim(model = ARMA, n = N, innov = noiseInnov)
     xt <- modulation + as.numeric(noise)
 
@@ -942,7 +914,7 @@ F4Testpar <- function(xt, N, k, p, deltat = 1, dpss = FALSE, undersampleNumber =
 #' w is chosen by shannons number based on k
 #'
 #' @param xt time series
-#' @param N Total number of observations
+#' @param N = length(xt)Total number of observations
 #' @param p Highest degree polynomial you want to test for
 #' @param deltat Time interval between each observation
 #' @param dpss  = FALSE unless you want to use dpss, it will do sine tapers by default
@@ -954,7 +926,7 @@ F4Testpar <- function(xt, N, k, p, deltat = 1, dpss = FALSE, undersampleNumber =
 #' @return $F3testStat, $Freq, $significantFrequencies
 #'
 #' @export
-F3Testpar <- function(xt, N = length(xt), k, p, deltat = 1, dpss = FALSE, undersampleNumber = 100, cores = 1,
+F3Testpar <- function(xt, k, p, N = length(xt), deltat = 1, dpss = FALSE, undersampleNumber = 100, cores = 1,
                       confLevel = (1-(1/length(xt)))){
 
   if(is.null(undersampleNumber)){
@@ -979,7 +951,7 @@ F3Testpar <- function(xt, N = length(xt), k, p, deltat = 1, dpss = FALSE, unders
   significantFrequencies<- matrix(0,nrow = p, ncol = length(Freq))
   for(i in 1:length(k)){
     for(j in 1:p){
-      if(length(as.vector(fullDat[[i]]$significantFreq[[P]])) == 0){
+      if(length(as.vector(fullDat[[i]]$significantFreq[[j]])) == 0){
 
       }else{
         #apparently you have to check each sig freq separatly
