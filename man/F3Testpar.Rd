@@ -6,24 +6,25 @@
 \usage{
 F3Testpar(
   xt,
-  N = length(xt),
   k,
   p,
+  N = length(xt),
   deltat = 1,
   dpss = FALSE,
   undersampleNumber = 100,
   cores = 1,
-  confLevel = (1 - (1/length(xt)))
+  confLevel = (1 - (1/length(xt))),
+  altSig = FALSE
 )
 }
 \arguments{
 \item{xt}{time series}
 
-\item{N}{Total number of observations}
-
 \item{k}{vector of tapers used in the f test}
 
 \item{p}{Highest degree polynomial you want to test for}
+
+\item{N}{= length(xt)Total number of observations}
 
 \item{deltat}{Time interval between each observation}
 

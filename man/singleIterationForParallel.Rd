@@ -12,7 +12,8 @@ singleIterationForParallel(
   w = NULL,
   dpss = FALSE,
   undersampleNumber = 100,
-  confLevel = (1 - (1/length(xt)))
+  confLevel = (1 - (1/length(xt))),
+  altSig = FALSE
 )
 }
 \arguments{
