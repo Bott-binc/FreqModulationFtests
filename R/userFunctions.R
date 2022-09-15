@@ -518,15 +518,28 @@ F3Test <- function(xt, N, k, p, deltat = 1, w = NULL, dpss = FALSE,
     normPhiSq <- colSums(instFreqEigen$PHI^2)
     normcHatWOutZeroSq <- 0
 
-    F3 <-  matrix(nrow = nrow(fStuff$cHat), ncol = length(instFreqEigen$Freq))
-    colnames(F3) <- Freq
-    for(P in 1:nrow(fStuff$cHat)){ # this is 1:p as we are removing zero so P-1 is actually P
+    if(p == 1){
+      F3 <-  matrix(nrow = 1, ncol = length(instFreqEigen$Freq))
+      colnames(F3) <- Freq
+      for(P in 1){ # this is 1:p as we are removing zero so P-1 is actually P
+
+        normcHatWOutZeroSq <- normcHatWOutZeroSq + fStuff$cHat^2
+        F3<- (fStuff$cHat)^2/
+          ((normPhiSq - normcHatWOutZeroSq)/(k - P))
+
+      }
+    }else{
+      F3 <-  matrix(nrow = nrow(fStuff$cHat), ncol = length(instFreqEigen$Freq))
+      colnames(F3) <- Freq
+      for(P in 1:nrow(fStuff$cHat)){ # this is 1:p as we are removing zero so P-1 is actually P
 
         normcHatWOutZeroSq <- normcHatWOutZeroSq + fStuff$cHat[P,]^2
         F3[P,] <- (fStuff$cHat[P,])^2/
           ((normPhiSq - normcHatWOutZeroSq)/(k - P))
 
+      }
     }
+
   }
 
   #making the return
@@ -985,7 +998,7 @@ F3Testpar <- function(xt, k, p, N = length(xt), deltat = 1, dpss = FALSE, unders
     }
     Freq = fullDat[[1]]$Freq
 
-    browser()
+
     significantFrequencies<- matrix(0,nrow = p, ncol = length(Freq))
     sigFreqDiff <- matrix(0,nrow = p, ncol = length(Freq))
     for(i in 1:length(k)){
