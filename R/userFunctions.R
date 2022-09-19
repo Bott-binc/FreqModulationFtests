@@ -951,13 +951,13 @@ F3Testpar <- function(xt, k, p, N = length(xt), deltat = 1, dpss = FALSE, unders
         return(singleIterationForParallel(xt = xt, k = x, w = ((x+1)/(2*length(xt))), p = p, deltat = deltat,
                                           undersampleNumber = undersampleNumber, dpss = TRUE,
                                           confLevel = (1-(1/length(xt)))))
-      }, mc.cores = cores, mc.cleanup = TRUE)
+      }, mc.cores = cores, mc.cleanup = TRUE, mc.preschedule = TRUE)
     }else{
       fullDat <- parallel::mclapply(X = k,FUN = function(x){
         return(singleIterationForParallel(xt = xt, k = x, p = p, deltat = deltat,
                                           undersampleNumber = undersampleNumber, dpss = FALSE,
                                           confLevel = (1-(1/length(xt)))))
-      }, mc.cores = cores, mc.cleanup = TRUE)
+      }, mc.cores = cores, mc.cleanup = TRUE, mc.preschedule = TRUE)
     }
     Freq = fullDat[[1]]$Freq
 
@@ -988,18 +988,18 @@ F3Testpar <- function(xt, k, p, N = length(xt), deltat = 1, dpss = FALSE, unders
         return(singleIterationForParallel(xt = xt, k = x, w = ((x+1)/(2*length(xt))), p = p, deltat = deltat,
                                           undersampleNumber = undersampleNumber, dpss = TRUE,
                                           confLevel = (1-(1/length(xt))), altSig = TRUE ))
-      }, mc.cores = cores, mc.cleanup = TRUE)
+      }, mc.cores = cores, mc.cleanup = TRUE, mc.preschedule = TRUE)
     }else{
       fullDat <- parallel::mclapply(X = k,FUN = function(x){
         return(singleIterationForParallel(xt = xt, k = x, p = p, deltat = deltat,
                                           undersampleNumber = undersampleNumber, dpss = FALSE,
                                           confLevel = (1-(1/length(xt))), altSig = TRUE ))
-      }, mc.cores = cores, mc.cleanup = TRUE)
+      }, mc.cores = cores, mc.cleanup = TRUE, mc.preschedule = TRUE)
     }
     Freq = fullDat[[1]]$Freq
 
 
-    significantFrequencies<- matrix(0,nrow = p, ncol = length(Freq))
+    significantFrequencies <- matrix(0,nrow = p, ncol = length(Freq))
     sigFreqDiff <- matrix(0,nrow = p, ncol = length(Freq))
     for(i in 1:length(k)){
       for(j in 1:p){
