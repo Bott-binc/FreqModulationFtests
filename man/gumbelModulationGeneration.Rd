@@ -7,16 +7,16 @@
 gumbelModulationGeneration(
   N,
   P,
-  BLinear,
+  wLinear,
   linCoefs,
   AmpLinear,
-  BQuadratic = 0,
+  wQuadratic = 0,
   quadCoefs = c(0, 0, 0),
   AmpQuad = 0,
-  BCubic = 0,
+  wCubic = 0,
   cubeCoefs = c(0, 0, 0, 0),
   AmpCube = 0,
-  BQuartic = 0,
+  wQuartic = 0,
   quartCoefs = c(0, 0, 0, 0, 0),
   AmpQuart = 0,
   fLin = 0.1,
@@ -36,25 +36,27 @@ gumbelModulationGeneration(
 
 \item{P}{Highest degree polynomial will use all degrees less than P other than 0}
 
-\item{BLinear}{desired bandwidth for linear modulation}
+\item{wLinear}{desired bandwidth for linear modulation}
 
 \item{linCoefs}{vector of c1 and c2 in \eqn{BLinear\cdot(c1 + c2 \cdot t)}}
 
 \item{AmpLinear}{amplitude of linear modulation}
 
-\item{BQuadratic}{desired bandwidth for quadratic modulation}
+\item{wQuadratic}{desired bandwidth for quadratic modulation}
 
 \item{quadCoefs}{vector of c1, c2, c3 in \eqn{BQuadratic\cdot(c1 + c2 \cdot t + c3 \cdot t^2)}}
 
 \item{AmpQuad}{amplitude of quadratic modulation}
 
-\item{BCubic}{desired bandwidth for cubic modulation}
+\item{wCubic}{desired bandwidth for cubic modulation}
 
 \item{cubeCoefs}{vector of c1, c2, c3, c4 in \eqn{BCubic\cdot(c1 + c2 \cdot t + c3 \cdot t^2 + c4 \cdot t^3)}}
 
 \item{AmpCube}{amplitide of cubic modulation}
 
-\item{BQuartic}{desired bandwidth for quartic modulation}
+\item{wQuartic}{desired bandwidth for quartic modulation}
+
+\item{quartCoefs}{vector of c1, c2, c3, c4, c5 in \eqn{BQuart\cdot(c1 + c2 \cdot t + c3 \cdot t^2 + c4 \cdot t^3 + c5 \cdot^4)}}
 
 \item{AmpQuart}{amplitude of quartic modulation}
 
@@ -77,11 +79,10 @@ gumbelModulationGeneration(
 \item{plotXt}{def = FALSE, will plot xt with noise if needed}
 
 \item{seed}{seed used for generation of the gumbel noise}
-
-\item{quartCoefsvector}{of c1, c2, c3, c4, c5 in \eqn{BQuartic\cdot(c1 + c2 \cdot t + c3 \cdot t^2 + c4 \cdot t^3 + c5 \cdot t^4)}}
 }
 \value{
 $xt for noisy data and $xtNoNoise for signal without noise and $noise for just the pure noise that was used
+        $correctionCoef tells you the coeficients that give the correct wp's (Blinear, ...., BQuartic)
 }
 \description{
 Modulation Generation for gumble distribution

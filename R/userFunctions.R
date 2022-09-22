@@ -4,10 +4,10 @@
 #'
 #' @param N Length of series you want to create
 #' @param P Highest degree polynomial will use all degrees less than P other than 0
-#' @param BLinear desired bandwidth for linear modulation
-#' @param BQuadratic desired bandwidth for quadratic modulation
-#' @param BCubic desired bandwidth for cubic modulation
-#' @param BQuartic desired bandwidth for quartic modulation
+#' @param wLinear desired bandwidth for linear modulation
+#' @param wQuadratic desired bandwidth for quadratic modulation
+#' @param wCubic desired bandwidth for cubic modulation
+#' @param wQuartic desired bandwidth for quartic modulation
 #' @param AmpLinear amplitude of linear modulation
 #' @param AmpQuad amplitude of quadratic modulation
 #' @param AmpCube amplitide of cubic modulation
@@ -24,19 +24,20 @@
 #' @param linCoefs vector of c1 and c2 in \eqn{BLinear\cdot(c1 + c2 \cdot t)}
 #' @param quadCoefs vector of c1, c2, c3 in \eqn{BQuadratic\cdot(c1 + c2 \cdot t + c3 \cdot t^2)}
 #' @param cubeCoefs vector of c1, c2, c3, c4 in \eqn{BCubic\cdot(c1 + c2 \cdot t + c3 \cdot t^2 + c4 \cdot t^3)}
-#' @param quartCoefsvector of c1, c2, c3, c4, c5 in \eqn{BQuartic\cdot(c1 + c2 \cdot t + c3 \cdot t^2 + c4 \cdot t^3 + c5 \cdot t^4)}
 #' @param seed seed used for generation of the gumbel noise
+#' @param quartCoefs vector of c1, c2, c3, c4, c5 in \eqn{BQuart\cdot(c1 + c2 \cdot t + c3 \cdot t^2 + c4 \cdot t^3 + c5 \cdot^4)}
 #'
 #' @return $xt for noisy data and $xtNoNoise for signal without noise and $noise for just the pure noise that was used
+#'         $correctionCoef tells you the coeficients that give the correct wp's (Blinear, ...., BQuartic)
 #' @export
 gumbelModulationGeneration <- function(N,P,
-                                        BLinear, linCoefs,
+                                        wLinear, linCoefs,
                                         AmpLinear,
-                                        BQuadratic = 0, quadCoefs = c(0,0,0),
+                                        wQuadratic = 0, quadCoefs = c(0,0,0),
                                         AmpQuad = 0,
-                                        BCubic = 0, cubeCoefs = c(0,0,0,0),
+                                        wCubic = 0, cubeCoefs = c(0,0,0,0),
                                         AmpCube = 0,
-                                        BQuartic = 0, quartCoefs = c(0,0,0,0,0),
+                                        wQuartic = 0, quartCoefs = c(0,0,0,0,0),
                                         AmpQuart = 0,
                                         fLin = 0.1, fQuad = 0.3, fCube = 0.31, fQuart = 0.4,
                                         ar = c(0.5, 0.3, -0.1), ma = c(0.6),
@@ -73,7 +74,9 @@ gumbelModulationGeneration <- function(N,P,
     bwQuart <- max(abs(Quartic))
 
     if(P == 1){
-      correctionLinearbw <- BLinear/(ceiling((bwLin)*100)/100) # finds closest correction factor to three digits below the desired bandwidth
+      correctionLinearbw <- wLinear/(ceiling((bwLin)*100)/100) # finds closest correction factor to three digits below the desired bandwidth
+
+      correct <- correctionLinearbw
 
       FMLinear <- Linear*correctionLinearbw
 
@@ -90,8 +93,10 @@ gumbelModulationGeneration <- function(N,P,
     }
     else if(P == 2){
 
-      correctionLinearbw <- BLinear/(ceiling((bwLin)*100)/100) # finds closest correction factor to three digits below the desired bandwidth
-      correctionQuadbw <- BQuadratic/(ceiling((bwQuad)*100)/100)
+      correctionLinearbw <- wLinear/(ceiling((bwLin)*100)/100) # finds closest correction factor to three digits below the desired bandwidth
+      correctionQuadbw <- wQuadratic/(ceiling((bwQuad)*100)/100)
+
+      correct <- c(correctionLinearbw, correctionQuadbw)
 
       FMLinear <- Linear*correctionLinearbw
       FMQuadratic <- Quadratic*correctionQuadbw
@@ -116,9 +121,12 @@ gumbelModulationGeneration <- function(N,P,
     }
     else if(P == 3){
 
-      correctionLinearbw <- BLinear/(ceiling((bwLin)*100)/100) # finds closest correction factor to three digits below the desired bandwidth
-      correctionQuadbw <- BQuadratic/(ceiling((bwQuad)*100)/100)
-      correctionCubebw <- BCubic/(ceiling((bwCube)*100)/100)
+      correctionLinearbw <- wLinear/(ceiling((bwLin)*100)/100) # finds closest correction factor to three digits below the desired bandwidth
+      correctionQuadbw <- wQuadratic/(ceiling((bwQuad)*100)/100)
+      correctionCubebw <- wCubic/(ceiling((bwCube)*100)/100)
+
+      correct <- c(correctionLinearbw, correctionQuadbw,
+                   correctionCubebw)
 
       FMLinear <- Linear*correctionLinearbw
       FMQuadratic <- Quadratic*correctionQuadbw
@@ -147,10 +155,12 @@ gumbelModulationGeneration <- function(N,P,
                     AmpCube*cos(InnerCosCube)
     }
     else{
-      correctionLinearbw <- BLinear/(ceiling((bwLin)*100)/100) # finds closest correction factor to three digits below the desired bandwidth
-      correctionQuadbw <- BQuadratic/(ceiling((bwQuad)*100)/100)
-      correctionCubebw <- BCubic/(ceiling((bwCube)*100)/100)
-      correctionQuartbw <- BQuartic/(ceiling((bwQuart)*100)/100)
+      correctionLinearbw <- wLinear/(ceiling((bwLin)*100)/100) # finds closest correction factor to three digits below the desired bandwidth
+      correctionQuadbw <- wQuadratic/(ceiling((bwQuad)*100)/100)
+      correctionCubebw <- wCubic/(ceiling((bwCube)*100)/100)
+      correctionQuartbw <- wQuartic/(ceiling((bwQuart)*100)/100)
+      correct <- c(correctionLinearbw, correctionQuadbw,
+                   correctionCubebw, correctionQuartbw)
 
       FMLinear <- Linear*correctionLinearbw
       FMQuadratic <- Quadratic*correctionQuadbw
@@ -196,7 +206,7 @@ gumbelModulationGeneration <- function(N,P,
     plot(xt, x = 1:N, type = "l")
   }
 
-  return(list(xt = xt, xtNoNoise = modulation, noise = noise))
+  return(list(xt = xt, xtNoNoise = modulation, noise = noise, correctionCoef = correct))
 }
 
 
