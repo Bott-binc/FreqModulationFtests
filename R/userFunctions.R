@@ -1,26 +1,12 @@
 # Data Generation ----------------------------------------
 
-#' Modulation Generation for grumble distribution
+#' Modulation Generation for gumble distribution
 #'
 #' @param N Length of series you want to create
 #' @param P Highest degree polynomial will use all degrees less than P other than 0
 #' @param BLinear desired bandwidth for linear modulation
-#' @param linConstCoef linear constant term
-#' @param linCoef linear term coefficient
 #' @param BQuadratic desired bandwidth for quadratic modulation
-#' @param quadConstCoef quadratic constant term
-#' @param quadLinCoef quadratic linear term coefficient
-#' @param quadCoef quadratic term coefficient
 #' @param BCubic desired bandwidth for cubic modulation
-#' @param cubeConstCoef cubic constant term
-#' @param cubeLinCoef cubic linear term coefficient
-#' @param cubeQuadCoef cubic quadratic term coefficient
-#' @param cubeCoef cubic term coefficient
-#' @param quartConstCoef quartic constant term
-#' @param quartLinCoef quartic linear term coefficient
-#' @param quartQuadCoef quartic quadratic term coefficient
-#' @param quartCubeCoef quartic cubic term coefficient
-#' @param quartCoef quartic term coefficient
 #' @param BQuartic desired bandwidth for quartic modulation
 #' @param AmpLinear amplitude of linear modulation
 #' @param AmpQuad amplitude of quadratic modulation
@@ -35,21 +21,26 @@
 #' @param ma  = 0.6 MA coef for noise generation
 #' @param noiseScale = 1*6/pi^2 ratio of noise to pure signal
 #' @param plotXt def = FALSE, will plot xt with noise if needed
+#' @param linCoefs vector of c1 and c2 in \eqn{BLinear\cdot(c1 + c2 \cdot t)}
+#' @param quadCoefs vector of c1, c2, c3 in \eqn{BQuadratic\cdot(c1 + c2 \cdot t + c3 \cdot t^2)}
+#' @param cubeCoefs vector of c1, c2, c3, c4 in \eqn{BCubic\cdot(c1 + c2 \cdot t + c3 \cdot t^2 + c4 \cdot t^3)}
+#' @param quartCoefsvector of c1, c2, c3, c4, c5 in \eqn{BQuartic\cdot(c1 + c2 \cdot t + c3 \cdot t^2 + c4 \cdot t^3 + c5 \cdot t^4)}
+#' @param seed seed used for generation of the gumbel noise
 #'
 #' @return $xt for noisy data and $xtNoNoise for signal without noise and $noise for just the pure noise that was used
 #' @export
-grumbelModulationGeneration <- function(N,P,
-                                        BLinear, linConstCoef, linCoef,
+gumbelModulationGeneration <- function(N,P,
+                                        BLinear, linCoefs,
                                         AmpLinear,
-                                        BQuadratic = 0, quadConstCoef = 0, quadLinCoef = 0, quadCoef = 0,
+                                        BQuadratic = 0, quadCoefs = c(0,0,0),
                                         AmpQuad = 0,
-                                        BCubic = 0, cubeConstCoef = 0, cubeLinCoef = 0, cubeQuadCoef = 0, cubeCoef = 0,
+                                        BCubic = 0, cubeCoefs = c(0,0,0,0),
                                         AmpCube = 0,
-                                        BQuartic = 0, quartConstCoef = 0, quartLinCoef = 0, quartQuadCoef = 0, quartCubeCoef = 0, quartCoef = 0,
+                                        BQuartic = 0, quartCoefs = c(0,0,0,0,0),
                                         AmpQuart = 0,
                                         fLin = 0.1, fQuad = 0.3, fCube = 0.31, fQuart = 0.4,
-                                        checkBandWidth = FALSE, ar = c(0.5, 0.3, -0.1),
-                                        ma = c(0.6), noiseScale = 1*6/pi^2, plotXt = FALSE, seed = NULL
+                                        ar = c(0.5, 0.3, -0.1), ma = c(0.6),
+                                        noiseScale = 1*6/pi^2, checkBandWidth = FALSE, plotXt = FALSE, seed = NULL
 
                                         ){
 
@@ -70,11 +61,11 @@ grumbelModulationGeneration <- function(N,P,
     tt <- n * tstep - 1.0  # this runs from -1 to 1
 
     #modulating functions
-    Linear <-  (linConstCoef + linCoef * tt)   #linear
-    Quadratic <-  (quadConstCoef + quadLinCoef * tt + quadCoef * tt^2)     #quadratic
-    Cubic <-  (cubeConstCoef + cubeLinCoef*tt + cubeQuadCoef*tt^2 + cubeCoef*tt^3) #cubic
-    Quartic <-  (quartConstCoef + quartLinCoef*tt + quartQuadCoef*tt^2 +
-                           quartCubeCoef*tt^3 + quartCoef*tt^4) # quartic
+    Linear <-  (linCoefs[1] + linCoefs[2] * tt)   #linear
+    Quadratic <-  (quadCoefs[1] + quadCoefs[2] * tt + quadCoefs[3] * tt^2)     #quadratic
+    Cubic <-  (cubeCoefs[1] + cubeCoefs[2]*tt + cubeCoefs[3]*tt^2 + cubeCoefs[4]*tt^3) #cubic
+    Quartic <-  (quartCoefs[1] + quartCoefs[2]*tt + quartCoefs[3]*tt^2 +
+                   quartCoefs[4]*tt^3 + quartCoefs[5]*tt^4) # quartic
 
     bwLin <- max(abs(Linear))
     bwQuad <- max(abs(Quadratic))
