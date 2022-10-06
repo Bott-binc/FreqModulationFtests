@@ -936,11 +936,13 @@ F4Testpar <- function(xt, N, k, p, deltat = 1, dpss = FALSE, undersampleNumber =
 #' @param k vector of tapers used in the f test
 #' @param cores must be 1 if on windows, number of cores used for parallelization
 #' @param confLevel default is 1-1/N, level of confidence used in the Ftest
+#' @param altSig if you want to use a measure above the ftestcutoff instead of proportions
+#' @param R Number of K's that must agree to consider significant frequency
 #'
 #' @return $F3testStat, $Freq, $significantFrequencies
 #'
 #' @export
-F3Testpar <- function(xt, k, p, N = length(xt), deltat = 1, dpss = FALSE, undersampleNumber = 100, cores = 1,
+F3Testpar <- function(xt, k, p, R = 2, N = length(xt), deltat = 1, dpss = FALSE, undersampleNumber = 100, cores = 1,
                       confLevel = (1-(1/length(xt))), altSig = FALSE){
 
   if(is.null(undersampleNumber)){
@@ -977,13 +979,18 @@ F3Testpar <- function(xt, k, p, N = length(xt), deltat = 1, dpss = FALSE, unders
       }
 
     }
-    prop <- significantFrequencies/length(k)
+
+    sigFreqCut <- apply(significantFrequencies, MARGIN = 1, FUN= function(x){
+      x[x<R] <- 0
+      return(x)
+    })
+
 
     #making the return
     return(list(F3TestStat = fullDat, Freq = Freq, sigFreq = significantFrequencies,
-                proportionSig = prop))
+                SigFreqWithCut = sigFreqCut))
   }
-  else{ # uses a measure of difstance from the Ftest stat line
+  else{ # uses a measure of distance from the Ftest stat line
     if(dpss){
       fullDat <- parallel::mclapply(X = k,FUN = function(x){
         return(singleIterationForParallel(xt = xt, k = x, w = ((x+1)/(2*length(xt))), p = p, deltat = deltat,
@@ -1017,10 +1024,16 @@ F3Testpar <- function(xt, k, p, N = length(xt), deltat = 1, dpss = FALSE, unders
       }
 
     }
-    prop <- significantFrequencies/length(k)
+
+    sigFreqCut <- apply(significantFrequencies, MARGIN = 1, FUN= function(x){
+      x[x<R] <- 0
+      return(x)
+    })
+
+
     #making the return
     return(list(F3TestStat = fullDat, Freq = Freq, sigFreq = significantFrequencies,
-                proportionSig = prop, sigFreqDiff = sigFreqDiff))
+                SigFreqWithCut = sigFreqCut, sigFreqDiff = sigFreqDiff))
   }
 
 

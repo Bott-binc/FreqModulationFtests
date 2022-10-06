@@ -550,7 +550,7 @@ regressionSineInstFreq <- function(N, k, instFreqEigen, p,
       cHat <- t(H) %*% instFreqEigen
       polyPart <- G %*% cHat
     }
-    browser()
+
     if(returnRp){
       rp <- (diag(k) - H %*% t(H)) %*% instFreqEigen
 
@@ -1447,7 +1447,7 @@ singleIterationForParallel <- function(xt, k, p, deltat = 1, w = NULL, dpss = FA
                                        confLevel = (1-(1/length(xt))),
                                        altSig = FALSE){
   N = length(xt)
-
+  browser()
   if(is.null(undersampleNumber)){
     stop("need to set undersample amount")
   }
