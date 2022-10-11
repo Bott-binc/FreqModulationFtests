@@ -1447,7 +1447,7 @@ singleIterationForParallel <- function(xt, k, p, deltat = 1, w = NULL, dpss = FA
                                        confLevel = (1-(1/length(xt))),
                                        altSig = FALSE){
   N = length(xt)
-  browser()
+
   if(is.null(undersampleNumber)){
     stop("need to set undersample amount")
   }

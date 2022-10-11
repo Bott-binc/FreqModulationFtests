@@ -987,7 +987,7 @@ F3Testpar <- function(xt, k, p, R = 2, N = length(xt), deltat = 1, dpss = FALSE,
       })
     }else{
       sigFreqCut <- list()
-      for(i in length(R)){
+      for(i in 1:length(R)){
         sigFreqCut[[i]] <- apply(significantFrequencies, MARGIN = 1, FUN= function(x){
           x[x<R[i]] <- 0
           return(x)
@@ -1043,7 +1043,7 @@ F3Testpar <- function(xt, k, p, R = 2, N = length(xt), deltat = 1, dpss = FALSE,
       })
     }else{
       sigFreqCut <- list()
-      for(i in length(R)){
+      for(i in 1:length(R)){
         sigFreqCut[[i]] <- apply(significantFrequencies, MARGIN = 1, FUN= function(x){
           x[x<R[i]] <- 0
           return(x)

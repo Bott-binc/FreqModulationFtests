@@ -8,6 +8,7 @@ F3Testpar(
   xt,
   k,
   p,
+  R = 2,
   N = length(xt),
   deltat = 1,
   dpss = FALSE,
@@ -24,6 +25,8 @@ F3Testpar(
 
 \item{p}{Highest degree polynomial you want to test for}
 
+\item{R}{Number of K's that must agree to consider significant frequency}
+
 \item{N}{= length(xt)Total number of observations}
 
 \item{deltat}{Time interval between each observation}
@@ -35,6 +38,8 @@ F3Testpar(
 \item{cores}{must be 1 if on windows, number of cores used for parallelization}
 
 \item{confLevel}{default is 1-1/N, level of confidence used in the Ftest}
+
+\item{altSig}{if you want to use a measure above the ftestcutoff instead of proportions}
 }
 \value{
 $F3testStat, $Freq, $significantFrequencies
