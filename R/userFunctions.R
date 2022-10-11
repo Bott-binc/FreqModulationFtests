@@ -936,72 +936,96 @@ F4Testpar <- function(xt, N, k, p, deltat = 1, dpss = FALSE, undersampleNumber =
 #' @param k vector of tapers used in the f test
 #' @param cores must be 1 if on windows, number of cores used for parallelization
 #' @param confLevel default is 1-1/N, level of confidence used in the Ftest
-#' @param altSig if you want to use a measure above the ftestcutoff instead of proportions
-#' @param R Number of K's that must agree to consider significant frequency
+#' @param altSig Uses a measure of how far above the F is above the F quantile = FALSE by default
+#' @param returnFTestVars = FALSE.  Used for when more information about inner Ftests is needed.
+#'  NOTE: this will be very memory intensive and is only implimented for altSig = FALSE
 #'
 #' @return $F3testStat, $Freq, $significantFrequencies
 #'
 #' @export
-F3Testpar <- function(xt, k, p, R = 2, N = length(xt), deltat = 1, dpss = FALSE, undersampleNumber = 100, cores = 1,
-                      confLevel = (1-(1/length(xt))), altSig = FALSE){
+F3Testpar <- function(xt, k, p, N = length(xt), deltat = 1, dpss = FALSE, undersampleNumber = 100, cores = 1,
+                      confLevel = (1-(1/length(xt))), altSig = FALSE, returnFTestVars = FALSE){
 
   if(is.null(undersampleNumber)){
     stop("need to set undersample amount")
   }
   if(!altSig){
-    if(dpss){
-      fullDat <- parallel::mclapply(X = k,FUN = function(x){
-        return(singleIterationForParallel(xt = xt, k = x, w = ((x+1)/(2*length(xt))), p = p, deltat = deltat,
-                                          undersampleNumber = undersampleNumber, dpss = TRUE,
-                                          confLevel = (1-(1/length(xt)))))
-      }, mc.cores = cores, mc.cleanup = TRUE, mc.preschedule = TRUE)
-    }else{
-      fullDat <- parallel::mclapply(X = k,FUN = function(x){
-        return(singleIterationForParallel(xt = xt, k = x, p = p, deltat = deltat,
-                                          undersampleNumber = undersampleNumber, dpss = FALSE,
-                                          confLevel = (1-(1/length(xt)))))
-      }, mc.cores = cores, mc.cleanup = TRUE, mc.preschedule = TRUE)
-    }
-    Freq = fullDat[[1]]$Freq
+    if(!returnFTestVars){
+      if(dpss){
+        fullDat <- parallel::mclapply(X = k,FUN = function(x){
+          return(singleIterationForParallel(xt = xt, k = x, w = ((x+1)/(2*length(xt))), p = p, deltat = deltat,
+                                            undersampleNumber = undersampleNumber, dpss = TRUE,
+                                            confLevel = (1-(1/length(xt))), returnFTestVars = FALSE))
+        }, mc.cores = cores, mc.cleanup = TRUE, mc.preschedule = TRUE)
+      }else{
+        fullDat <- parallel::mclapply(X = k,FUN = function(x){
+          return(singleIterationForParallel(xt = xt, k = x, p = p, deltat = deltat,
+                                            undersampleNumber = undersampleNumber, dpss = FALSE,
+                                            confLevel = (1-(1/length(xt))), returnFTestVars = FALSE))
+        }, mc.cores = cores, mc.cleanup = TRUE, mc.preschedule = TRUE)
+      }
+      Freq = fullDat[[1]]$Freq
 
 
-    significantFrequencies<- matrix(0,nrow = p, ncol = length(Freq))
-    for(i in 1:length(k)){
-      for(j in 1:p){
-        if(length(as.vector(fullDat[[i]]$significantFreq[[j]])) == 0){
+      significantFrequencies<- matrix(0,nrow = p, ncol = length(Freq))
+      for(i in 1:length(k)){
+        for(j in 1:p){
+          if(length(as.vector(fullDat[[i]]$significantFreq[[j]])) == 0){
 
-        }else{
-          indexesOfSigFreq <- match(fullDat[[i]]$significantFreq[[j]], Freq)
-          significantFrequencies[j,indexesOfSigFreq] =
-            significantFrequencies[j,indexesOfSigFreq] + 1
+          }else{
+            indexesOfSigFreq <- match(fullDat[[i]]$significantFreq[[j]], Freq)
+            significantFrequencies[j,indexesOfSigFreq] =
+              significantFrequencies[j,indexesOfSigFreq] + 1
+          }
+
         }
 
       }
+      prop <- significantFrequencies/length(k)
 
-    }
+      #making the return
+      return(list(F3TestStat = fullDat, Freq = Freq, sigFreq = significantFrequencies,
+                  proportionSig = prop))
+    }else{ # if the user wants the F test variables as well
+      if(dpss){
+        fullDat <- parallel::mclapply(X = k,FUN = function(x){
+          return(singleIterationForParallel(xt = xt, k = x, w = ((x+1)/(2*length(xt))), p = p, deltat = deltat,
+                                            undersampleNumber = undersampleNumber, dpss = TRUE,
+                                            confLevel = (1-(1/length(xt))), returnFTestVars = TRUE))
+        }, mc.cores = cores, mc.cleanup = TRUE, mc.preschedule = TRUE)
+      }else{
+        fullDat <- parallel::mclapply(X = k,FUN = function(x){
+          return(singleIterationForParallel(xt = xt, k = x, p = p, deltat = deltat,
+                                            undersampleNumber = undersampleNumber, dpss = FALSE,
+                                            confLevel = (1-(1/length(xt))), returnFTestVars = TRUE))
+        }, mc.cores = cores, mc.cleanup = TRUE, mc.preschedule = TRUE)
+      }
+      Freq = fullDat[[1]]$Freq
 
-    if(length(R) == 1){
-      sigFreqCut <- apply(significantFrequencies, MARGIN = 1, FUN= function(x){
-        x[x<R] <- 0
-        return(x)
-      })
-    }else{
-      sigFreqCut <- list()
-      for(i in 1:length(R)){
-        sigFreqCut[[i]] <- apply(significantFrequencies, MARGIN = 1, FUN= function(x){
-          x[x<R[i]] <- 0
-          return(x)
-        })
+
+      significantFrequencies<- matrix(0,nrow = p, ncol = length(Freq))
+      for(i in 1:length(k)){
+        for(j in 1:p){
+          if(length(as.vector(fullDat[[i]]$significantFreq[[j]])) == 0){
+
+          }else{
+            indexesOfSigFreq <- match(fullDat[[i]]$significantFreq[[j]], Freq)
+            significantFrequencies[j,indexesOfSigFreq] =
+              significantFrequencies[j,indexesOfSigFreq] + 1
+          }
+
+        }
 
       }
+      prop <- significantFrequencies/length(k)
+
+      #making the return
+      return(list(F3TestStat = fullDat, Freq = Freq, sigFreq = significantFrequencies,
+                  proportionSig = prop, FtestVars = fullDat$ftestvars))
     }
 
-
-    #making the return
-    return(list(F3TestStat = fullDat, Freq = Freq, sigFreq = significantFrequencies,
-                SigFreqWithCut = sigFreqCut))
   }
-  else{ # uses a measure of distance from the Ftest stat line
+  else{ # uses a measure of difstance from the Ftest stat line
     if(dpss){
       fullDat <- parallel::mclapply(X = k,FUN = function(x){
         return(singleIterationForParallel(xt = xt, k = x, w = ((x+1)/(2*length(xt))), p = p, deltat = deltat,
@@ -1035,28 +1059,10 @@ F3Testpar <- function(xt, k, p, R = 2, N = length(xt), deltat = 1, dpss = FALSE,
       }
 
     }
-
-    if(length(R) == 1){
-      sigFreqCut <- apply(significantFrequencies, MARGIN = 1, FUN= function(x){
-        x[x<R] <- 0
-        return(x)
-      })
-    }else{
-      sigFreqCut <- list()
-      for(i in 1:length(R)){
-        sigFreqCut[[i]] <- apply(significantFrequencies, MARGIN = 1, FUN= function(x){
-          x[x<R[i]] <- 0
-          return(x)
-        })
-
-      }
-    }
-
-
-
+    prop <- significantFrequencies/length(k)
     #making the return
     return(list(F3TestStat = fullDat, Freq = Freq, sigFreq = significantFrequencies,
-                SigFreqWithCut = sigFreqCut, sigFreqDiff = sigFreqDiff))
+                proportionSig = prop, sigFreqDiff = sigFreqDiff))
   }
 
 

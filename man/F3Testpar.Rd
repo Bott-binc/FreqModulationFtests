@@ -8,14 +8,14 @@ F3Testpar(
   xt,
   k,
   p,
-  R = 2,
   N = length(xt),
   deltat = 1,
   dpss = FALSE,
   undersampleNumber = 100,
   cores = 1,
   confLevel = (1 - (1/length(xt))),
-  altSig = FALSE
+  altSig = FALSE,
+  returnFTestVars = FALSE
 )
 }
 \arguments{
@@ -24,8 +24,6 @@ F3Testpar(
 \item{k}{vector of tapers used in the f test}
 
 \item{p}{Highest degree polynomial you want to test for}
-
-\item{R}{Number of K's that must agree to consider significant frequency}
 
 \item{N}{= length(xt)Total number of observations}
 
@@ -39,7 +37,10 @@ F3Testpar(
 
 \item{confLevel}{default is 1-1/N, level of confidence used in the Ftest}
 
-\item{altSig}{if you want to use a measure above the ftestcutoff instead of proportions}
+\item{altSig}{Uses a measure of how far above the F is above the F quantile = FALSE by default}
+
+\item{returnFTestVars}{= FALSE.  Used for when more information about inner Ftests is needed.
+NOTE: this will be very memory intensive and is only implimented for altSig = FALSE}
 }
 \value{
 $F3testStat, $Freq, $significantFrequencies
