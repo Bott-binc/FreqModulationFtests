@@ -964,28 +964,7 @@ F3Testpar <- function(xt, k, p, N = length(xt), deltat = 1, dpss = FALSE, unders
                                             confLevel = (1-(1/length(xt))), returnFTestVars = FALSE))
         }, mc.cores = cores, mc.cleanup = TRUE, mc.preschedule = TRUE)
       }
-      Freq = fullDat[[1]]$Freq
 
-
-      significantFrequencies<- matrix(0,nrow = p, ncol = length(Freq))
-      for(i in 1:length(k)){
-        for(j in 1:p){
-          if(length(as.vector(fullDat[[i]]$significantFreq[[j]])) == 0){
-
-          }else{
-            indexesOfSigFreq <- match(fullDat[[i]]$significantFreq[[j]], Freq)
-            significantFrequencies[j,indexesOfSigFreq] =
-              significantFrequencies[j,indexesOfSigFreq] + 1
-          }
-
-        }
-
-      }
-      prop <- significantFrequencies/length(k)
-
-      #making the return
-      return(list(F3TestStat = fullDat, Freq = Freq, sigFreq = significantFrequencies,
-                  proportionSig = prop))
     }else{ # if the user wants the F test variables as well
       if(dpss){
         fullDat <- parallel::mclapply(X = k,FUN = function(x){
@@ -1000,32 +979,32 @@ F3Testpar <- function(xt, k, p, N = length(xt), deltat = 1, dpss = FALSE, unders
                                             confLevel = (1-(1/length(xt))), returnFTestVars = TRUE))
         }, mc.cores = cores, mc.cleanup = TRUE, mc.preschedule = TRUE)
       }
-      Freq = fullDat[[1]]$Freq
+
+    }
+    Freq = fullDat[[1]]$Freq
 
 
-      significantFrequencies<- matrix(0,nrow = p, ncol = length(Freq))
-      for(i in 1:length(k)){
-        for(j in 1:p){
-          if(length(as.vector(fullDat[[i]]$significantFreq[[j]])) == 0){
+    significantFrequencies<- matrix(0,nrow = p, ncol = length(Freq))
+    for(i in 1:length(k)){
+      for(j in 1:p){
+        if(length(as.vector(fullDat[[i]]$significantFreq[[j]])) == 0){
 
-          }else{
-            indexesOfSigFreq <- match(fullDat[[i]]$significantFreq[[j]], Freq)
-            significantFrequencies[j,indexesOfSigFreq] =
-              significantFrequencies[j,indexesOfSigFreq] + 1
-          }
-
+        }else{
+          indexesOfSigFreq <- match(fullDat[[i]]$significantFreq[[j]], Freq)
+          significantFrequencies[j,indexesOfSigFreq] =
+            significantFrequencies[j,indexesOfSigFreq] + 1
         }
 
       }
-      prop <- significantFrequencies/length(k)
 
-      #making the return
-      return(list(F3TestStat = fullDat, Freq = Freq, sigFreq = significantFrequencies,
-                  proportionSig = prop, FtestVars = fullDat$ftestvars))
     }
+    prop <- significantFrequencies/length(k)
 
+    #making the return
+    return(list(F3TestStat = fullDat, Freq = Freq, sigFreq = significantFrequencies,
+                proportionSig = prop))
   }
-  else{ # uses a measure of difstance from the Ftest stat line
+  else{ # uses a measure of distance from the Ftest stat line
     if(dpss){
       fullDat <- parallel::mclapply(X = k,FUN = function(x){
         return(singleIterationForParallel(xt = xt, k = x, w = ((x+1)/(2*length(xt))), p = p, deltat = deltat,
