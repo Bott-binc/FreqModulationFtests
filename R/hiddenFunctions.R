@@ -1502,7 +1502,7 @@ singleIterationForParallel <- function(xt, k, p, deltat = 1, w = NULL, dpss = FA
        normcHatWOutZeroSq <- normcHatWOutZeroSq + fStuff$cHat^2
        F3[p,] <- (fStuff$cHat)^2/
          ((normPhiSq - normcHatWOutZeroSq)/(k - p))
-       FcutOff <- qf(confLevel, df1 = 1, df2 = (k-p-1), lower.tail = TRUE)
+       FcutOff <- qf(confLevel, df1 = 1, df2 = (k-p), lower.tail = TRUE)
        significantFreq[[p]] <- Freq[which(F3[p,] >= FcutOff)]
 
      }else{
@@ -1514,7 +1514,7 @@ singleIterationForParallel <- function(xt, k, p, deltat = 1, w = NULL, dpss = FA
          normcHatWOutZeroSq <- normcHatWOutZeroSq + fStuff$cHat[P,]^2
          F3[P,] <- (fStuff$cHat[P,])^2/
            ((normPhiSq - normcHatWOutZeroSq)/(k - P))
-         FcutOff <- qf(confLevel, df1 = 1, df2 = (k-P-1), lower.tail = TRUE)
+         FcutOff <- qf(confLevel, df1 = 1, df2 = (k-P), lower.tail = TRUE)
          significantFreq[[P]] <- Freq[which(F3[P,] >= FcutOff)]
 
 
