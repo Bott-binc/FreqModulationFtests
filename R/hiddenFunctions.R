@@ -447,14 +447,13 @@ instFreqSine <- function(xt, N, k, deltat, passInSineMat = NULL, returnSineMat =
 #' @param N Total number of observations
 #' @param k Number of tapers
 #' @param deltat default is 1, used for nyquist calculation
-#' @param nu = 0 default, code is in dpss version but not parallelized yet
 #' @param returnSineMat if you want to return SineTapers for use elsewhere
 #' @param passInSineTapers  if sine matrix was calculated somewhere else
 #' @param passInSineUnder If sine undersampling matrix was calculated already
 #'
 #' @return returns $PHI kxn matrix, $Freq which are the columns of PHI.  If
 #' returnSineMat = TRUE, will also return tapers for future use
-eigenSpectrumSineInstFrequency <- function(xt, N, k, deltat, nu = 0,
+eigenSpectrumSineInstFrequency <- function(xt, N, k, deltat,
                                            returnSineMat = FALSE,
                                            passInSineTapers = NULL,
                                            passInSineUnder = NULL){
