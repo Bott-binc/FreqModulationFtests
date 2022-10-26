@@ -95,6 +95,9 @@ eigenCoefSineFFT <- function(N, k, Xt, deltat = 1, passInTaper = NULL, returnSin
       vec <- sine[,i] * as.matrix(Xt)
       EigenCoef[,i] <- fft(vec)
     }
+    if(penalty != 1){
+      EigenCoef <- t(apply(EigenCoef, MARGIN = 1, FUN = function(x){x/seq(from = 1, to = penalty*k, length.out = k)}))
+    }
     ret <- data.frame(EigenCoef = EigenCoef, Freq = c(seq(from = 0, to = 1/(2*deltat),
                                                           by = 1/(N*deltat)),
                                                       seq(from = (-1/(2*deltat) + 1/(N*deltat)),
@@ -403,26 +406,29 @@ instFreqSine <- function(xt, N, k, deltat, passInSineMat = NULL, returnSineMat =
   if(is.null(passInSineUnder)){
     if(is.null(passInSineMat)){ # need to create sine taper matrix in stdInverse then pass into stdInvDer
       stdInv <- standardInverseSine(xt = xt, N = N, k = k, deltat = deltat,
-                                    retSineTapers = TRUE)
+                                    retSineTapers = TRUE, penalty = penalty)
       stdInvDer <- standardInverseSineDer(xt = xt, N = N, k = k,
-                                          deltat = deltat, passInSineMat = stdInv$DPSS)
+                                          deltat = deltat, passInSineMat = stdInv$sineTapers
+                                          , penalty = penalty)
       sineMat <- stdInv$sineTapers
     }
     else{ # we already have sine taper matrix so we will pass into stdinv, then into stdInvDer
       stdInv <- standardInverseSine(xt = xt, N = N, k = k, deltat = deltat,
-                                    retSineTapers = FALSE, passInSineMat = passInSineMat)
+                                    retSineTapers = FALSE, passInSineMat = passInSineMat
+                                    , penalty = penalty)
       stdInvDer <- standardInverseSineDer(xt = xt, N = N, k = k,
-                                          deltat = deltat, passInSineMat = passInSineMat)
+                                          deltat = deltat, passInSineMat = passInSineMat
+                                          , penalty = penalty)
       sineMat <- passInSineMat
     }
   }else{ #need to do some undersampling!
     if(is.null(passInSineMat)){ # need to create sine taper matrix in stdInverse then pass into stdInvDer
       stdInv <- standardInverseSine(xt = xt, N = N, k = k, deltat = deltat,
                                     retSineTapers = TRUE, passInSineMat = FALSE,
-                                    passInSineUnder = passInSineUnder)
+                                    passInSineUnder = passInSineUnder, penalty = penalty)
       stdInvDer <- standardInverseSineDer(xt = xt, N = N, k = k,
-                                          deltat = deltat, passInSineMat = stdInv$DPSS,
-                                          passInSineUnder = passInSineUnder)
+                                          deltat = deltat, passInSineMat = stdInv$sineTapers,
+                                          passInSineUnder = passInSineUnder, penalty = penalty)
       sineMat <- stdInv$sineTapers
     }
     else{ # we already have sine taper matrix so we will pass into stdinv, then into stdInvDer
@@ -723,9 +729,11 @@ eigenCoefdpss <- function(n, k, w, Xt, f, deltat = 1, dpssRet = FALSE){
 #' @param passInDPSSMat For limiting the number of calculations of DPSS this is dpss$v
 #' @param deltat = 1 by default
 #' @param pad if true will zero padd automatically the Xt that is inputted into the function
+#' @param penalty 1 is no penalty , 0.2  would give seq(from =  1, to =  1/(0.2*k, length.out = k)
+#' penalty to each respective taper
 #'
 #' @return Matrix of EigenCoef for each frequency, as well as the frequencies under Freq in the list
-eigenCoefdpssFFT <- function(n, k, w, Xt, deltat = 1, passInDPSSMat = NULL, pad = FALSE){
+eigenCoefdpssFFT <- function(n, k, w, Xt, deltat = 1, passInDPSSMat = NULL, pad = FALSE, penalty = 1){
   EigenCoef <- matrix(nrow = n,ncol = k)
   if(is.null(passInDPSSMat)){
     dp <- multitaper::dpss(n, k, n*w)$v
@@ -739,6 +747,9 @@ eigenCoefdpssFFT <- function(n, k, w, Xt, deltat = 1, passInDPSSMat = NULL, pad 
       vec <- dp[,i] * as.matrix(Xt)
       EigenCoef[,i] <- fft(vec)
     }
+    if(penalty != 1){
+      EigenCoef <- t(apply(EigenCoef, MARGIN = 1, FUN = function(x){x/seq(from = 1, to = penalty*k, length.out = k)}))
+    }
     ret <- data.frame(EigenCoef = EigenCoef, Freq = c(seq(from = 0, to = 1/(2*deltat),
                                                           by = 1/(n*deltat)),
                                                       seq(from = (-1/(2*deltat) + 1/(n*deltat)),
@@ -750,7 +761,9 @@ eigenCoefdpssFFT <- function(n, k, w, Xt, deltat = 1, passInDPSSMat = NULL, pad 
     taper <- dp * Xt
     pad <- rbind(taper, matrix(0, nrow = nFFT - n, ncol = k))
     EigenCoef <- mvfft(pad)[1:(nextPowerOfTwo + 1), ,drop = FALSE]
-
+    if(penalty != 1){
+      EigenCoef <- t(apply(EigenCoef, MARGIN = 1, FUN = function(x){x/seq(from = 1, to = penalty*k, length.out = k)}))
+    }
     ret <- data.frame(EigenCoef = EigenCoef, Freq = seq(from = 0, to = 1/(2*deltat),
                                                         by = 1/(2*nextPowerOfTwo*deltat)))
   }
@@ -807,10 +820,13 @@ standardInverseDPSSSingleFreq <- function(xt, N, w, k, f, deltat = 1, FFT = FALS
 #' @param passInDPSS if dpss has already been calculated somewhere else this is the full
 #' object of dpss both $v and $eigen
 #' @param passInDPSSReduced if dpss undersampling was calculated already
+#' @param penalty 1 is no penalty , 0.2  would give seq(from =  1, to =  1/(0.2*k, length.out = k)
+#' penalty to each respective taper
 #'
 #' @return returns standard inverse along with frequencies that are the columns
 standardInverseDPSS <- function(xt, N, k, w, deltat = 1, retDPSS = FALSE,
-                                passInDPSS = NULL, passInDPSSReduced = NULL){
+                                passInDPSS = NULL, passInDPSSReduced = NULL,
+                                penalty = 1){
 
   if(is.null(passInDPSS)){
     dp <- multitaper::dpss(N, k, N*w)
@@ -822,9 +838,9 @@ standardInverseDPSS <- function(xt, N, k, w, deltat = 1, retDPSS = FALSE,
   }
 
   if(is.null(passInDPSSReduced)){ # we don't zeropadd
-    Y <- eigenCoefdpssFFT(N, k, w, xt, deltat = deltat, passInDPSSMat = v, pad = FALSE)
+    Y <- eigenCoefdpssFFT(N, k, w, xt, deltat = deltat, passInDPSSMat = v, pad = FALSE, penalty = penalty)
   }else{
-    Y <- eigenCoefdpssFFT(N, k, w, xt, deltat = deltat, passInDPSSMat = v, pad = TRUE)
+    Y <- eigenCoefdpssFFT(N, k, w, xt, deltat = deltat, passInDPSSMat = v, pad = TRUE, penalty = penalty)
   }
   #stdInverse <- matrix(nrow = N, ncol = length(Y$Freq))
   #index <- 0
@@ -857,11 +873,14 @@ standardInverseDPSS <- function(xt, N, k, w, deltat = 1, retDPSS = FALSE,
 #' this includes both $v and $eigen
 #' @param returnDPSS returns dpss if needed outside function
 #' @param passInDPSSReduced if dpss undersampling was calculated already
+#' @param penalty 1 is no penalty , 0.2  would give seq(from =  1, to =  1/(0.2*k, length.out = k)
+#' penalty to each respective taper
 #'
 #' @return Standard Inverse Derivative Z' vector $StdInverse as well as $Freq which are the columns of stdInverse
 #' if returnDPSS = TRUE will also return $DPSS which is the dpss object
 standardInverseDPSSFirstDir <- function(xt, N, w, k, deltat = 1, passInDPSS = NULL,
-                                        returnDPSS = FALSE, passInDPSSReduced = NULL){#, FirstDir = NULL){
+                                        returnDPSS = FALSE, passInDPSSReduced = NULL,
+                                        penalty = 1){#, FirstDir = NULL){
   if(is.null(passInDPSSReduced)){
     if(is.null(passInDPSS)){
       FirstDir <- FirstDerTimeDomSlepians(N = N, w = w, k = k, returnDPSS = TRUE)
@@ -885,7 +904,7 @@ standardInverseDPSSFirstDir <- function(xt, N, w, k, deltat = 1, passInDPSS = NU
     # }
 
 
-    Y <- eigenCoefdpssFFT(N, k, w, xt, deltat = deltat, passInDPSSMat = dp)
+    Y <- eigenCoefdpssFFT(N, k, w, xt, deltat = deltat, passInDPSSMat = dp, penalty = penalty)
 
     stdInverse <- matrix(nrow = N, ncol = length(Y$Freq))
     #index <- 0
@@ -907,7 +926,7 @@ standardInverseDPSSFirstDir <- function(xt, N, w, k, deltat = 1, passInDPSS = NU
     }
 
 
-    Y <- eigenCoefdpssFFT(nrow(dp), k, w, xt, deltat = deltat, passInDPSSMat = dp, pad = TRUE)
+    Y <- eigenCoefdpssFFT(nrow(dp), k, w, xt, deltat = deltat, passInDPSSMat = dp, pad = TRUE, penalty = penalty)
 
     stdInverse <- matrix(nrow = nrow(dp), ncol = length(Y$Freq))
     #index <- 0
@@ -1107,27 +1126,31 @@ FirstDerTimeDomSlepians <- function(N, w, k, passInFullDPSS = NULL, returnDPSS =
 #' object of dpss both $v and $eigen
 #' @param passInDPSSUnder if dpss undersampling was calculated already
 #' @param returnDPSS if you want to return dpss for use elsewhere
+#' @param penalty 1 is no penalty , 0.2  would give seq(from =  1, to =  1/(0.2*k, length.out = k)
+#' penalty to each respective taper
 #'
 #' @return list of $InstFreq and $Freq which is the column of instFreq
 #' if returnDPSS = TRUE then list of $InstFreq, $Freq, and $DPSS
 instFreqDPSS <- function(xt, N, k, w, deltat, passInDPSS = NULL, returnDPSS = FALSE,
-                         passInDPSSUnder = NULL){
+                         passInDPSSUnder = NULL, penalty = 1){
   if(is.null(passInDPSSUnder)){ # no undersampling will take place
     if(is.null(passInDPSS)){ # need to create dpss in stdInverse then pass into stdInvDer
 
 
       stdInv <- standardInverseDPSS(xt = xt, N = N, k = k, w = w, deltat = deltat,
-                                    retDPSS = TRUE)
+                                    retDPSS = TRUE, penalty = penalty)
       stdInvDer <- standardInverseDPSSFirstDir(xt = xt, N = N, w = w, k = k,
-                                               deltat = deltat, passInDPSS = stdInv$DPSS)
+                                               deltat = deltat, passInDPSS = stdInv$DPSS,
+                                               penalty = penalty)
 
       dp <- stdInv$DPSS
     }
     else{ # we already have dpss so we will pass into std, then into stdInvDer
       stdInv <- standardInverseDPSS(xt = xt, N = N, k = k, w = w, deltat = deltat,
-                                    retDPSS = FALSE, passInDPSS = passInDPSS)
+                                    retDPSS = FALSE, passInDPSS = passInDPSS, penalty = penalty)
       stdInvDer <- standardInverseDPSSFirstDir(xt = xt, N = N, w = w, k = k,
-                                               deltat = deltat, passInDPSS = passInDPSS)
+                                               deltat = deltat, passInDPSS = passInDPSS,
+                                               penalty = penalty)
       dp <- passInDPSS
     }
   }else{ #need to do some undersampling!
@@ -1135,20 +1158,20 @@ instFreqDPSS <- function(xt, N, k, w, deltat, passInDPSS = NULL, returnDPSS = FA
 
 
       stdInv <- standardInverseDPSS(xt = xt, N = N, k = k, w = w, deltat = deltat,
-                                    retDPSS = TRUE, passInDPSSReduced = passInDPSSUnder)
+                                    retDPSS = TRUE, passInDPSSReduced = passInDPSSUnder, penalty = penalty)
       stdInvDer <- standardInverseDPSSFirstDir(xt = xt, N = N, w = w, k = k,
                                                deltat = deltat, passInDPSS = stdInv$DPSS,
-                                               passInDPSSReduced = passInDPSSUnder)
+                                               passInDPSSReduced = passInDPSSUnder, penalty = penalty)
 
       dp <- stdInv$DPSS
     }
     else{ # we already have dpss so we will pass into std, then into stdInvDer
       stdInv <- standardInverseDPSS(xt = xt, N = N, k = k, w = w, deltat = deltat,
                                     retDPSS = TRUE, passInDPSS = passInDPSS,
-                                    passInDPSSReduced = passInDPSSUnder)
+                                    passInDPSSReduced = passInDPSSUnder, penalty = penalty)
       stdInvDer <- standardInverseDPSSFirstDir(xt = xt, N = N, w = w, k = k,
                                                deltat = deltat, passInDPSS = stdInv$DPSS,
-                                               passInDPSSReduced = passInDPSSUnder)
+                                               passInDPSSReduced = passInDPSSUnder, penalty = penalty)
       dp <- passInDPSS
     }
   }
@@ -1182,20 +1205,22 @@ instFreqDPSS <- function(xt, N, k, w, deltat, passInDPSS = NULL, returnDPSS = FA
 #' @param passInDPSS  if dpss has already been calculated somewhere else this is the full
 #' object of dpss both $v and $eigen
 #' @param passInDPSSUnder if dpss undersampling was calculated already
+#' @param penalty 1 is no penalty , 0.2  would give seq(from =  1, to =  1/(0.2*k, length.out = k)
+#' penalty to each respective taper
 #'
 #' @return returns $PSI kxn matrix, $Freq which are the columns of PSI.  If
 #' returnDPSS = TRUE, will also return tapers $v and $eigen for future use
 eigenCoefDPSSInstFrequency <- function(xt, N, k, w, deltat, nu = 0, returnDPSS = FALSE,
-                                           passInDPSS = NULL, passInDPSSUnder = NULL){
+                                           passInDPSS = NULL, passInDPSSUnder = NULL, penalty = 1){
   if(is.null(passInDPSSUnder)){#runs with no under sampling
     if(is.null(passInDPSS)){ # need instFreq to create the dpss
       instFreq <- instFreqDPSS(xt = xt, N = N, k = k, w = w, deltat = deltat,
-                               returnDPSS = TRUE)
+                               returnDPSS = TRUE, penalty = penalty)
       dp <- instFreq$DPSS
     }
     else{ # will pass DPSS inot instFreq
       instFreq <- instFreqDPSS(xt = xt, N = N, k = k, w = w, deltat = deltat,
-                               returnDPSS = FALSE, passInDPSS = passInDPSS)
+                               returnDPSS = FALSE, passInDPSS = passInDPSS, penalty = penalty)
       dp <- passInDPSS
     }
     #need to use the undersampling dpss here
@@ -1207,13 +1232,13 @@ eigenCoefDPSSInstFrequency <- function(xt, N, k, w, deltat, nu = 0, returnDPSS =
   }else{ #we want under sampling so we need to change a few things
     if(is.null(passInDPSS)){ # need instFreq to create the dpss
       instFreq <- instFreqDPSS(xt = xt, N = N, k = k, w = w, deltat = deltat,
-                               returnDPSS = TRUE, passInDPSSUnder = passInDPSSUnder)
+                               returnDPSS = TRUE, passInDPSSUnder = passInDPSSUnder, penalty = penalty)
       dp <- instFreq$DPSS
     }
     else{ # will pass DPSS inot instFreq
       instFreq <- instFreqDPSS(xt = xt, N = N, k = k, w = w, deltat = deltat,
                                returnDPSS = FALSE, passInDPSS = passInDPSS,
-                               passInDPSSUnder = passInDPSSUnder)
+                               passInDPSSUnder = passInDPSSUnder, penalty = penalty)
       dp <- passInDPSS
     }
 
@@ -1478,7 +1503,7 @@ singleIterationForParallel <- function(xt, k, p, deltat = 1, w = NULL, dpss = FA
     instFreqEigen <- eigenCoefDPSSInstFrequency(xt = xt, N = N, k = k, w = w,
                                                     deltat = deltat,
                                                     returnDPSS = FALSE, passInDPSS = dp,
-                                                    passInDPSSUnder = dpUnder)
+                                                    passInDPSSUnder = dpUnder, penalty = penalty)
     fStuff <- regressionDPSSInstFreq(N = N, k = k, w = w, instFreqEigen = instFreqEigen$PSI,
                                      p = p, passInDPSS = dpUnder ,returnDPSS = FALSE,
                                      returnRp = FALSE, withoutzeroPoly = TRUE)
