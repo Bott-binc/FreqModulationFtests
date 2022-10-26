@@ -240,17 +240,17 @@ F1Test <- function(xt, N, k, p, deltat = 1, w = NULL, dpss = FALSE, returnInstFr
       if(is.null(w)){
         stop("need to set w for dpss")
       }
-      instFreqEigen <- eigenSpectrumDPSSInstFrequency(xt = xt, N = N, k = k, w = w, deltat = deltat,
+      instFreqEigen <- eigenCoefDPSSInstFrequency(xt = xt, N = N, k = k, w = w, deltat = deltat,
                                                       returnDPSS = TRUE)
-      fStuff <- regressionDPSSInstFreq(N = N, k = k, w = w, instFreqEigen = instFreqEigen$PHI,
+      fStuff <- regressionDPSSInstFreq(N = N, k = k, w = w, instFreqEigen = instFreqEigen$PSI,
                                        p = p, passInDPSS = instFreqEigen$DPSS,returnDPSS = FALSE,
                                        returnRp = FALSE)
     }
     else{ # the sine tapers are used
-      instFreqEigen <- eigenSpectrumSineInstFrequency(xt = xt, N = N, k = k,deltat = deltat,
+      instFreqEigen <- eigenCoefSineInstFrequency(xt = xt, N = N, k = k,deltat = deltat,
                                                       returnSineMat = TRUE)
 
-      fStuff <- regressionSineInstFreq(N = N, k = k, instFreqEigen = instFreqEigen$PHI,
+      fStuff <- regressionSineInstFreq(N = N, k = k, instFreqEigen = instFreqEigen$PSI,
                                        p = p, returnSineTapers = FALSE,
                                        passInSineMat = instFreqEigen$SineTaper,
                                        returnRp = FALSE)
@@ -264,7 +264,7 @@ F1Test <- function(xt, N, k, p, deltat = 1, w = NULL, dpss = FALSE, returnInstFr
         indexF1 <- which(colnames(F1) == f)
         index <- which(colnames(fStuff$cHat) == f)
         F1[P,indexF1] <- ((norm(fStuff$cHat[1:P,index], type = "2"))^2/((P - 1) + 1))/
-          (((norm(instFreqEigen$PHI[,index], type = "2"))^2 - (norm(fStuff$cHat[1:P,index], type = "2"))^2)/(k - (P - 1) - 1))
+          (((norm(instFreqEigen$PSI[,index], type = "2"))^2 - (norm(fStuff$cHat[1:P,index], type = "2"))^2)/(k - (P - 1) - 1))
       }
     }
   }else{ # without zero degree
@@ -272,18 +272,18 @@ F1Test <- function(xt, N, k, p, deltat = 1, w = NULL, dpss = FALSE, returnInstFr
       if(is.null(w)){
         stop("need to set w for dpss")
       }
-      instFreqEigen <- eigenSpectrumDPSSInstFrequency(xt = xt, N = N, k = k, w = w, deltat = deltat,
+      instFreqEigen <- eigenCoefDPSSInstFrequency(xt = xt, N = N, k = k, w = w, deltat = deltat,
                                                       returnDPSS = TRUE)
-      fStuff <- regressionDPSSInstFreq(N = N, k = k, w = w, instFreqEigen = instFreqEigen$PHI,
+      fStuff <- regressionDPSSInstFreq(N = N, k = k, w = w, instFreqEigen = instFreqEigen$PSI,
                                        p = p, passInDPSS = instFreqEigen$DPSS,returnDPSS = FALSE,
                                        returnRp = FALSE, withoutzeroPoly =
                                          TRUE)
     }
     else{ # the sine tapers are used
-      instFreqEigen <- eigenSpectrumSineInstFrequency(xt = xt, N = N, k = k,deltat = deltat,
+      instFreqEigen <- eigenCoefSineInstFrequency(xt = xt, N = N, k = k,deltat = deltat,
                                                       returnSineMat = TRUE)
 
-      fStuff <- regressionSineInstFreq(N = N, k = k, instFreqEigen = instFreqEigen$PHI,
+      fStuff <- regressionSineInstFreq(N = N, k = k, instFreqEigen = instFreqEigen$PSI,
                                        p = p, returnSineTapers = FALSE,
                                        passInSineMat = instFreqEigen$SineTaper,
                                        returnRp = FALSE, withoutzeroPoly = TRUE)
@@ -298,7 +298,7 @@ F1Test <- function(xt, N, k, p, deltat = 1, w = NULL, dpss = FALSE, returnInstFr
         indexF1 <- which(colnames(F1) == f)
         index <- which(colnames(fStuff$cHat) == f)
         F1[P,indexF1] <- ((norm(fStuff$cHat[1:P,index], type = "2"))^2/(P))/
-          (((norm(instFreqEigen$PHI[,index], type = "2"))^2 - (norm(fStuff$cHat[1:P,index], type = "2"))^2)/(k - (P)))
+          (((norm(instFreqEigen$PSI[,index], type = "2"))^2 - (norm(fStuff$cHat[1:P,index], type = "2"))^2)/(k - (P)))
       }
     }
   }
@@ -340,9 +340,9 @@ F2Test <- function(xt, N, k, p, deltat = 1, w = NULL, dpss = FALSE, passInInstFr
       stop("need to set w for dpss")
     }
     if(is.null(passInInstFreqAndRegression)){
-      instFreqEigen <- eigenSpectrumDPSSInstFrequency(xt = xt, N = N, k = k, w = w, deltat = deltat,
+      instFreqEigen <- eigenCoefDPSSInstFrequency(xt = xt, N = N, k = k, w = w, deltat = deltat,
                                                       returnDPSS = TRUE)
-      fStuff <- regressionDPSSInstFreq(N = N, k = k, w = w, instFreqEigen = instFreqEigen$PHI,
+      fStuff <- regressionDPSSInstFreq(N = N, k = k, w = w, instFreqEigen = instFreqEigen$PSI,
                                        p = p, passInDPSS = instFreqEigen$DPSS,returnDPSS = FALSE,
                                        returnRp = FALSE, returnGCHatp = TRUE)
     }else{
@@ -352,10 +352,10 @@ F2Test <- function(xt, N, k, p, deltat = 1, w = NULL, dpss = FALSE, passInInstFr
   }
   else{ # the sine tapers are used
     if(is.null(passInInstFreqAndRegression)){
-      instFreqEigen <- eigenSpectrumSineInstFrequency(xt = xt, N = N, k = k,deltat = deltat,
+      instFreqEigen <- eigenCoefSineInstFrequency(xt = xt, N = N, k = k,deltat = deltat,
                                                       returnSineMat = TRUE)
 
-      fStuff <- regressionSineInstFreq(N = N, k = k, instFreqEigen = instFreqEigen$PHI,
+      fStuff <- regressionSineInstFreq(N = N, k = k, instFreqEigen = instFreqEigen$PSI,
                                        p = p, returnSineTapers = FALSE,
                                        passInSineMat = instFreqEigen$SineTaper,
                                        returnRp = FALSE, returnGCHatp = TRUE)
@@ -375,7 +375,7 @@ F2Test <- function(xt, N, k, p, deltat = 1, w = NULL, dpss = FALSE, passInInstFr
       indexF2 <- which(colnames(F2) == f)
       index <- which(colnames(fStuff$cHat) == f)
       F2[P,indexF2] <- ((norm(fStuff$G[,1:P] %*% as.matrix(fStuff$cHat[1:P,index]), type = "2"))^2/((P-1)+1))/
-        (((norm(instFreqEigen$PHI[,index], type = "2"))^2 - (norm(fStuff$cHat[1:P,index], type = "2"))^2)/(k - (P-1) - 1))
+        (((norm(instFreqEigen$PSI[,index], type = "2"))^2 - (norm(fStuff$cHat[1:P,index], type = "2"))^2)/(k - (P-1) - 1))
     }
   }
 
@@ -417,18 +417,18 @@ F3Test <- function(xt, N, k, p, deltat = 1, w = NULL, dpss = FALSE,
       if(is.null(w)){
         stop("need to set w for dpss")
       }
-        instFreqEigen <- eigenSpectrumDPSSInstFrequency(xt = xt, N = N, k = k, w = w, deltat = deltat,
+        instFreqEigen <- eigenCoefDPSSInstFrequency(xt = xt, N = N, k = k, w = w, deltat = deltat,
                                                         returnDPSS = TRUE)
-        fStuff <- regressionDPSSInstFreq(N = N, k = k, w = w, instFreqEigen = instFreqEigen$PHI,
+        fStuff <- regressionDPSSInstFreq(N = N, k = k, w = w, instFreqEigen = instFreqEigen$PSI,
                                          p = p, passInDPSS = instFreqEigen$DPSS,returnDPSS = FALSE,
                                          returnRp = FALSE)
     }
     else{ # the sine tapers are used
 
-        instFreqEigen <- eigenSpectrumSineInstFrequency(xt = xt, N = N, k = k,deltat = deltat,
+        instFreqEigen <- eigenCoefSineInstFrequency(xt = xt, N = N, k = k,deltat = deltat,
                                                         returnSineMat = TRUE)
 
-        fStuff <- regressionSineInstFreq(N = N, k = k, instFreqEigen = instFreqEigen$PHI,
+        fStuff <- regressionSineInstFreq(N = N, k = k, instFreqEigen = instFreqEigen$PSI,
                                          p = p, returnSineTapers = FALSE,
                                          passInSineMat = instFreqEigen$SineTaper,
                                          returnRp = FALSE)
@@ -439,11 +439,11 @@ F3Test <- function(xt, N, k, p, deltat = 1, w = NULL, dpss = FALSE,
     zeroNyquist <- c(length(instFreqEigen$Freq),which(instFreqEigen$Freq == 0))
     instFreqEigen$Freq <- instFreqEigen$Freq[-zeroNyquist]
     Freq <- instFreqEigen$Freq
-    instFreqEigen$PHI <- instFreqEigen$PHI[,-zeroNyquist]
+    instFreqEigen$PSI <- instFreqEigen$PSI[,-zeroNyquist]
     fStuff$cHat <- fStuff$cHat[,-zeroNyquist]
 
 
-    normPhiSq <- colSums(instFreqEigen$PHI^2)
+    normPSISq <- colSums(instFreqEigen$PSI^2)
     normcHatwithZeroSq <- 0
     # removing nyquist and the zero as they aren't complex (no -nyquist from FFt)
 
@@ -453,7 +453,7 @@ F3Test <- function(xt, N, k, p, deltat = 1, w = NULL, dpss = FALSE,
 
         normcHatwithZeroSq <- normcHatwithZeroSq + fStuff$cHat[P,]^2
         F3[P,] <- (fStuff$cHat[P,])^2/
-          (((normPhiSq - normcHatwithZeroSq)/(k - (P-1) - 1)))
+          (((normPSISq - normcHatwithZeroSq)/(k - (P-1) - 1)))
 
     }
   }else{#not using zeroth degree in the test. (best test statistic at this point)
@@ -463,17 +463,17 @@ F3Test <- function(xt, N, k, p, deltat = 1, w = NULL, dpss = FALSE,
           stop("need to set w for dpss")
         }
 
-        instFreqEigen <- eigenSpectrumDPSSInstFrequency(xt = xt, N = N, k = k, w = w, deltat = deltat,
+        instFreqEigen <- eigenCoefDPSSInstFrequency(xt = xt, N = N, k = k, w = w, deltat = deltat,
                                                         returnDPSS = TRUE,)
-        fStuff <- regressionDPSSInstFreq(N = N, k = k, w = w, instFreqEigen = instFreqEigen$PHI,
+        fStuff <- regressionDPSSInstFreq(N = N, k = k, w = w, instFreqEigen = instFreqEigen$PSI,
                                          p = p, passInDPSS = instFreqEigen$DPSS,returnDPSS = FALSE,
                                          returnRp = FALSE,  withoutzeroPoly = TRUE)
       }
       else{ #Sine Tapers are used
-        instFreqEigen <- eigenSpectrumSineInstFrequency(xt = xt, N = N, k = k,deltat = deltat,
+        instFreqEigen <- eigenCoefSineInstFrequency(xt = xt, N = N, k = k,deltat = deltat,
                                                         returnSineMat = TRUE)
 
-        fStuff <- regressionSineInstFreq(N = N, k = k, instFreqEigen = instFreqEigen$PHI,
+        fStuff <- regressionSineInstFreq(N = N, k = k, instFreqEigen = instFreqEigen$PSI,
                                          p = p, returnSineTapers = FALSE,
                                          passInSineMat = instFreqEigen$SineTaper,
                                          returnRp = FALSE, withoutzeroPoly = TRUE)
@@ -488,21 +488,21 @@ F3Test <- function(xt, N, k, p, deltat = 1, w = NULL, dpss = FALSE,
         }
         dp <- multitaper::dpss(n = N, k = k, nw = N*w)
         dpUnder <- multitaper::dpss(n = undersampleNumber, k = k, nw = N*w)
-        instFreqEigen <- eigenSpectrumDPSSInstFrequency(xt = xt, N = N, k = k, w = w, deltat = deltat,
+        instFreqEigen <- eigenCoefDPSSInstFrequency(xt = xt, N = N, k = k, w = w, deltat = deltat,
                                                         returnDPSS = FALSE, passInDPSS = dp,
                                                         passInDPSSUnder = dpUnder)
-        fStuff <- regressionDPSSInstFreq(N = N, k = k, w = w, instFreqEigen = instFreqEigen$PHI,
+        fStuff <- regressionDPSSInstFreq(N = N, k = k, w = w, instFreqEigen = instFreqEigen$PSI,
                                          p = p, passInDPSS = dpUnder ,returnDPSS = FALSE,
                                          returnRp = FALSE, withoutzeroPoly = TRUE)
       }
       else{ #Sine Tapers are used
         sine <- sineTaperMatrix(N = N, k = k)
         sineUnder <- sineTaperMatrix(N = undersampleNumber, k = k)
-        instFreqEigen <- eigenSpectrumSineInstFrequency(xt = xt, N = N, k = k,deltat = deltat,
+        instFreqEigen <- eigenCoefSineInstFrequency(xt = xt, N = N, k = k,deltat = deltat,
                                                         returnSineMat = FALSE, passInSineTapers = sine,
                                                         passInSineUnder = sineUnder)
 
-        fStuff <- regressionSineInstFreq(N = N, k = k, instFreqEigen = instFreqEigen$PHI,
+        fStuff <- regressionSineInstFreq(N = N, k = k, instFreqEigen = instFreqEigen$PSI,
                                          p = p, returnSineTapers = FALSE,
                                          passInSineMat = sineUnder,
                                          returnRp = FALSE, withoutzeroPoly = TRUE)
@@ -513,10 +513,10 @@ F3Test <- function(xt, N, k, p, deltat = 1, w = NULL, dpss = FALSE,
     zeroNyquist <- c(length(instFreqEigen$Freq),which(instFreqEigen$Freq == 0))
     instFreqEigen$Freq <- instFreqEigen$Freq[-zeroNyquist]
     Freq <- instFreqEigen$Freq
-    instFreqEigen$PHI <- instFreqEigen$PHI[,-zeroNyquist]
+    instFreqEigen$PSI <- instFreqEigen$PSI[,-zeroNyquist]
     fStuff$cHat <- fStuff$cHat[,-zeroNyquist]
 
-    normPhiSq <- colSums(instFreqEigen$PHI^2)
+    normPSISq <- colSums(instFreqEigen$PSI^2)
     normcHatWOutZeroSq <- 0
 
     if(p == 1){
@@ -526,7 +526,7 @@ F3Test <- function(xt, N, k, p, deltat = 1, w = NULL, dpss = FALSE,
 
         normcHatWOutZeroSq <- normcHatWOutZeroSq + fStuff$cHat^2
         F3<- (fStuff$cHat)^2/
-          ((normPhiSq - normcHatWOutZeroSq)/(k - P))
+          ((normPSISq - normcHatWOutZeroSq)/(k - P))
 
       }
     }else{
@@ -536,7 +536,7 @@ F3Test <- function(xt, N, k, p, deltat = 1, w = NULL, dpss = FALSE,
 
         normcHatWOutZeroSq <- normcHatWOutZeroSq + fStuff$cHat[P,]^2
         F3[P,] <- (fStuff$cHat[P,])^2/
-          ((normPhiSq - normcHatWOutZeroSq)/(k - P))
+          ((normPSISq - normcHatWOutZeroSq)/(k - P))
 
       }
     }
@@ -584,17 +584,17 @@ FtestCombined <- function(xt, N, k, p, deltat = 1, w = NULL, dpss = FALSE,
           stop("need to set w for dpss")
         }
 
-        instFreqEigen <- eigenSpectrumDPSSInstFrequency(xt = xt, N = N, k = k, w = w, deltat = deltat,
+        instFreqEigen <- eigenCoefDPSSInstFrequency(xt = xt, N = N, k = k, w = w, deltat = deltat,
                                                         returnDPSS = TRUE)
-        fStuff <- regressionDPSSInstFreq(N = N, k = k, w = w, instFreqEigen = instFreqEigen$PHI,
+        fStuff <- regressionDPSSInstFreq(N = N, k = k, w = w, instFreqEigen = instFreqEigen$PSI,
                                          p = p, passInDPSS = instFreqEigen$DPSS,returnDPSS = FALSE,
                                          returnRp = FALSE)
       }
       else{ #Sine Tapers are used
-        instFreqEigen <- eigenSpectrumSineInstFrequency(xt = xt, N = N, k = k,deltat = deltat,
+        instFreqEigen <- eigenCoefSineInstFrequency(xt = xt, N = N, k = k,deltat = deltat,
                                                         returnSineMat = TRUE)
 
-        fStuff <- regressionSineInstFreq(N = N, k = k, instFreqEigen = instFreqEigen$PHI,
+        fStuff <- regressionSineInstFreq(N = N, k = k, instFreqEigen = instFreqEigen$PSI,
                                          p = p, returnSineTapers = FALSE,
                                          passInSineMat = instFreqEigen$SineTaper,
                                          returnRp = FALSE, withoutzeroPoly = FALSE)
@@ -609,21 +609,21 @@ FtestCombined <- function(xt, N, k, p, deltat = 1, w = NULL, dpss = FALSE,
         }
         dp <- multitaper::dpss(n = N, k = k, nw = N*w)
         dpUnder <- multitaper::dpss(n = undersampleNumber, k = k, nw = N*w)
-        instFreqEigen <- eigenSpectrumDPSSInstFrequency(xt = xt, N = N, k = k, w = w, deltat = deltat,
+        instFreqEigen <- eigenCoefDPSSInstFrequency(xt = xt, N = N, k = k, w = w, deltat = deltat,
                                                         returnDPSS = FALSE, passInDPSS = dp,
                                                         passInDPSSUnder = dpUnder)
-        fStuff <- regressionDPSSInstFreq(N = N, k = k, w = w, instFreqEigen = instFreqEigen$PHI,
+        fStuff <- regressionDPSSInstFreq(N = N, k = k, w = w, instFreqEigen = instFreqEigen$PSI,
                                          p = p, passInDPSS = dpUnder ,returnDPSS = FALSE,
                                          returnRp = FALSE)
       }
       else{ #Sine Tapers are used
         sine <- sineTaperMatrix(N = N, k = k)
         sineUnder <- sineTaperMatrix(N = undersampleNumber, k = k)
-        instFreqEigen <- eigenSpectrumSineInstFrequency(xt = xt, N = N, k = k,deltat = deltat,
+        instFreqEigen <- eigenCoefSineInstFrequency(xt = xt, N = N, k = k,deltat = deltat,
                                                         returnSineMat = FALSE, passInSineTapers = sine,
                                                         passInSineUnder = sineUnder)
 
-        fStuff <- regressionSineInstFreq(N = N, k = k, instFreqEigen = instFreqEigen$PHI,
+        fStuff <- regressionSineInstFreq(N = N, k = k, instFreqEigen = instFreqEigen$PSI,
                                          p = p, returnSineTapers = FALSE,
                                          passInSineMat = sineUnder,
                                          returnRp = FALSE, withoutzeroPoly = FALSE)
@@ -636,18 +636,18 @@ FtestCombined <- function(xt, N, k, p, deltat = 1, w = NULL, dpss = FALSE,
           stop("need to set w for dpss")
         }
 
-        instFreqEigen <- eigenSpectrumDPSSInstFrequency(xt = xt, N = N, k = k, w = w, deltat = deltat,
+        instFreqEigen <- eigenCoefDPSSInstFrequency(xt = xt, N = N, k = k, w = w, deltat = deltat,
                                                         returnDPSS = TRUE)
-        fStuff <- regressionDPSSInstFreq(N = N, k = k, w = w, instFreqEigen = instFreqEigen$PHI,
+        fStuff <- regressionDPSSInstFreq(N = N, k = k, w = w, instFreqEigen = instFreqEigen$PSI,
                                          p = p, passInDPSS = instFreqEigen$DPSS,returnDPSS = FALSE,
                                          returnRp = TRUE)
         taperMat <- instFreqEigen$DPSS$v
       }
       else{ #Sine Tapers are used
-        instFreqEigen <- eigenSpectrumSineInstFrequency(xt = xt, N = N, k = k,deltat = deltat,
+        instFreqEigen <- eigenCoefSineInstFrequency(xt = xt, N = N, k = k,deltat = deltat,
                                                         returnSineMat = TRUE)
 
-        fStuff <- regressionSineInstFreq(N = N, k = k, instFreqEigen = instFreqEigen$PHI,
+        fStuff <- regressionSineInstFreq(N = N, k = k, instFreqEigen = instFreqEigen$PSI,
                                          p = p, returnSineTapers = FALSE,
                                          passInSineMat = instFreqEigen$SineTaper,
                                          returnRp = TRUE, withoutzeroPoly = FALSE)
@@ -663,10 +663,10 @@ FtestCombined <- function(xt, N, k, p, deltat = 1, w = NULL, dpss = FALSE,
         }
         dp <- multitaper::dpss(n = N, k = k, nw = N*w)
         dpUnder <- multitaper::dpss(n = undersampleNumber, k = k, nw = N*w)
-        instFreqEigen <- eigenSpectrumDPSSInstFrequency(xt = xt, N = N, k = k, w = w, deltat = deltat,
+        instFreqEigen <- eigenCoefDPSSInstFrequency(xt = xt, N = N, k = k, w = w, deltat = deltat,
                                                         returnDPSS = FALSE, passInDPSS = dp,
                                                         passInDPSSUnder = dpUnder)
-        fStuff <- regressionDPSSInstFreq(N = N, k = k, w = w, instFreqEigen = instFreqEigen$PHI,
+        fStuff <- regressionDPSSInstFreq(N = N, k = k, w = w, instFreqEigen = instFreqEigen$PSI,
                                          p = p, passInDPSS = dpUnder ,returnDPSS = FALSE,
                                          returnRp = TRUE)
         taperMat <- dpUnder$v
@@ -674,11 +674,11 @@ FtestCombined <- function(xt, N, k, p, deltat = 1, w = NULL, dpss = FALSE,
       else{ #Sine Tapers are used
         sine <- sineTaperMatrix(N = N, k = k)
         sineUnder <- sineTaperMatrix(N = undersampleNumber, k = k)
-        instFreqEigen <- eigenSpectrumSineInstFrequency(xt = xt, N = N, k = k,deltat = deltat,
+        instFreqEigen <- eigenCoefSineInstFrequency(xt = xt, N = N, k = k,deltat = deltat,
                                                         returnSineMat = FALSE, passInSineTapers = sine,
                                                         passInSineUnder = sineUnder)
 
-        fStuff <- regressionSineInstFreq(N = N, k = k, instFreqEigen = instFreqEigen$PHI,
+        fStuff <- regressionSineInstFreq(N = N, k = k, instFreqEigen = instFreqEigen$PSI,
                                          p = p, returnSineTapers = FALSE,
                                          passInSineMat = sineUnder,
                                          returnRp = TRUE, withoutzeroPoly = FALSE)
@@ -694,13 +694,13 @@ FtestCombined <- function(xt, N, k, p, deltat = 1, w = NULL, dpss = FALSE,
   zeroNyquist <- c(length(instFreqEigen$Freq),which(instFreqEigen$Freq == 0))
   instFreqEigen$Freq <- instFreqEigen$Freq[-zeroNyquist]
   Freq <- instFreqEigen$Freq
-  instFreqEigen$PHI <- instFreqEigen$PHI[,-zeroNyquist]
+  instFreqEigen$PSI <- instFreqEigen$PSI[,-zeroNyquist]
   fStuff$cHat <- fStuff$cHat[,-zeroNyquist]
 
   #need to calculate the H and Chat for the removed zero HERE
   HWoutZero <- fStuff$H[,-1] # removes the 0th order column
   #GWOutZero <- fStuff$G[,-1] dont think we need this for f1 and f3
-  cHatWOutZero <- t(HWoutZero) %*% instFreqEigen$PHI
+  cHatWOutZero <- t(HWoutZero) %*% instFreqEigen$PSI
   #cHatWOutZero <- as.matrix(cHatWOutZero[, -zeroNyquist])
 
   F1Reduced <- matrix(nrow = nrow(cHatWOutZero), ncol = length(instFreqEigen$Freq))
@@ -710,7 +710,7 @@ FtestCombined <- function(xt, N, k, p, deltat = 1, w = NULL, dpss = FALSE,
   colnames(F3Reduced) <- Freq
   colnames(F3) <- Freq
 
-  normPhiSq <- colSums(instFreqEigen$PHI^2)
+  normPSISq <- colSums(instFreqEigen$PSI^2)
   normcHatWOutZeroSq <- 0
   normcHatwithZeroSq <- 0
   rpmodSqrdWithoutZero <- matrix(nrow = (nrow(fStuff$cHat)-1), ncol = length(Freq))
@@ -720,15 +720,15 @@ FtestCombined <- function(xt, N, k, p, deltat = 1, w = NULL, dpss = FALSE,
     if(P != nrow(fStuff$cHat)){ # will do P = 1, ...P for the reduced and P = 0 to P for F3
       normcHatWOutZeroSq <- normcHatWOutZeroSq + cHatWOutZero[P,]^2
       F1Reduced[P,] <- (normcHatWOutZeroSq/(P))/
-        ((normPhiSq - normcHatWOutZeroSq)/(k - (P)))
+        ((normPSISq - normcHatWOutZeroSq)/(k - (P)))
       F3Reduced[P,] <- (cHatWOutZero[P,])^2/
-        ((normPhiSq - normcHatWOutZeroSq)/(k - P))
+        ((normPSISq - normcHatWOutZeroSq)/(k - P))
       F3[P,] <- (fStuff$cHat[P,])^2/
-        (((normPhiSq - normcHatwithZeroSq)/(k - (P-1) - 1)))
-      rpmodSqrdWithoutZero[P,] <- normPhiSq - normcHatwithZeroSq
+        (((normPSISq - normcHatwithZeroSq)/(k - (P-1) - 1)))
+      rpmodSqrdWithoutZero[P,] <- normPSISq - normcHatwithZeroSq
     }else{
       F3[P,] <- (fStuff$cHat[P,])^2/
-        (((normPhiSq - normcHatwithZeroSq)/(k - (P-1) - 1)))
+        (((normPSISq - normcHatwithZeroSq)/(k - (P-1) - 1)))
     }
   }
 
@@ -746,7 +746,7 @@ FtestCombined <- function(xt, N, k, p, deltat = 1, w = NULL, dpss = FALSE,
                                           regressionInstFreq = fStuff,
                                           cHatWOutZero = cHatWOutZero,
                                           rpmodSqrdWithoutZero = rpmodSqrdWithoutZero,
-                                          rp = fStuff$rp)))#(taperMat %*% (diag(k) - HWoutZero %*% t(HWoutZero)))%*% instFreqEigen$PHI )))
+                                          rp = fStuff$rp)))#(taperMat %*% (diag(k) - HWoutZero %*% t(HWoutZero)))%*% instFreqEigen$PSI )))
   }
 }
 
@@ -779,22 +779,22 @@ F4Test <- function(xt, N, k, p, deltat = 1, w = NULL, dpss = FALSE, undersampleN
       }
       dp <- multitaper::dpss(n = N, k = K, nw = N*w[loopNum])
       dpUnder <- multitaper::dpss(n = undersampleNumber, k = K, nw = N*w[loopNum])
-      instFreqEigen <- eigenSpectrumDPSSInstFrequency(xt = xt, N = N, k = K, w = w[loopNum],
+      instFreqEigen <- eigenCoefDPSSInstFrequency(xt = xt, N = N, k = K, w = w[loopNum],
                                                       deltat = deltat,
                                                       returnDPSS = FALSE, passInDPSS = dp,
                                                       passInDPSSUnder = dpUnder)
-      fStuff <- regressionDPSSInstFreq(N = N, k = K, w = w[loopNum], instFreqEigen = instFreqEigen$PHI,
+      fStuff <- regressionDPSSInstFreq(N = N, k = K, w = w[loopNum], instFreqEigen = instFreqEigen$PSI,
                                        p = p, passInDPSS = dpUnder ,returnDPSS = FALSE,
                                        returnRp = FALSE, withoutzeroPoly = TRUE)
     }
     else{ #Sine Tapers are used
       sine <- sineTaperMatrix(N = N, k = K)
       sineUnder <- sineTaperMatrix(N = undersampleNumber, k = K)
-      instFreqEigen <- eigenSpectrumSineInstFrequency(xt = xt, N = N, k = K,deltat = deltat,
+      instFreqEigen <- eigenCoefSineInstFrequency(xt = xt, N = N, k = K,deltat = deltat,
                                                       returnSineMat = FALSE, passInSineTapers = sine,
                                                       passInSineUnder = sineUnder)
 
-      fStuff <- regressionSineInstFreq(N = N, k = K, instFreqEigen = instFreqEigen$PHI,
+      fStuff <- regressionSineInstFreq(N = N, k = K, instFreqEigen = instFreqEigen$PSI,
                                        p = p, returnSineTapers = FALSE,
                                        passInSineMat = sineUnder,
                                        returnRp = FALSE, withoutzeroPoly = TRUE)
@@ -805,28 +805,28 @@ F4Test <- function(xt, N, k, p, deltat = 1, w = NULL, dpss = FALSE, undersampleN
     zeroNyquist <- c(length(instFreqEigen$Freq),which(instFreqEigen$Freq == 0))
     instFreqEigen$Freq <- instFreqEigen$Freq[-zeroNyquist]
     Freq <- instFreqEigen$Freq
-    instFreqEigen$PHI <- instFreqEigen$PHI[,-zeroNyquist]
+    instFreqEigen$PSI <- instFreqEigen$PSI[,-zeroNyquist]
     fStuff$cHat <- fStuff$cHat[,-zeroNyquist]
 
 
     if(initial){                            # K iterations X P polynomials X zeroPadd size
       normcHatWOutZeroSq <- array(0, dim = c(length(k), nrow(fStuff$cHat), ncol(fStuff$cHat)))
-      normPhiSq <- matrix(nrow = length(k), ncol = ncol(fStuff$cHat))
+      normPSISq <- matrix(nrow = length(k), ncol = ncol(fStuff$cHat))
       cHat <- array(0, dim=c(length(k), nrow(fStuff$cHat), ncol(fStuff$cHat)))
       initial <- FALSE
     }
-    normPhiSq[loopNum,] <- colSums(instFreqEigen$PHI^2)
+    normPSISq[loopNum,] <- colSums(instFreqEigen$PSI^2)
 
     #p = 1 th for loop iteration
     normcHatWOutZeroSq[loopNum,1,] <-  fStuff$cHat[1,]^2
     cHat[loopNum,1,] <- fStuff$cHat[1,]^2
     # F3[1,] <- (fStuff$cHat[1,])^2/
-    #   ((normPhiSq - normcHatWOutZeroSq[k,1,])/(k - 1))
+    #   ((normPSISq - normcHatWOutZeroSq[k,1,])/(k - 1))
     for(P in 2:nrow(fStuff$cHat)){ # this is 1:p as we are removing zero so P-1 is actually P
       cHat[loopNum,P,] <- fStuff$cHat[P,]^2
       normcHatWOutZeroSq[loopNum,P,] <- normcHatWOutZeroSq[loopNum,(P-1),] + fStuff$cHat[P,]^2
       # F3[P,] <- (fStuff$cHat[P,])^2/
-      #   ((normPhiSq - normcHatWOutZeroSq[k,P,])/(k - P))
+      #   ((normPSISq - normcHatWOutZeroSq[k,P,])/(k - P))
 
     }
   }
@@ -835,9 +835,9 @@ F4Test <- function(xt, N, k, p, deltat = 1, w = NULL, dpss = FALSE, undersampleN
 
   for(P in 1:nrow(fStuff$cHat)){
     F1[P,] <- (colSums(normcHatWOutZeroSq[,P,])/sum(rep(P, times = length(k))))/
-      (((colSums(normPhiSq - normcHatWOutZeroSq[,P,])))/(sum((k - rep(P, times=length(k))))))
+      (((colSums(normPSISq - normcHatWOutZeroSq[,P,])))/(sum((k - rep(P, times=length(k))))))
     F3[P,] <- (((colSums(cHat[,P,]^2)))/(length(k)))/
-      (((colSums(normPhiSq - normcHatWOutZeroSq[,P,])))/(sum((k - rep(P, times=length(k))))))
+      (((colSums(normPSISq - normcHatWOutZeroSq[,P,])))/(sum((k - rep(P, times=length(k))))))
   }
   #making the return
   return(list(F4testStat = F3, Freq = Freq,
@@ -883,28 +883,28 @@ F4Testpar <- function(xt, N, k, p, deltat = 1, dpss = FALSE, undersampleNumber =
   if(p != 1){
                                # K iterations X P polynomials X zeroPadd size
   normcHatWOutZeroSq <- array(0, dim = c(length(k), nrow(fullDat[[1]]$cHat), ncol(fullDat[[1]]$cHat)))
-  normPhiSq <- matrix(nrow = length(k), ncol = ncol(fullDat[[1]]$cHat))
+  normPSISq <- matrix(nrow = length(k), ncol = ncol(fullDat[[1]]$cHat))
   cHat <- array(0, dim=c(length(k), nrow(fullDat[[1]]$cHat), ncol(fullDat[[1]]$cHat)))
   }else{
     normcHatWOutZeroSq <- array(0, dim = c(length(k), length(fullDat[[1]]$cHat),1))
-    normPhiSq <- matrix(nrow = length(k), ncol = 1)
+    normPSISq <- matrix(nrow = length(k), ncol = 1)
     cHat <- array(0, dim=c(length(k), length(fullDat[[1]]$cHat), 1))
   }
 
   for(loopNum in 1:length(k)){
 
-    normPhiSq[loopNum,] <- colSums(fullDat[[loopNum]]$PHI^2)
+    normPSISq[loopNum,] <- colSums(fullDat[[loopNum]]$PSI^2)
 
     #p = 1 th for loop iteration
     normcHatWOutZeroSq[loopNum,1,] <-  fullDat[[loopNum]]$cHat[1,]^2
     cHat[loopNum,1,] <- fullDat[[loopNum]]$cHat[1,]^2
     # F3[1,] <- (fStuff$cHat[1,])^2/
-    #   ((normPhiSq - normcHatWOutZeroSq[k,1,])/(k - 1))
+    #   ((normPSISq - normcHatWOutZeroSq[k,1,])/(k - 1))
     for(P in 2:nrow(fullDat[[loopNum]]$cHat)){ # this is 1:p as we are removing zero so P-1 is actually P
       cHat[loopNum,P,] <- fullDat[[loopNum]]$cHat[P,]^2
       normcHatWOutZeroSq[loopNum,P,] <- normcHatWOutZeroSq[loopNum,(P-1),] + fullDat[[loopNum]]$cHat[P,]^2
       # F3[P,] <- (fStuff$cHat[P,])^2/
-      #   ((normPhiSq - normcHatWOutZeroSq[k,P,])/(k - P))
+      #   ((normPSISq - normcHatWOutZeroSq[k,P,])/(k - P))
 
     }
   }
@@ -914,9 +914,9 @@ F4Testpar <- function(xt, N, k, p, deltat = 1, dpss = FALSE, undersampleNumber =
 
   for(P in 1:nrow(fullDat[[1]]$cHat)){
     F1[P,] <- (colSums(normcHatWOutZeroSq[,P,])/sum(rep(P, times = length(k))))/
-      (((colSums(normPhiSq - normcHatWOutZeroSq[,P,])))/(sum((k - rep(P, times=length(k))))))
+      (((colSums(normPSISq - normcHatWOutZeroSq[,P,])))/(sum((k - rep(P, times=length(k))))))
     F3[P,] <- (((colSums(cHat[,P,]^2)))/(length(k)))/
-      (((colSums(normPhiSq - normcHatWOutZeroSq[,P,])))/(sum((k - rep(P, times=length(k))))))
+      (((colSums(normPSISq - normcHatWOutZeroSq[,P,])))/(sum((k - rep(P, times=length(k))))))
   }
   #making the return
   return(list(F4testStat = F3, Freq = Freq,

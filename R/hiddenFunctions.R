@@ -37,7 +37,7 @@ sineTaperMatrix <- function(N, k){
   return(out)
 }
 
-#' Non Centered Eigenspectrum for Sine Tapers
+#' Non Centered eigenCoef for Sine Tapers
 #'
 #' @param n Total number of observations
 #' @param k Number of tapers
@@ -46,26 +46,26 @@ sineTaperMatrix <- function(N, k){
 #' @param deltat default is 1 unless otherwise inputted
 #' @param sineRet = FALSE , allows for the tapers to be returned for computational efficiency
 #'
-#' @return Vector of the eigenspectrum for each k 0, ..., K-1
-eigenSpectrumSine <- function(n, k, Xt, f, deltat = 1, sineRet = FALSE){
+#' @return Vector of the eigenCoef for each k 0, ..., K-1
+eigenCoefSine <- function(n, k, Xt, f, deltat = 1, sineRet = FALSE){
 
-  eigenSpec <- vector(length = k)
+  EigenCoef <- vector(length = k)
   tapers <- sineTaperMatrix(N = n, k = k)
   for(i in 1:k){
     vec <- t(tapers[,i]) %*% as.matrix(Xt * exp(-1i*2*pi*f*0:(n-1)*deltat))
-    eigenSpec[i] <- sum(vec)
+    EigenCoef[i] <- sum(vec)
   }
   if(sineRet){
-    return(list(EigenSpec = eigenSpec, Sine = tapers))
+    return(list(EigenCoef = EigenCoef, Sine = tapers))
   }
   else{
-    return(eigenSpec)
+    return(EigenCoef)
   }
 }
 
 
 
-#' Non Centered Eigenspectrum Using DPSS and fft for speed and zero padding ability
+#' Non Centered eigenCoef Using DPSS and fft for speed and zero padding ability
 #'
 #' @param N Total number of observations
 #' @param k Number of tapers
@@ -75,11 +75,11 @@ eigenSpectrumSine <- function(n, k, Xt, f, deltat = 1, sineRet = FALSE){
 #' @param returnSineMat if you want to use Sine taper matrix outside function can return if TRUE
 #' @param pad if true, will automatically zero padd the fft
 #'
-#' @return Matrix of $EigenSpec for each frequency, as well as the frequencies under $Freq in the list
+#' @return Matrix of $EigenCoef for each frequency, as well as the frequencies under $Freq in the list
 #' if returnSineMat = TRUE, will also return $SineMat
-eigenSpectrumSineFFT <- function(N, k, Xt, deltat = 1, passInTaper = NULL, returnSineMat = FALSE, pad = TRUE){
+eigenCoefSineFFT <- function(N, k, Xt, deltat = 1, passInTaper = NULL, returnSineMat = FALSE, pad = TRUE){
 
-  eigenSpec <- matrix(nrow = N,ncol = k)
+  EigenCoef <- matrix(nrow = N,ncol = k)
   if(is.null(passInTaper)){
     sine <- sineTaperMatrix(N, k)
   }
@@ -91,9 +91,9 @@ eigenSpectrumSineFFT <- function(N, k, Xt, deltat = 1, passInTaper = NULL, retur
 
     for(i in 1:k){
       vec <- sine[,i] * as.matrix(Xt)
-      eigenSpec[,i] <- fft(vec)
+      EigenCoef[,i] <- fft(vec)
     }
-    ret <- data.frame(EigenSpec = eigenSpec, Freq = c(seq(from = 0, to = 1/(2*deltat),
+    ret <- data.frame(EigenCoef = EigenCoef, Freq = c(seq(from = 0, to = 1/(2*deltat),
                                                           by = 1/(N*deltat)),
                                                       seq(from = (-1/(2*deltat) + 1/(N*deltat)),
                                                           to = (-1/(N*deltat)),
@@ -103,9 +103,9 @@ eigenSpectrumSineFFT <- function(N, k, Xt, deltat = 1, passInTaper = NULL, retur
     nextPowerOfTwo <- 2^ceiling(log2(2*N)-1)
     taper <- sine * Xt
     pad <- rbind(taper, matrix(0, nrow = nFFT - N, ncol = k))
-    eigenSpec <- mvfft(pad)[1:(nextPowerOfTwo + 1), ,drop = FALSE]
+    EigenCoef <- mvfft(pad)[1:(nextPowerOfTwo + 1), ,drop = FALSE]
 
-    ret <- data.frame(EigenSpec = eigenSpec, Freq = seq(from = 0, to = 1/(2*deltat),
+    ret <- data.frame(EigenCoef = EigenCoef, Freq = seq(from = 0, to = 1/(2*deltat),
                                                         by = 1/(2*nextPowerOfTwo*deltat)))
   }
 
@@ -116,11 +116,11 @@ eigenSpectrumSineFFT <- function(N, k, Xt, deltat = 1, passInTaper = NULL, retur
 
   if(!returnSineMat){
 
-    return(list(EigenSpec = eSpecReorder, Freq = ret$Freq))
+    return(list(EigenCoef = eSpecReorder, Freq = ret$Freq))
   }
   else{
 
-    return(list(EigenSpec = eSpecReorder, Freq = ret$Freq,SineMat = sine))
+    return(list(EigenCoef = eSpecReorder, Freq = ret$Freq,SineMat = sine))
   }
 }
 
@@ -138,14 +138,14 @@ standardInverseSineSingleFreq <- function(xt, N, k, f, deltat = 1, FFT = FALSE){
 
   v <- sineTaperMatrix(N, k)
   if(!FFT){
-    # Note this could be maybe sped up with eigenSpectrumSine if needed in future
+    # Note this could be maybe sped up with eigenCoefSine if needed in future
     Xf <- xt * exp(-1i*2*pi*f*0:(N-1)*deltat)
     stdInverse <- v %*% t(v) %*% as.matrix(Xf)
   }
   else{
 
-    Y <- eigenSpectrumSineFFT(N, k, xt, deltat = deltat)
-    stdInverse <- v %*% as.matrix(Y$EigenSpec[which(Y$Freq == f),])
+    Y <- eigenCoefSineFFT(N, k, xt, deltat = deltat)
+    stdInverse <- v %*% as.matrix(Y$EigenCoef[which(Y$Freq == f),])
   }
   return(stdInverse)
 }
@@ -174,15 +174,15 @@ standardInverseSine <- function(xt, N, k, deltat = 1, passInSineMat = NULL,
   }
 
   if(is.null(passInSineUnder)){
-    Y <- eigenSpectrumSineFFT(N, k, xt, deltat = deltat, passInTaper = v, pad = FALSE)
+    Y <- eigenCoefSineFFT(N, k, xt, deltat = deltat, passInTaper = v, pad = FALSE)
   }else{
-    Y <- eigenSpectrumSineFFT(N, k, xt, deltat = deltat, passInTaper = v, pad = TRUE)
+    Y <- eigenCoefSineFFT(N, k, xt, deltat = deltat, passInTaper = v, pad = TRUE)
   }
 
   if(is.null(passInSineUnder)){
-    stdInverse <- tcrossprod(v, Y$EigenSpec)
+    stdInverse <- tcrossprod(v, Y$EigenCoef)
   }else{#reduced matrix of tapers used here
-    stdInverse <- tcrossprod(passInSineUnder, Y$EigenSpec)
+    stdInverse <- tcrossprod(passInSineUnder, Y$EigenCoef)
   }
 
 
@@ -215,47 +215,47 @@ standardInverseSineDer <- function(xt, N, k, deltat = 1, passInSineMat = NULL,
   if(is.null(passInSineUnder)){
     FirstDir <- FirstDerSineTaper(N, k)
     if(!returnSineMat){
-      if(is.null(passInSineMat)){ # no tapers will be passed to eigenspecfft
-        Y <- eigenSpectrumSineFFT(N, k, xt, deltat = deltat, pad = FALSE)
+      if(is.null(passInSineMat)){ # no tapers will be passed to EigenCoeffft
+        Y <- eigenCoefSineFFT(N, k, xt, deltat = deltat, pad = FALSE)
       }
       else{ # passing in sine tapers from outside function
-        Y <- eigenSpectrumSineFFT(N, k, xt, deltat = deltat, passInTaper = passInSineMat, pad = FALSE)
+        Y <- eigenCoefSineFFT(N, k, xt, deltat = deltat, passInTaper = passInSineMat, pad = FALSE)
       }
     }
     else{
-      if(is.null(passInSineMat)){ # no tapers will be passed to eigenspecfft
-        Y <- eigenSpectrumSineFFT(N, k, xt, deltat = deltat, returnSineMat = TRUE)
+      if(is.null(passInSineMat)){ # no tapers will be passed to EigenCoeffft
+        Y <- eigenCoefSineFFT(N, k, xt, deltat = deltat, returnSineMat = TRUE)
       }
       else{ # passing in sine tapers from outside function
-        Y <- eigenSpectrumSineFFT(N, k, xt, deltat = deltat, passInTaper = passInSineMat,
+        Y <- eigenCoefSineFFT(N, k, xt, deltat = deltat, passInTaper = passInSineMat,
                                   returnSineMat = TRUE)
       }
     }
-    stdInverse <- tcrossprod(FirstDir, Y$EigenSpec)
+    stdInverse <- tcrossprod(FirstDir, Y$EigenCoef)
   }
   else{ # reduction
     FirstDir <- FirstDerSineTaper(N = nrow(passInSineUnder), k)
     if(!returnSineMat){
-      if(is.null(passInSineMat)){ # no tapers will be passed to eigenspecfft
-        Y <- eigenSpectrumSineFFT(N = nrow(passInSineMat), k, xt, deltat = deltat, pad = TRUE)
+      if(is.null(passInSineMat)){ # no tapers will be passed to EigenCoeffft
+        Y <- eigenCoefSineFFT(N = nrow(passInSineMat), k, xt, deltat = deltat, pad = TRUE)
       }
       else{ # passing in sine tapers from outside function
-        Y <- eigenSpectrumSineFFT(N = nrow(passInSineMat), k, xt, deltat = deltat,
+        Y <- eigenCoefSineFFT(N = nrow(passInSineMat), k, xt, deltat = deltat,
                                   passInTaper = passInSineMat, pad = TRUE)
       }
     }
     else{
-      if(is.null(passInSineMat)){ # no tapers will be passed to eigenspecfft
-        Y <- eigenSpectrumSineFFT(N = nrow(passInSineMat), k, xt, deltat = deltat,
+      if(is.null(passInSineMat)){ # no tapers will be passed to EigenCoeffft
+        Y <- eigenCoefSineFFT(N = nrow(passInSineMat), k, xt, deltat = deltat,
                                   returnSineMat = TRUE, pad = TRUE)
       }
       else{ # passing in sine tapers from outside function
-        Y <- eigenSpectrumSineFFT(N = nrow(passInSineMat), k, xt, deltat = deltat,
+        Y <- eigenCoefSineFFT(N = nrow(passInSineMat), k, xt, deltat = deltat,
                                   passInTaper = passInSineMat,
                                   returnSineMat = TRUE, pad = TRUE)
       }
     }
-    stdInverse <- tcrossprod(FirstDir, Y$EigenSpec)
+    stdInverse <- tcrossprod(FirstDir, Y$EigenCoef)
   }
 
 
@@ -286,7 +286,7 @@ standardInverseSineDer <- function(xt, N, k, deltat = 1, passInSineMat = NULL,
 #' list of cHat and polynomialPart of composit inverse which is G_p*cHat
 compInverseSine <- function(N, k, xt, f, p, deltat = 1, polynomialPart = FALSE, returnHG = FALSE){
 
-  Y <- eigenSpectrumSine(N, k, Xt = xt, f = f, sineRet = TRUE, deltat = deltat)
+  Y <- eigenCoefSine(N, k, Xt = xt, f = f, sineRet = TRUE, deltat = deltat)
   v <- Y$Sine
 
   SineGram <- HatMatGMatSine(N = N, k = k, p = p)
@@ -295,11 +295,11 @@ compInverseSine <- function(N, k, xt, f, p, deltat = 1, polynomialPart = FALSE, 
 
   if(!returnHG){
     if(!polynomialPart){
-      zCompSine <-  ((v %*% (diag(k) - H %*% t(H))) + G %*% t(H)) %*% Y$EigenSpec
+      zCompSine <-  ((v %*% (diag(k) - H %*% t(H))) + G %*% t(H)) %*% Y$EigenCoef
       return(zCompSine)
     }
     else{
-      cHat <- t(H) %*% Y$EigenSpec
+      cHat <- t(H) %*% Y$EigenCoef
       polyPart <- G %*% cHat
 
       return(list(chat = cHat, polyPart = polyPart))
@@ -307,11 +307,11 @@ compInverseSine <- function(N, k, xt, f, p, deltat = 1, polynomialPart = FALSE, 
   }
   else{
     if(!polynomialPart){
-      zCompSine <-  ((v %*% (diag(k) - H %*% t(H))) + G %*% t(H)) %*% Y$EigenSpec
+      zCompSine <-  ((v %*% (diag(k) - H %*% t(H))) + G %*% t(H)) %*% Y$EigenCoef
       return(list(z = zCompSine, H = H, G = G))
     }
     else{
-      cHat <- t(H) %*% Y$EigenSpec
+      cHat <- t(H) %*% Y$EigenCoef
       polyPart <- G %*% cHat
 
       return(list(cHat = cHat, polyPart = polyPart, H = H, G = G))
@@ -441,7 +441,7 @@ instFreqSine <- function(xt, N, k, deltat, passInSineMat = NULL, returnSineMat =
   }
 }
 
-#' Eigenspectra for Instantainous Frequency Sine Tapers
+#' Eigen coefficients for Instantainous Frequency Sine Tapers
 #'
 #' @param xt time series
 #' @param N Total number of observations
@@ -451,9 +451,9 @@ instFreqSine <- function(xt, N, k, deltat, passInSineMat = NULL, returnSineMat =
 #' @param passInSineTapers  if sine matrix was calculated somewhere else
 #' @param passInSineUnder If sine undersampling matrix was calculated already
 #'
-#' @return returns $PHI kxn matrix, $Freq which are the columns of PHI.  If
+#' @return returns $PSI kxn matrix, $Freq which are the columns of PSI.  If
 #' returnSineMat = TRUE, will also return tapers for future use
-eigenSpectrumSineInstFrequency <- function(xt, N, k, deltat,
+eigenCoefSineInstFrequency <- function(xt, N, k, deltat,
                                            returnSineMat = FALSE,
                                            passInSineTapers = NULL,
                                            passInSineUnder = NULL){
@@ -472,7 +472,7 @@ eigenSpectrumSineInstFrequency <- function(xt, N, k, deltat,
 
 
 
-    PHI <- crossprod(v, instFreq$InstFreq)#t(v) %*% instFreq$InstFreq
+    PSI <- crossprod(v, instFreq$InstFreq)#t(v) %*% instFreq$InstFreq
   }
   else{ # we want under sampling so we need to chnge a few things
     if(is.null(passInSineTapers)){ # need instFreq to create the sineTapers
@@ -493,17 +493,17 @@ eigenSpectrumSineInstFrequency <- function(xt, N, k, deltat,
 
 
 
-    PHI <- crossprod(v, instFreq$InstFreq)#t(v) %*% instFreq$InstFreq
+    PSI <- crossprod(v, instFreq$InstFreq)#t(v) %*% instFreq$InstFreq
 
   }
 
 
 
   if(!returnSineMat){
-    return(list(PHI = PHI, Freq = instFreq$Freq))
+    return(list(PSI = PSI, Freq = instFreq$Freq))
   }
   else{ # will return the DPSS
-    return(list(PHI = PHI, Freq = instFreq$Freq,SineTaper = sineTaper))
+    return(list(PSI = PSI, Freq = instFreq$Freq,SineTaper = sineTaper))
   }
 
 }
@@ -670,7 +670,7 @@ UDpss <- function(N, k, p, w, round = 14){
 }
 
 
-#' Non Centered Eigenspectrum Using DPSS
+#' Non Centered eigenCoef Using DPSS
 #'
 #' @param n Total number of observations
 #' @param k Number of tapers
@@ -681,26 +681,26 @@ UDpss <- function(N, k, p, w, round = 14){
 #' @param dpssRet  = FALSE, will not return dpss use true to help not
 #' re-computing dpss multiple times in program
 #'
-#' @return Vector of the eigenspectrum for each k 0, ..., K-1
-eigenSpectrumdpss <- function(n, k, w, Xt, f, deltat = 1, dpssRet = FALSE){
+#' @return Vector of the eigenCoef for each k 0, ..., K-1
+eigenCoefdpss <- function(n, k, w, Xt, f, deltat = 1, dpssRet = FALSE){
 
-  eigenSpec <- vector(length = k)
+  EigenCoef <- vector(length = k)
   dpFull <- multitaper::dpss(n, k, n*w)
   dp <- dpFull$v
   for(i in 1:k){
     vec <- t(dp[,i]) %*% as.matrix(Xt * exp(-1i*2*pi*f*0:(n-1)*deltat))
-    eigenSpec[i] <- sum(vec)
+    EigenCoef[i] <- sum(vec)
   }
   if(dpssRet){
-    return(list(EigenSpec = eigenSpec,
+    return(list(EigenCoef = EigenCoef,
                 Dpss = dpFull))
   }
   else{
-    return(eigenSpec)
+    return(EigenCoef)
   }
 }
 
-#' Non Centered Eigenspectrum Using DPSS and fft for speed
+#' Non Centered eigenCoef Using DPSS and fft for speed
 #'
 #' @param n Total number of observations
 #' @param k Number of tapers
@@ -710,9 +710,9 @@ eigenSpectrumdpss <- function(n, k, w, Xt, f, deltat = 1, dpssRet = FALSE){
 #' @param deltat = 1 by default
 #' @param pad if true will zero padd automatically the Xt that is inputted into the function
 #'
-#' @return Matrix of EigenSpec for each frequency, as well as the frequencies under Freq in the list
-eigenSpectrumdpssFFT <- function(n, k, w, Xt, deltat = 1, passInDPSSMat = NULL, pad = FALSE){
-  eigenSpec <- matrix(nrow = n,ncol = k)
+#' @return Matrix of EigenCoef for each frequency, as well as the frequencies under Freq in the list
+eigenCoefdpssFFT <- function(n, k, w, Xt, deltat = 1, passInDPSSMat = NULL, pad = FALSE){
+  EigenCoef <- matrix(nrow = n,ncol = k)
   if(is.null(passInDPSSMat)){
     dp <- multitaper::dpss(n, k, n*w)$v
   }
@@ -723,9 +723,9 @@ eigenSpectrumdpssFFT <- function(n, k, w, Xt, deltat = 1, passInDPSSMat = NULL, 
 
     for(i in 1:k){
       vec <- dp[,i] * as.matrix(Xt)
-      eigenSpec[,i] <- fft(vec)
+      EigenCoef[,i] <- fft(vec)
     }
-    ret <- data.frame(EigenSpec = eigenSpec, Freq = c(seq(from = 0, to = 1/(2*deltat),
+    ret <- data.frame(EigenCoef = EigenCoef, Freq = c(seq(from = 0, to = 1/(2*deltat),
                                                           by = 1/(n*deltat)),
                                                       seq(from = (-1/(2*deltat) + 1/(n*deltat)),
                                                           to = (-1/(n*deltat)),
@@ -735,16 +735,16 @@ eigenSpectrumdpssFFT <- function(n, k, w, Xt, deltat = 1, passInDPSSMat = NULL, 
     nextPowerOfTwo <- 2^ceiling(log2(2*n)-1)
     taper <- dp * Xt
     pad <- rbind(taper, matrix(0, nrow = nFFT - n, ncol = k))
-    eigenSpec <- mvfft(pad)[1:(nextPowerOfTwo + 1), ,drop = FALSE]
+    EigenCoef <- mvfft(pad)[1:(nextPowerOfTwo + 1), ,drop = FALSE]
 
-    ret <- data.frame(EigenSpec = eigenSpec, Freq = seq(from = 0, to = 1/(2*deltat),
+    ret <- data.frame(EigenCoef = EigenCoef, Freq = seq(from = 0, to = 1/(2*deltat),
                                                         by = 1/(2*nextPowerOfTwo*deltat)))
   }
   ret <- ret[order(ret$Freq, decreasing = FALSE),]
   eSpecReorder <- as.matrix(ret[,1:(ncol(ret)-1)])
   rownames(eSpecReorder) <- ret$Freq
   colnames(eSpecReorder) <- 1:ncol(eSpecReorder)
-  return(list(EigenSpec = eSpecReorder, Freq = ret$Freq))
+  return(list(EigenCoef = eSpecReorder, Freq = ret$Freq))
 }
 
 
@@ -770,8 +770,8 @@ standardInverseDPSSSingleFreq <- function(xt, N, w, k, f, deltat = 1, FFT = FALS
     stdInverse <- v %*% t(v) %*% as.matrix(Xf)
   }
   else{
-    Y <- eigenSpectrumdpssFFT(N, k, w, xt, deltat = deltat, passInDPSSMat = v)
-    stdInverse <- v %*% as.matrix(Y$EigenSpec[which(Y$Freq == f),])
+    Y <- eigenCoefdpssFFT(N, k, w, xt, deltat = deltat, passInDPSSMat = v)
+    stdInverse <- v %*% as.matrix(Y$EigenCoef[which(Y$Freq == f),])
   }
 
   if(!retDPSS){
@@ -808,20 +808,20 @@ standardInverseDPSS <- function(xt, N, k, w, deltat = 1, retDPSS = FALSE,
   }
 
   if(is.null(passInDPSSReduced)){ # we don't zeropadd
-    Y <- eigenSpectrumdpssFFT(N, k, w, xt, deltat = deltat, passInDPSSMat = v, pad = FALSE)
+    Y <- eigenCoefdpssFFT(N, k, w, xt, deltat = deltat, passInDPSSMat = v, pad = FALSE)
   }else{
-    Y <- eigenSpectrumdpssFFT(N, k, w, xt, deltat = deltat, passInDPSSMat = v, pad = TRUE)
+    Y <- eigenCoefdpssFFT(N, k, w, xt, deltat = deltat, passInDPSSMat = v, pad = TRUE)
   }
   #stdInverse <- matrix(nrow = N, ncol = length(Y$Freq))
   #index <- 0
   # for(i in 1:length(Y$Freq)){
   #   #index <- index + 1
-  #   stdInverse[,i] <- v %*% as.matrix(Y$EigenSpec[i,])
+  #   stdInverse[,i] <- v %*% as.matrix(Y$EigenCoef[i,])
   # }
   if(is.null(passInDPSSReduced)){
-    stdInverse <- tcrossprod(v,Y$EigenSpec)
+    stdInverse <- tcrossprod(v,Y$EigenCoef)
   }else{
-    stdInverse <- tcrossprod(passInDPSSReduced$v,Y$EigenSpec)
+    stdInverse <- tcrossprod(passInDPSSReduced$v,Y$EigenCoef)
   }
   colnames(stdInverse) <- Y$Freq
   if(!retDPSS){
@@ -871,12 +871,12 @@ standardInverseDPSSFirstDir <- function(xt, N, w, k, deltat = 1, passInDPSS = NU
     # }
 
 
-    Y <- eigenSpectrumdpssFFT(N, k, w, xt, deltat = deltat, passInDPSSMat = dp)
+    Y <- eigenCoefdpssFFT(N, k, w, xt, deltat = deltat, passInDPSSMat = dp)
 
     stdInverse <- matrix(nrow = N, ncol = length(Y$Freq))
     #index <- 0
 
-    stdInverse <- tcrossprod(FirstDir$Vdot,Y$EigenSpec)
+    stdInverse <- tcrossprod(FirstDir$Vdot,Y$EigenCoef)
   }else{ #undersamp so
     if(is.null(passInDPSS)){
       stop("you must pass in DPSS and reduced DPSS to use this function")
@@ -893,17 +893,17 @@ standardInverseDPSSFirstDir <- function(xt, N, w, k, deltat = 1, passInDPSS = NU
     }
 
 
-    Y <- eigenSpectrumdpssFFT(nrow(dp), k, w, xt, deltat = deltat, passInDPSSMat = dp, pad = TRUE)
+    Y <- eigenCoefdpssFFT(nrow(dp), k, w, xt, deltat = deltat, passInDPSSMat = dp, pad = TRUE)
 
     stdInverse <- matrix(nrow = nrow(dp), ncol = length(Y$Freq))
     #index <- 0
 
-    stdInverse <- tcrossprod(FirstDir$Vdot,Y$EigenSpec)
+    stdInverse <- tcrossprod(FirstDir$Vdot,Y$EigenCoef)
   }
 
   # for(i in 1:length(Y$Freq)){
   #   #index <- index + 1
-  #   stdInverse[,i] <- FirstDir$Vdot %*% as.matrix(Y$EigenSpec[i,])
+  #   stdInverse[,i] <- FirstDir$Vdot %*% as.matrix(Y$EigenCoef[i,])
   # }
   colnames(stdInverse) <- Y$Freq
   if(!returnDPSS){
@@ -932,7 +932,7 @@ standardInverseDPSSFirstDir <- function(xt, N, w, k, deltat = 1, passInDPSS = NU
 #' list of cHat and polynomialPart of composit inverse which is G_p*cHat
 compInverseDpss <- function(N, k, w, xt, f, p, deltat = 1, polynomialOnly = FALSE, returnHG = FALSE){
 
-  Y <- eigenSpectrumdpss(N, k, w, xt, f = f, dpssRet = TRUE, deltat = deltat)
+  Y <- eigenCoefdpss(N, k, w, xt, f = f, dpssRet = TRUE, deltat = deltat)
   v <- Y$Dpss$v
 
   dpssGram <- HatMatGMatDpss(N = N, k = k, p = p, w = w)
@@ -941,11 +941,11 @@ compInverseDpss <- function(N, k, w, xt, f, p, deltat = 1, polynomialOnly = FALS
 
   if(!returnHG){
     if(!polynomialOnly){ # just z
-      zCompDp <-  ((v %*% (diag(k) - H %*% t(H))) + G %*% t(H)) %*% Y$EigenSpec
+      zCompDp <-  ((v %*% (diag(k) - H %*% t(H))) + G %*% t(H)) %*% Y$EigenCoef
       return(zCompDp)
     }
     else{ # poly part only
-      cHat <- t(H) %*% Y$EigenSpec
+      cHat <- t(H) %*% Y$EigenCoef
       polyPart <- G %*% cHat
 
       return(list(cHat = cHat, polyPart = polyPart))
@@ -953,11 +953,11 @@ compInverseDpss <- function(N, k, w, xt, f, p, deltat = 1, polynomialOnly = FALS
   }
   else{ # returning G and H as well
     if(!polynomialOnly){
-      zCompDp <-  ((v %*% (diag(k) - H %*% t(H))) + G %*% t(H)) %*% Y$EigenSpec
+      zCompDp <-  ((v %*% (diag(k) - H %*% t(H))) + G %*% t(H)) %*% Y$EigenCoef
       return(list(z = zCompDp, H = H, G = G))
     }
     else{ # poly part and G and H
-      cHat <- t(H) %*% Y$EigenSpec
+      cHat <- t(H) %*% Y$EigenCoef
       polyPart <- G %*% cHat
 
       return(list(cHat = cHat, polyPart = polyPart, H = H, G = G))
@@ -1156,7 +1156,7 @@ instFreqDPSS <- function(xt, N, k, w, deltat, passInDPSS = NULL, returnDPSS = FA
   }
 }
 
-#' Eigenspectra for DPSS Instantanious Frequency
+#' Eigen Coefficients for DPSS Instantanious Frequency
 #'
 #' @param xt time series
 #' @param N Total number of observations
@@ -1169,9 +1169,9 @@ instFreqDPSS <- function(xt, N, k, w, deltat, passInDPSS = NULL, returnDPSS = FA
 #' object of dpss both $v and $eigen
 #' @param passInDPSSUnder if dpss undersampling was calculated already
 #'
-#' @return returns $PHI kxn matrix, $Freq which are the columns of PHI.  If
+#' @return returns $PSI kxn matrix, $Freq which are the columns of PSI.  If
 #' returnDPSS = TRUE, will also return tapers $v and $eigen for future use
-eigenSpectrumDPSSInstFrequency <- function(xt, N, k, w, deltat, nu = 0, returnDPSS = FALSE,
+eigenCoefDPSSInstFrequency <- function(xt, N, k, w, deltat, nu = 0, returnDPSS = FALSE,
                                            passInDPSS = NULL, passInDPSSUnder = NULL){
   if(is.null(passInDPSSUnder)){#runs with no under sampling
     if(is.null(passInDPSS)){ # need instFreq to create the dpss
@@ -1188,7 +1188,7 @@ eigenSpectrumDPSSInstFrequency <- function(xt, N, k, w, deltat, nu = 0, returnDP
     v <- dp$v
 
     #if(nu == 0){
-    PHI <- crossprod(v, instFreq$InstFreq)#t(v) %*% instFreq$InstFreq
+    PSI <- crossprod(v, instFreq$InstFreq)#t(v) %*% instFreq$InstFreq
     #}
   }else{ #we want under sampling so we need to change a few things
     if(is.null(passInDPSS)){ # need instFreq to create the dpss
@@ -1206,16 +1206,16 @@ eigenSpectrumDPSSInstFrequency <- function(xt, N, k, w, deltat, nu = 0, returnDP
     v <- passInDPSSUnder$v
 
     #if(nu == 0){
-    PHI <- crossprod(v, instFreq$InstFreq)#t(v) %*% instFreq$InstFreq
+    PSI <- crossprod(v, instFreq$InstFreq)#t(v) %*% instFreq$InstFreq
     #}
   }
 
 
   if(!returnDPSS){
-    return(list(PHI = PHI, Freq = instFreq$Freq))
+    return(list(PSI = PSI, Freq = instFreq$Freq))
   }
   else{ # will return the DPSS
-    return(list(PHI = PHI, Freq = instFreq$Freq,DPSS = dp))
+    return(list(PSI = PSI, Freq = instFreq$Freq,DPSS = dp))
   }
 
 }
@@ -1376,7 +1376,7 @@ GramSchmidtMod <- function(uMat, rMat){
 #' @param undersampleNumber = 100 by default  this is the number used in undersampling the tapers
 #' @param N length of Xt
 #'
-#' @return $cHat chat used in caluclation of f , $PHI capital PHI , $Freq vector of frequencies , $k number of tapers used
+#' @return $cHat chat used in caluclation of f , $PSI capital PSI , $Freq vector of frequencies , $k number of tapers used
 singleIterationForParallel4 <- function(xt, N, k, p, deltat = 1, w = NULL, dpss = FALSE, undersampleNumber = 100){
 
 
@@ -1389,22 +1389,22 @@ singleIterationForParallel4 <- function(xt, N, k, p, deltat = 1, w = NULL, dpss 
     }
     dp <- multitaper::dpss(n = N, k = k, nw = N*w)
     dpUnder <- multitaper::dpss(n = undersampleNumber, k = k, nw = N*w)
-    instFreqEigen <- eigenSpectrumDPSSInstFrequency(xt = xt, N = N, k = k, w = w,
+    instFreqEigen <- eigenCoefDPSSInstFrequency(xt = xt, N = N, k = k, w = w,
                                                     deltat = deltat,
                                                     returnDPSS = FALSE, passInDPSS = dp,
                                                     passInDPSSUnder = dpUnder)
-    fStuff <- regressionDPSSInstFreq(N = N, k = k, w = w, instFreqEigen = instFreqEigen$PHI,
+    fStuff <- regressionDPSSInstFreq(N = N, k = k, w = w, instFreqEigen = instFreqEigen$PSI,
                                      p = p, passInDPSS = dpUnder ,returnDPSS = FALSE,
                                      returnRp = FALSE, withoutzeroPoly = TRUE)
   }
   else{ #Sine Tapers are used
     sine <- sineTaperMatrix(N = N, k = k)
     sineUnder <- sineTaperMatrix(N = undersampleNumber, k = k)
-    instFreqEigen <- eigenSpectrumSineInstFrequency(xt = xt, N = N, k = k,deltat = deltat,
+    instFreqEigen <- eigenCoefSineInstFrequency(xt = xt, N = N, k = k,deltat = deltat,
                                                     returnSineMat = FALSE, passInSineTapers = sine,
                                                     passInSineUnder = sineUnder)
 
-    fStuff <- regressionSineInstFreq(N = N, k = k, instFreqEigen = instFreqEigen$PHI,
+    fStuff <- regressionSineInstFreq(N = N, k = k, instFreqEigen = instFreqEigen$PSI,
                                      p = p, returnSineTapers = FALSE,
                                      passInSineMat = sineUnder,
                                      returnRp = FALSE, withoutzeroPoly = TRUE)
@@ -1415,11 +1415,11 @@ singleIterationForParallel4 <- function(xt, N, k, p, deltat = 1, w = NULL, dpss 
   zeroNyquist <- c(length(instFreqEigen$Freq),which(instFreqEigen$Freq == 0))
   instFreqEigen$Freq <- instFreqEigen$Freq[-zeroNyquist]
   Freq <- instFreqEigen$Freq
-  instFreqEigen$PHI <- instFreqEigen$PHI[,-zeroNyquist]
+  instFreqEigen$PSI <- instFreqEigen$PSI[,-zeroNyquist]
   fStuff$cHat <- fStuff$cHat[,-zeroNyquist]
 
 
-  return(list(cHat = fStuff$cHat, PHI = instFreqEigen$PHI, Freq = Freq, k = k))
+  return(list(cHat = fStuff$cHat, PSI = instFreqEigen$PSI, Freq = Freq, k = k))
 }
 
 
@@ -1458,22 +1458,22 @@ singleIterationForParallel <- function(xt, k, p, deltat = 1, w = NULL, dpss = FA
     }
     dp <- multitaper::dpss(n = N, k = k, nw = N*w)
     dpUnder <- multitaper::dpss(n = undersampleNumber, k = k, nw = N*w)
-    instFreqEigen <- eigenSpectrumDPSSInstFrequency(xt = xt, N = N, k = k, w = w,
+    instFreqEigen <- eigenCoefDPSSInstFrequency(xt = xt, N = N, k = k, w = w,
                                                     deltat = deltat,
                                                     returnDPSS = FALSE, passInDPSS = dp,
                                                     passInDPSSUnder = dpUnder)
-    fStuff <- regressionDPSSInstFreq(N = N, k = k, w = w, instFreqEigen = instFreqEigen$PHI,
+    fStuff <- regressionDPSSInstFreq(N = N, k = k, w = w, instFreqEigen = instFreqEigen$PSI,
                                      p = p, passInDPSS = dpUnder ,returnDPSS = FALSE,
                                      returnRp = FALSE, withoutzeroPoly = TRUE)
   }
   else{ #Sine Tapers are used
     sine <- sineTaperMatrix(N = N, k = k)
     sineUnder <- sineTaperMatrix(N = undersampleNumber, k = k)
-    instFreqEigen <- eigenSpectrumSineInstFrequency(xt = xt, N = N, k = k,deltat = deltat,
+    instFreqEigen <- eigenCoefSineInstFrequency(xt = xt, N = N, k = k,deltat = deltat,
                                                     returnSineMat = FALSE, passInSineTapers = sine,
                                                     passInSineUnder = sineUnder)
 
-    fStuff <- regressionSineInstFreq(N = N, k = k, instFreqEigen = instFreqEigen$PHI,
+    fStuff <- regressionSineInstFreq(N = N, k = k, instFreqEigen = instFreqEigen$PSI,
                                      p = p, returnSineTapers = FALSE,
                                      passInSineMat = sineUnder,
                                      returnRp = FALSE, withoutzeroPoly = TRUE)
@@ -1484,10 +1484,10 @@ singleIterationForParallel <- function(xt, k, p, deltat = 1, w = NULL, dpss = FA
   zeroNyquist <- c(length(instFreqEigen$Freq),which(instFreqEigen$Freq == 0))
   instFreqEigen$Freq <- instFreqEigen$Freq[-zeroNyquist]
   Freq <- instFreqEigen$Freq
-  instFreqEigen$PHI <- instFreqEigen$PHI[,-zeroNyquist]
+  instFreqEigen$PSI <- instFreqEigen$PSI[,-zeroNyquist]
   fStuff$cHat <- fStuff$cHat[,-zeroNyquist]
 
-  normPhiSq <- colSums(instFreqEigen$PHI^2)
+  normPhiSq <- colSums(instFreqEigen$PSI^2)
   normcHatWOutZeroSq <- 0
 
 
