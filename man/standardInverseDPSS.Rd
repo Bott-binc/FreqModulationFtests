@@ -12,7 +12,8 @@ standardInverseDPSS(
   deltat = 1,
   retDPSS = FALSE,
   passInDPSS = NULL,
-  passInDPSSReduced = NULL
+  passInDPSSReduced = NULL,
+  penalty = 1
 )
 }
 \arguments{
@@ -32,6 +33,9 @@ standardInverseDPSS(
 object of dpss both $v and $eigen}
 
 \item{passInDPSSReduced}{if dpss undersampling was calculated already}
+
+\item{penalty}{1 is no penalty , 0.2  would give seq(from =  1, to =  1/(0.2*k, length.out = k)
+penalty to each respective taper}
 }
 \value{
 returns standard inverse along with frequencies that are the columns

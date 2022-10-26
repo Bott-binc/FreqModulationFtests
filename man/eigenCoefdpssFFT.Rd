@@ -4,7 +4,16 @@
 \alias{eigenCoefdpssFFT}
 \title{Non Centered eigenCoef Using DPSS and fft for speed}
 \usage{
-eigenCoefdpssFFT(n, k, w, Xt, deltat = 1, passInDPSSMat = NULL, pad = FALSE)
+eigenCoefdpssFFT(
+  n,
+  k,
+  w,
+  Xt,
+  deltat = 1,
+  passInDPSSMat = NULL,
+  pad = FALSE,
+  penalty = 1
+)
 }
 \arguments{
 \item{n}{Total number of observations}
@@ -20,6 +29,9 @@ eigenCoefdpssFFT(n, k, w, Xt, deltat = 1, passInDPSSMat = NULL, pad = FALSE)
 \item{passInDPSSMat}{For limiting the number of calculations of DPSS this is dpss$v}
 
 \item{pad}{if true will zero padd automatically the Xt that is inputted into the function}
+
+\item{penalty}{1 is no penalty , 0.2  would give seq(from =  1, to =  1/(0.2*k, length.out = k)
+penalty to each respective taper}
 }
 \value{
 Matrix of EigenCoef for each frequency, as well as the frequencies under Freq in the list

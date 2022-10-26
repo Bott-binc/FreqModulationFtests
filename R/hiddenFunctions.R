@@ -104,6 +104,7 @@ eigenCoefSineFFT <- function(N, k, Xt, deltat = 1, passInTaper = NULL, returnSin
                                                           to = (-1/(N*deltat)),
                                                           by = 1/(N*deltat))))
   }else{
+
     nFFT <- 2^ceiling(log2(2*N))
     nextPowerOfTwo <- 2^ceiling(log2(2*N)-1)
     taper <- sine * Xt

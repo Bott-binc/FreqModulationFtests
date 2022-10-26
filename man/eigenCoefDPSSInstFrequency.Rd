@@ -13,7 +13,8 @@ eigenCoefDPSSInstFrequency(
   nu = 0,
   returnDPSS = FALSE,
   passInDPSS = NULL,
-  passInDPSSUnder = NULL
+  passInDPSSUnder = NULL,
+  penalty = 1
 )
 }
 \arguments{
@@ -35,6 +36,9 @@ eigenCoefDPSSInstFrequency(
 object of dpss both $v and $eigen}
 
 \item{passInDPSSUnder}{if dpss undersampling was calculated already}
+
+\item{penalty}{1 is no penalty , 0.2  would give seq(from =  1, to =  1/(0.2*k, length.out = k)
+penalty to each respective taper}
 }
 \value{
 returns $PSI kxn matrix, $Freq which are the columns of PSI.  If

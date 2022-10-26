@@ -12,7 +12,8 @@ standardInverseDPSSFirstDir(
   deltat = 1,
   passInDPSS = NULL,
   returnDPSS = FALSE,
-  passInDPSSReduced = NULL
+  passInDPSSReduced = NULL,
+  penalty = 1
 )
 }
 \arguments{
@@ -32,6 +33,9 @@ this includes both $v and $eigen}
 \item{returnDPSS}{returns dpss if needed outside function}
 
 \item{passInDPSSReduced}{if dpss undersampling was calculated already}
+
+\item{penalty}{1 is no penalty , 0.2  would give seq(from =  1, to =  1/(0.2*k, length.out = k)
+penalty to each respective taper}
 }
 \value{
 Standard Inverse Derivative Z' vector $StdInverse as well as $Freq which are the columns of stdInverse

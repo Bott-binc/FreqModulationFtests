@@ -12,7 +12,8 @@ instFreqDPSS(
   deltat,
   passInDPSS = NULL,
   returnDPSS = FALSE,
-  passInDPSSUnder = NULL
+  passInDPSSUnder = NULL,
+  penalty = 1
 )
 }
 \arguments{
@@ -32,6 +33,9 @@ object of dpss both $v and $eigen}
 \item{returnDPSS}{if you want to return dpss for use elsewhere}
 
 \item{passInDPSSUnder}{if dpss undersampling was calculated already}
+
+\item{penalty}{1 is no penalty , 0.2  would give seq(from =  1, to =  1/(0.2*k, length.out = k)
+penalty to each respective taper}
 }
 \value{
 list of $InstFreq and $Freq which is the column of instFreq
