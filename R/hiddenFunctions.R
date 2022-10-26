@@ -74,10 +74,12 @@ eigenCoefSine <- function(n, k, Xt, f, deltat = 1, sineRet = FALSE){
 #' @param deltat default is one, changes the nyquist if altered
 #' @param returnSineMat if you want to use Sine taper matrix outside function can return if TRUE
 #' @param pad if true, will automatically zero padd the fft
+#' @param penalty 1 is no penalty , 0.2  would give seq(from =  1, to =  1/(0.2*k, length.out = k)
+#' penalty to each respective taper
 #'
 #' @return Matrix of $EigenCoef for each frequency, as well as the frequencies under $Freq in the list
 #' if returnSineMat = TRUE, will also return $SineMat
-eigenCoefSineFFT <- function(N, k, Xt, deltat = 1, passInTaper = NULL, returnSineMat = FALSE, pad = TRUE){
+eigenCoefSineFFT <- function(N, k, Xt, deltat = 1, passInTaper = NULL, returnSineMat = FALSE, pad = TRUE, penalty = 1){
 
   EigenCoef <- matrix(nrow = N,ncol = k)
   if(is.null(passInTaper)){
@@ -104,7 +106,9 @@ eigenCoefSineFFT <- function(N, k, Xt, deltat = 1, passInTaper = NULL, returnSin
     taper <- sine * Xt
     pad <- rbind(taper, matrix(0, nrow = nFFT - N, ncol = k))
     EigenCoef <- mvfft(pad)[1:(nextPowerOfTwo + 1), ,drop = FALSE]
-
+    if(penalty != 1){
+      EigenCoef <- t(apply(EigenCoef, MARGIN = 1, FUN = function(x){x/seq(from = 1, to = penalty*k, length.out = k)}))
+    }
     ret <- data.frame(EigenCoef = EigenCoef, Freq = seq(from = 0, to = 1/(2*deltat),
                                                         by = 1/(2*nextPowerOfTwo*deltat)))
   }
@@ -161,11 +165,14 @@ standardInverseSineSingleFreq <- function(xt, N, k, f, deltat = 1, FFT = FALSE){
 #' @param deltat default is 1 unless using different nyquist
 #' @param passInSineMat If sine matrix was calculated already
 #' @param passInSineUnder If sine undersampling matrix was calculated already
+#' @param penalty 1 is no penalty , 0.2  would give seq(from =  1, to =  1/(0.2*k, length.out = k)
+#' penalty to each respective taper
 #'
 #' @return returns matrix of standard inverse along with frequencies corresponding to the columns
 standardInverseSine <- function(xt, N, k, deltat = 1, passInSineMat = NULL,
                                 retSineTapers = FALSE,
-                                passInSineUnder = NULL){
+                                passInSineUnder = NULL,
+                                penalty = 1){
   if(is.null(passInSineMat)){
     v <- sineTaperMatrix(N, k)
   }
@@ -174,9 +181,9 @@ standardInverseSine <- function(xt, N, k, deltat = 1, passInSineMat = NULL,
   }
 
   if(is.null(passInSineUnder)){
-    Y <- eigenCoefSineFFT(N, k, xt, deltat = deltat, passInTaper = v, pad = FALSE)
+    Y <- eigenCoefSineFFT(N, k, xt, deltat = deltat, passInTaper = v, pad = FALSE, penalty = penalty)
   }else{
-    Y <- eigenCoefSineFFT(N, k, xt, deltat = deltat, passInTaper = v, pad = TRUE)
+    Y <- eigenCoefSineFFT(N, k, xt, deltat = deltat, passInTaper = v, pad = TRUE, penalty = penalty)
   }
 
   if(is.null(passInSineUnder)){
@@ -207,28 +214,30 @@ standardInverseSine <- function(xt, N, k, deltat = 1, passInSineMat = NULL,
 #' @param returnSineMat will return the sine taper matrix back to the parent function
 #' @param passInSineMat If sine matrix was calculated already
 #' @param passInSineUnder If sine undersampling matrix was calculated already
+#' @param penalty 1 is no penalty , 0.2  would give seq(from =  1, to =  1/(0.2*k, length.out = k)
+#' penalty to each respective taper
 #'
 #' @return list of $StdInverse and $Freq which are the columns of StdInverse,
 #' if returnSineMat = TRUE then will also return $SineMat
 standardInverseSineDer <- function(xt, N, k, deltat = 1, passInSineMat = NULL,
-                                   returnSineMat = FALSE, passInSineUnder = NULL){
+                                   returnSineMat = FALSE, passInSineUnder = NULL, penalty = 1){
   if(is.null(passInSineUnder)){
     FirstDir <- FirstDerSineTaper(N, k)
     if(!returnSineMat){
       if(is.null(passInSineMat)){ # no tapers will be passed to EigenCoeffft
-        Y <- eigenCoefSineFFT(N, k, xt, deltat = deltat, pad = FALSE)
+        Y <- eigenCoefSineFFT(N, k, xt, deltat = deltat, pad = FALSE, penalty = penalty)
       }
       else{ # passing in sine tapers from outside function
-        Y <- eigenCoefSineFFT(N, k, xt, deltat = deltat, passInTaper = passInSineMat, pad = FALSE)
+        Y <- eigenCoefSineFFT(N, k, xt, deltat = deltat, passInTaper = passInSineMat, pad = FALSE, penalty = penalty)
       }
     }
     else{
       if(is.null(passInSineMat)){ # no tapers will be passed to EigenCoeffft
-        Y <- eigenCoefSineFFT(N, k, xt, deltat = deltat, returnSineMat = TRUE)
+        Y <- eigenCoefSineFFT(N, k, xt, deltat = deltat, returnSineMat = TRUE, penalty = penalty)
       }
       else{ # passing in sine tapers from outside function
         Y <- eigenCoefSineFFT(N, k, xt, deltat = deltat, passInTaper = passInSineMat,
-                                  returnSineMat = TRUE)
+                                  returnSineMat = TRUE, penalty = penalty)
       }
     }
     stdInverse <- tcrossprod(FirstDir, Y$EigenCoef)
@@ -237,22 +246,22 @@ standardInverseSineDer <- function(xt, N, k, deltat = 1, passInSineMat = NULL,
     FirstDir <- FirstDerSineTaper(N = nrow(passInSineUnder), k)
     if(!returnSineMat){
       if(is.null(passInSineMat)){ # no tapers will be passed to EigenCoeffft
-        Y <- eigenCoefSineFFT(N = nrow(passInSineMat), k, xt, deltat = deltat, pad = TRUE)
+        Y <- eigenCoefSineFFT(N = nrow(passInSineMat), k, xt, deltat = deltat, pad = TRUE, penalty = penalty)
       }
       else{ # passing in sine tapers from outside function
         Y <- eigenCoefSineFFT(N = nrow(passInSineMat), k, xt, deltat = deltat,
-                                  passInTaper = passInSineMat, pad = TRUE)
+                                  passInTaper = passInSineMat, pad = TRUE, penalty = penalty)
       }
     }
     else{
       if(is.null(passInSineMat)){ # no tapers will be passed to EigenCoeffft
         Y <- eigenCoefSineFFT(N = nrow(passInSineMat), k, xt, deltat = deltat,
-                                  returnSineMat = TRUE, pad = TRUE)
+                                  returnSineMat = TRUE, pad = TRUE, penalty = penalty)
       }
       else{ # passing in sine tapers from outside function
         Y <- eigenCoefSineFFT(N = nrow(passInSineMat), k, xt, deltat = deltat,
                                   passInTaper = passInSineMat,
-                                  returnSineMat = TRUE, pad = TRUE)
+                                  returnSineMat = TRUE, pad = TRUE, penalty = penalty)
       }
     }
     stdInverse <- tcrossprod(FirstDir, Y$EigenCoef)
@@ -384,11 +393,13 @@ FirstDerSineTaper <- function(N,k){
 #' @param passInSineMat if sine matrix was calculated somewhere else
 #' @param returnSineMat if you want to return SineTapers for use elsewhere
 #' @param passInSineUnder If sine undersampling matrix was calculated already
+#' @param penalty 1 is no penalty , 0.2  would give seq(from =  1, to =  1/(0.2*k, length.out = k)
+#' penalty to each respective taper
 #'
 #' @return list of $InstFreq and $Freq which is the column of instFreq
 #' if returnSineMat = TRUE then list of $InstFreq, $Freq, and $SineMat
 instFreqSine <- function(xt, N, k, deltat, passInSineMat = NULL, returnSineMat = FALSE,
-                         passInSineUnder = NULL){
+                         passInSineUnder = NULL, penalty = 1){
   if(is.null(passInSineUnder)){
     if(is.null(passInSineMat)){ # need to create sine taper matrix in stdInverse then pass into stdInvDer
       stdInv <- standardInverseSine(xt = xt, N = N, k = k, deltat = deltat,
@@ -417,10 +428,10 @@ instFreqSine <- function(xt, N, k, deltat, passInSineMat = NULL, returnSineMat =
     else{ # we already have sine taper matrix so we will pass into stdinv, then into stdInvDer
       stdInv <- standardInverseSine(xt = xt, N = N, k = k, deltat = deltat,
                                     retSineTapers = FALSE, passInSineMat = passInSineMat,
-                                    passInSineUnder = passInSineUnder)
+                                    passInSineUnder = passInSineUnder, penalty = penalty)
       stdInvDer <- standardInverseSineDer(xt = xt, N = N, k = k,
                                           deltat = deltat, passInSineMat = passInSineMat,
-                                          passInSineUnder = passInSineUnder)
+                                          passInSineUnder = passInSineUnder, penalty = penalty)
       sineMat <- passInSineMat
     }
   }
@@ -450,22 +461,25 @@ instFreqSine <- function(xt, N, k, deltat, passInSineMat = NULL, returnSineMat =
 #' @param returnSineMat if you want to return SineTapers for use elsewhere
 #' @param passInSineTapers  if sine matrix was calculated somewhere else
 #' @param passInSineUnder If sine undersampling matrix was calculated already
+#' @param penalty 1 is no penalty , 0.2  would give seq(from =  1, to =  1/(0.2*k, length.out = k)
+#' penalty to each respective taper
 #'
 #' @return returns $PSI kxn matrix, $Freq which are the columns of PSI.  If
 #' returnSineMat = TRUE, will also return tapers for future use
 eigenCoefSineInstFrequency <- function(xt, N, k, deltat,
                                            returnSineMat = FALSE,
                                            passInSineTapers = NULL,
-                                           passInSineUnder = NULL){
+                                           passInSineUnder = NULL,
+                                           penalty = 1){
   if(is.null(passInSineUnder)){
     if(is.null(passInSineTapers)){ # need instFreq to create the sineTapers
       instFreq <- instFreqSine(xt = xt, N = N, k = k, deltat = deltat,
-                               returnSineMat = TRUE)
+                               returnSineMat = TRUE, penalty = penalty)
       sineTaper <- instFreq$SineMat
     }
     else{ # will pass in sinetapers to instFreq
       instFreq <- instFreqSine(xt = xt, N = N, k = k, deltat = deltat,
-                               returnSineMat = FALSE, passInSineMat = passInSineTapers)
+                               returnSineMat = FALSE, passInSineMat = passInSineTapers, penalty = penalty)
       sineTaper <- passInSineTapers
     }
     v <- sineTaper
@@ -479,14 +493,14 @@ eigenCoefSineInstFrequency <- function(xt, N, k, deltat,
       instFreq <- instFreqSine(xt = xt, N = N, k = k, deltat = deltat,
                                returnSineMat = TRUE,
                                passInSineMat = passInSineTapers,
-                               passInSineUnder = passInSineUnder)
+                               passInSineUnder = passInSineUnder, penalty = penalty)
       sineTaper <- instFreq$SineMat
     }
     else{ # will pass in sinetapers to instFreq
       instFreq <- instFreqSine(xt = xt, N = N, k = k, deltat = deltat,
                                returnSineMat = FALSE,
                                passInSineMat = passInSineTapers,
-                               passInSineUnder = passInSineUnder)
+                               passInSineUnder = passInSineUnder, penalty = penalty)
       sineTaper <- passInSineTapers
     }
     v <- passInSineUnder
@@ -1440,13 +1454,16 @@ singleIterationForParallel4 <- function(xt, N, k, p, deltat = 1, w = NULL, dpss 
 #' @param confLevel level of confidence used in F3Mod, default is 1-1/N
 #' @param altSig Uses a measure of how far above the F is above the F quantile = FALSE by default
 #' @param returnFTestVars = FALSE.  Used for when more information about inner Ftests is needed. NOTE: this will be very memory intensive
+#' @param penalty 1 is no penalty , 0.2  would give seq(from =  1, to =  1/(0.2*k, length.out = k)
+#' penalty to each respective taper
 #'
 #' @return $F3Mod, $Freq, $significantFreq, $k
 
 singleIterationForParallel <- function(xt, k, p, deltat = 1, w = NULL, dpss = FALSE,
                                        undersampleNumber = 100,
                                        confLevel = (1-(1/length(xt))),
-                                       altSig = FALSE, returnFTestVars = FALSE){
+                                       altSig = FALSE, returnFTestVars = FALSE,
+                                       penalty = 1){
   N = length(xt)
 
   if(is.null(undersampleNumber)){
@@ -1471,7 +1488,7 @@ singleIterationForParallel <- function(xt, k, p, deltat = 1, w = NULL, dpss = FA
     sineUnder <- sineTaperMatrix(N = undersampleNumber, k = k)
     instFreqEigen <- eigenCoefSineInstFrequency(xt = xt, N = N, k = k,deltat = deltat,
                                                     returnSineMat = FALSE, passInSineTapers = sine,
-                                                    passInSineUnder = sineUnder)
+                                                    passInSineUnder = sineUnder, penalty = penalty)
 
     fStuff <- regressionSineInstFreq(N = N, k = k, instFreqEigen = instFreqEigen$PSI,
                                      p = p, returnSineTapers = FALSE,

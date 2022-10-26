@@ -11,7 +11,8 @@ instFreqSine(
   deltat,
   passInSineMat = NULL,
   returnSineMat = FALSE,
-  passInSineUnder = NULL
+  passInSineUnder = NULL,
+  penalty = 1
 )
 }
 \arguments{
@@ -28,6 +29,9 @@ instFreqSine(
 \item{returnSineMat}{if you want to return SineTapers for use elsewhere}
 
 \item{passInSineUnder}{If sine undersampling matrix was calculated already}
+
+\item{penalty}{1 is no penalty , 0.2  would give seq(from =  1, to =  1/(0.2*k, length.out = k)
+penalty to each respective taper}
 }
 \value{
 list of $InstFreq and $Freq which is the column of instFreq

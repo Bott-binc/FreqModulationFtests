@@ -939,12 +939,14 @@ F4Testpar <- function(xt, N, k, p, deltat = 1, dpss = FALSE, undersampleNumber =
 #' @param altSig Uses a measure of how far above the F is above the F quantile = FALSE by default
 #' @param returnFTestVars = FALSE.  Used for when more information about inner Ftests is needed.
 #'  NOTE: this will be very memory intensive and is only implimented for altSig = FALSE
+#' @param penalty 1 is no penalty , 0.2  would give seq(from =  1, to =  1/(0.2*k, length.out = k)
+#' penalty to each respective taper
 #'
 #' @return $F3testStat, $Freq, $significantFrequencies
 #'
 #' @export
 F3Testpar <- function(xt, k, p, N = length(xt), deltat = 1, dpss = FALSE, undersampleNumber = 100, cores = 1,
-                      confLevel = (1-(1/length(xt))), altSig = FALSE, returnFTestVars = FALSE){
+                      confLevel = (1-(1/length(xt))), altSig = FALSE, returnFTestVars = FALSE, penalty = 1){
 
   if(is.null(undersampleNumber)){
     stop("need to set undersample amount")
@@ -961,7 +963,7 @@ F3Testpar <- function(xt, k, p, N = length(xt), deltat = 1, dpss = FALSE, unders
         fullDat <- parallel::mclapply(X = k,FUN = function(x){
           return(singleIterationForParallel(xt = xt, k = x, p = p, deltat = deltat,
                                             undersampleNumber = undersampleNumber, dpss = FALSE,
-                                            confLevel = (1-(1/length(xt))), returnFTestVars = FALSE))
+                                            confLevel = (1-(1/length(xt))), returnFTestVars = FALSE, penalty = penalty))
         }, mc.cores = cores, mc.cleanup = TRUE, mc.preschedule = TRUE)
       }
 
@@ -976,7 +978,7 @@ F3Testpar <- function(xt, k, p, N = length(xt), deltat = 1, dpss = FALSE, unders
         fullDat <- parallel::mclapply(X = k,FUN = function(x){
           return(singleIterationForParallel(xt = xt, k = x, p = p, deltat = deltat,
                                             undersampleNumber = undersampleNumber, dpss = FALSE,
-                                            confLevel = (1-(1/length(xt))), returnFTestVars = TRUE))
+                                            confLevel = (1-(1/length(xt))), returnFTestVars = TRUE, penalty = penalty))
         }, mc.cores = cores, mc.cleanup = TRUE, mc.preschedule = TRUE)
       }
 

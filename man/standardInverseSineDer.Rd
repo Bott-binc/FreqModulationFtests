@@ -11,7 +11,8 @@ standardInverseSineDer(
   deltat = 1,
   passInSineMat = NULL,
   returnSineMat = FALSE,
-  passInSineUnder = NULL
+  passInSineUnder = NULL,
+  penalty = 1
 )
 }
 \arguments{
@@ -28,6 +29,9 @@ standardInverseSineDer(
 \item{returnSineMat}{will return the sine taper matrix back to the parent function}
 
 \item{passInSineUnder}{If sine undersampling matrix was calculated already}
+
+\item{penalty}{1 is no penalty , 0.2  would give seq(from =  1, to =  1/(0.2*k, length.out = k)
+penalty to each respective taper}
 }
 \value{
 list of $StdInverse and $Freq which are the columns of StdInverse,

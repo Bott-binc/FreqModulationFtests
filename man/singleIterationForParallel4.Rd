@@ -33,7 +33,7 @@ singleIterationForParallel4(
 \item{undersampleNumber}{= 100 by default  this is the number used in undersampling the tapers}
 }
 \value{
-$cHat chat used in caluclation of f , $PHI capital PHI , $Freq vector of frequencies , $k number of tapers used
+$cHat chat used in caluclation of f , $PSI capital PSI , $Freq vector of frequencies , $k number of tapers used
 }
 \description{
 can be used inside mclapply.  note that there is no checks in here as they are assumed

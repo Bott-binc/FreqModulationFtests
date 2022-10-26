@@ -15,7 +15,8 @@ F3Testpar(
   cores = 1,
   confLevel = (1 - (1/length(xt))),
   altSig = FALSE,
-  returnFTestVars = FALSE
+  returnFTestVars = FALSE,
+  penalty = 1
 )
 }
 \arguments{
@@ -41,6 +42,9 @@ F3Testpar(
 
 \item{returnFTestVars}{= FALSE.  Used for when more information about inner Ftests is needed.
 NOTE: this will be very memory intensive and is only implimented for altSig = FALSE}
+
+\item{penalty}{1 is no penalty , 0.2  would give seq(from =  1, to =  1/(0.2*k, length.out = k)
+penalty to each respective taper}
 }
 \value{
 $F3testStat, $Freq, $significantFrequencies

@@ -14,7 +14,8 @@ singleIterationForParallel(
   undersampleNumber = 100,
   confLevel = (1 - (1/length(xt))),
   altSig = FALSE,
-  returnFTestVars = FALSE
+  returnFTestVars = FALSE,
+  penalty = 1
 )
 }
 \arguments{
@@ -37,6 +38,9 @@ singleIterationForParallel(
 \item{altSig}{Uses a measure of how far above the F is above the F quantile = FALSE by default}
 
 \item{returnFTestVars}{= FALSE.  Used for when more information about inner Ftests is needed. NOTE: this will be very memory intensive}
+
+\item{penalty}{1 is no penalty , 0.2  would give seq(from =  1, to =  1/(0.2*k, length.out = k)
+penalty to each respective taper}
 }
 \value{
 $F3Mod, $Freq, $significantFreq, $k

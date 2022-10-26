@@ -11,7 +11,8 @@ standardInverseSine(
   deltat = 1,
   passInSineMat = NULL,
   retSineTapers = FALSE,
-  passInSineUnder = NULL
+  passInSineUnder = NULL,
+  penalty = 1
 )
 }
 \arguments{
@@ -28,6 +29,9 @@ standardInverseSine(
 \item{retSineTapers}{Will return calculated sine taper matrix for future use}
 
 \item{passInSineUnder}{If sine undersampling matrix was calculated already}
+
+\item{penalty}{1 is no penalty , 0.2  would give seq(from =  1, to =  1/(0.2*k, length.out = k)
+penalty to each respective taper}
 }
 \value{
 returns matrix of standard inverse along with frequencies corresponding to the columns
