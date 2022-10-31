@@ -12,11 +12,11 @@ F3Testpar(
   deltat = 1,
   dpss = FALSE,
   undersampleNumber = 100,
+  penalty = 1,
+  R = 1,
   cores = 1,
   confLevel = (1 - (1/length(xt))),
-  altSig = FALSE,
-  returnFTestVars = FALSE,
-  penalty = 1
+  returnFTestVars = FALSE
 )
 }
 \arguments{
@@ -34,20 +34,22 @@ F3Testpar(
 
 \item{undersampleNumber}{A numeric of the number the user wants to undersample, usually 100 is a good start}
 
+\item{penalty}{1 is no penalty , 0.2  would give seq(from =  1, to =  1/(0.2*k, length.out = k)
+penalty to each respective taper}
+
+\item{R}{= 1 by default: Number of times the specific frequency must be detected to be considered significant}
+
 \item{cores}{must be 1 if on windows, number of cores used for parallelization}
 
 \item{confLevel}{default is 1-1/N, level of confidence used in the Ftest}
 
-\item{altSig}{Uses a measure of how far above the F is above the F quantile = FALSE by default}
-
 \item{returnFTestVars}{= FALSE.  Used for when more information about inner Ftests is needed.
 NOTE: this will be very memory intensive and is only implimented for altSig = FALSE}
 
-\item{penalty}{1 is no penalty , 0.2  would give seq(from =  1, to =  1/(0.2*k, length.out = k)
-penalty to each respective taper}
+\item{altSig}{Uses a measure of how far above the F is above the F quantile = FALSE by default}
 }
 \value{
-$F3testStat, $Freq, $significantFrequencies
+$F3testStat, $Freq, $sigFreq, prop
 }
 \description{
 w is chosen by shannons number based on k
