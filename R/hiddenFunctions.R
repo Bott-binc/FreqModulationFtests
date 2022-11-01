@@ -1478,7 +1478,6 @@ singleIterationForParallel4 <- function(xt, N, k, p, deltat = 1, w = NULL, dpss 
 #' @param dpss = FALSE uses sine instead
 #' @param undersampleNumber = 100 by default  this is the number used in undersampling the tapers
 #' @param confLevel level of confidence used in F3Mod, default is 1-1/N
-#' @param altSig Uses a measure of how far above the F is above the F quantile = FALSE by default
 #' @param returnFTestVars = FALSE.  Used for when more information about inner Ftests is needed. NOTE: this will be very memory intensive
 #' @param penalty 1 is no penalty , 0.2  would give seq(from =  1, to =  1/(0.2*k, length.out = k)
 #' penalty to each respective taper
@@ -1488,7 +1487,8 @@ singleIterationForParallel4 <- function(xt, N, k, p, deltat = 1, w = NULL, dpss 
 singleIterationForParallel <- function(xt, k, p, deltat = 1, w = NULL, dpss = FALSE,
                                        undersampleNumber = 100,
                                        confLevel = (1-(1/length(xt))),
-                                       altSig = FALSE, returnFTestVars = FALSE,
+                                       # altSig = FALSE,
+                                       returnFTestVars = FALSE,
                                        penalty = 1){
   N = length(xt)
 
@@ -1535,7 +1535,7 @@ singleIterationForParallel <- function(xt, k, p, deltat = 1, w = NULL, dpss = FA
 
 
  if(!returnFTestVars){
-   if(!altSig){
+
      if(p ==1){
        F3 <-  matrix(nrow = 1, ncol = length(instFreqEigen$Freq))
        colnames(F3) <- Freq
@@ -1564,48 +1564,14 @@ singleIterationForParallel <- function(xt, k, p, deltat = 1, w = NULL, dpss = FA
      }
      return(list(F3Mod = F3, Freq = Freq, significantFreq = significantFreq,
                  k = k))
-   }else{
-     if(p ==1){
-       F3 <-  matrix(nrow = 1, ncol = length(instFreqEigen$Freq))
-       colnames(F3) <- Freq
-       significantFreq <- list()
-       sigFreqDiff <- list()
 
-       normcHatWOutZeroSq <- normcHatWOutZeroSq + fStuff$cHat^2
-       F3[p,] <- (fStuff$cHat)^2/
-         ((normPhiSq - normcHatWOutZeroSq)/(k - p))
-       FcutOff <- qf(confLevel, df1 = 1, df2 = (k-p-1), lower.tail = TRUE)
-       significantFreq[[p]] <- Freq[which(F3[p,] >= FcutOff)]
-       sigFreqDiff <- F3[p,which(F3[p,] >= FcutOff)] - FcutOff
-
-     }else{
-       F3 <-  matrix(nrow = nrow(fStuff$cHat), ncol = length(instFreqEigen$Freq))
-       colnames(F3) <- Freq
-       significantFreq <- list()
-       sigFreqDiff <- list()
-       for(P in 1:nrow(fStuff$cHat)){ # this is 1:p as we are removing zero so P-1 is actually P
-
-         normcHatWOutZeroSq <- normcHatWOutZeroSq + fStuff$cHat[P,]^2
-         F3[P,] <- (fStuff$cHat[P,])^2/
-           ((normPhiSq - normcHatWOutZeroSq)/(k - P))
-         FcutOff <- qf(confLevel, df1 = 1, df2 = (k-P-1), lower.tail = TRUE)
-         indexSig <- which(F3[P,] >= FcutOff)
-         significantFreq[[P]] <- Freq[indexSig]
-         sigFreqDiff <- F3[p,indexSig] - FcutOff
-
-
-       }
-     }
-     return(list(F3Mod = F3, Freq = Freq, significantFreq = significantFreq,
-                 sigFreqDiff = sigFreqDiff, k = k))
-   }
  }else{# if the Ftest variables needed to be returned
    if(dpss){
      tapers <- dpUnder
    }else{
      tapers <- sineUnder
    }
-   if(!altSig){
+
      if(p ==1){
        F3 <-  matrix(nrow = 1, ncol = length(instFreqEigen$Freq))
        colnames(F3) <- Freq
@@ -1635,42 +1601,6 @@ singleIterationForParallel <- function(xt, k, p, deltat = 1, w = NULL, dpss = FA
      return(list(F3Mod = F3, Freq = Freq, significantFreq = significantFreq,
                  k = k, ftestvars = list(instFreqEigen = instFreqEigen,
                                          fStuff = fStuff, tapers = tapers)))
-   }else{
-     if(p ==1){
-       F3 <-  matrix(nrow = 1, ncol = length(instFreqEigen$Freq))
-       colnames(F3) <- Freq
-       significantFreq <- list()
-       sigFreqDiff <- list()
-
-       normcHatWOutZeroSq <- normcHatWOutZeroSq + fStuff$cHat^2
-       F3[p,] <- (fStuff$cHat)^2/
-         ((normPhiSq - normcHatWOutZeroSq)/(k - p))
-       FcutOff <- qf(confLevel, df1 = 1, df2 = (k-p-1), lower.tail = TRUE)
-       significantFreq[[p]] <- Freq[which(F3[p,] >= FcutOff)]
-       sigFreqDiff <- F3[p,which(F3[p,] >= FcutOff)] - FcutOff
-
-     }else{
-       F3 <-  matrix(nrow = nrow(fStuff$cHat), ncol = length(instFreqEigen$Freq))
-       colnames(F3) <- Freq
-       significantFreq <- list()
-       sigFreqDiff <- list()
-       for(P in 1:nrow(fStuff$cHat)){ # this is 1:p as we are removing zero so P-1 is actually P
-
-         normcHatWOutZeroSq <- normcHatWOutZeroSq + fStuff$cHat[P,]^2
-         F3[P,] <- (fStuff$cHat[P,])^2/
-           ((normPhiSq - normcHatWOutZeroSq)/(k - P))
-         FcutOff <- qf(confLevel, df1 = 1, df2 = (k-P-1), lower.tail = TRUE)
-         indexSig <- which(F3[P,] >= FcutOff)
-         significantFreq[[P]] <- Freq[indexSig]
-         sigFreqDiff <- F3[p,indexSig] - FcutOff
-
-
-       }
-     }
-     return(list(F3Mod = F3, Freq = Freq, significantFreq = significantFreq,
-                 sigFreqDiff = sigFreqDiff, k = k, ftestvars = list(instFreqEigen = instFreqEigen,
-                                                                    fStuff = fStuff, tapers = tapers)))
-   }
  }
 
 

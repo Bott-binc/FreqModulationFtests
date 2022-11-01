@@ -13,7 +13,6 @@ singleIterationForParallel(
   dpss = FALSE,
   undersampleNumber = 100,
   confLevel = (1 - (1/length(xt))),
-  altSig = FALSE,
   returnFTestVars = FALSE,
   penalty = 1
 )
@@ -34,8 +33,6 @@ singleIterationForParallel(
 \item{undersampleNumber}{= 100 by default  this is the number used in undersampling the tapers}
 
 \item{confLevel}{level of confidence used in F3Mod, default is 1-1/N}
-
-\item{altSig}{Uses a measure of how far above the F is above the F quantile = FALSE by default}
 
 \item{returnFTestVars}{= FALSE.  Used for when more information about inner Ftests is needed. NOTE: this will be very memory intensive}
 

@@ -45,8 +45,6 @@ penalty to each respective taper}
 
 \item{returnFTestVars}{= FALSE.  Used for when more information about inner Ftests is needed.
 NOTE: this will be very memory intensive and is only implimented for altSig = FALSE}
-
-\item{altSig}{Uses a measure of how far above the F is above the F quantile = FALSE by default}
 }
 \value{
 $F3testStat, $Freq, $sigFreq, prop
