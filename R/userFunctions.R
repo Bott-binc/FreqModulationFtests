@@ -947,7 +947,7 @@ F4Testpar <- function(xt, N, k, p, deltat = 1, dpss = FALSE, undersampleNumber =
 #' @export
 F3Testpar <- function(xt, k, p, N = length(xt), deltat = 1, dpss = FALSE, undersampleNumber = 100,
                       penalty = 1, R = 1, cores = 1,
-                      confLevel = (1 - (1/length(xt))), returnFTestVars = FALSE){
+                      confLevel = (1 - (1/length(xt))), returnFTestVars = FALSE, weightSine = 1){
 
   if(is.null(undersampleNumber)){
     stop("need to set undersample amount")
@@ -964,7 +964,8 @@ F3Testpar <- function(xt, k, p, N = length(xt), deltat = 1, dpss = FALSE, unders
         fullDat <- parallel::mclapply(X = k,FUN = function(x){
           return(singleIterationForParallel(xt = xt, k = x, p = p, deltat = deltat,
                                             undersampleNumber = undersampleNumber, dpss = FALSE,
-                                            confLevel = (1-(1/length(xt))), returnFTestVars = FALSE, penalty = penalty))
+                                            confLevel = (1-(1/length(xt))), returnFTestVars = FALSE,
+                                            penalty = penalty, weightSine = weightSine))
         }, mc.cores = cores, mc.cleanup = TRUE, mc.preschedule = TRUE)
       }
       # user wants the F test variables as well -----------------------------------------
@@ -979,7 +980,8 @@ F3Testpar <- function(xt, k, p, N = length(xt), deltat = 1, dpss = FALSE, unders
         fullDat <- parallel::mclapply(X = k,FUN = function(x){
           return(singleIterationForParallel(xt = xt, k = x, p = p, deltat = deltat,
                                             undersampleNumber = undersampleNumber, dpss = FALSE,
-                                            confLevel = (1-(1/length(xt))), returnFTestVars = TRUE, penalty = penalty))
+                                            confLevel = (1-(1/length(xt))), returnFTestVars = TRUE,
+                                            penalty = penalty, weightSine = weightSine))
         }, mc.cores = cores, mc.cleanup = TRUE, mc.preschedule = TRUE)
       }
 

@@ -14,7 +14,8 @@ singleIterationForParallel(
   undersampleNumber = 100,
   confLevel = (1 - (1/length(xt))),
   returnFTestVars = FALSE,
-  penalty = 1
+  penalty = 1,
+  weightSine = 1
 )
 }
 \arguments{

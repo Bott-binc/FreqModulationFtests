@@ -1489,7 +1489,7 @@ singleIterationForParallel <- function(xt, k, p, deltat = 1, w = NULL, dpss = FA
                                        confLevel = (1-(1/length(xt))),
                                        # altSig = FALSE,
                                        returnFTestVars = FALSE,
-                                       penalty = 1){
+                                       penalty = 1, weightSine = 1){
   N = length(xt)
 
   if(is.null(undersampleNumber)){
@@ -1512,6 +1512,12 @@ singleIterationForParallel <- function(xt, k, p, deltat = 1, w = NULL, dpss = FA
   else{ #Sine Tapers are used
     sine <- sineTaperMatrix(N = N, k = k)
     sineUnder <- sineTaperMatrix(N = undersampleNumber, k = k)
+    if(weightSine != 1){
+      weights <- 1/seq(from = 1, to = weightSine*k, length.out = k)
+      sine <- sine %*% diag(weights)
+      sineUnder <- sineUnder %*% diag(weights)
+    }
+    browser()
     instFreqEigen <- eigenCoefSineInstFrequency(xt = xt, N = N, k = k,deltat = deltat,
                                                     returnSineMat = FALSE, passInSineTapers = sine,
                                                     passInSineUnder = sineUnder, penalty = penalty)

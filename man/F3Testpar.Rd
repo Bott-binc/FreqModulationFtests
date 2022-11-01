@@ -16,7 +16,8 @@ F3Testpar(
   R = 1,
   cores = 1,
   confLevel = (1 - (1/length(xt))),
-  returnFTestVars = FALSE
+  returnFTestVars = FALSE,
+  weightSine = 1
 )
 }
 \arguments{
