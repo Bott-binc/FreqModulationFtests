@@ -248,6 +248,7 @@ standardInverseSineDer <- function(xt, N, k, deltat = 1, passInSineMat = NULL,
   }
   else{ # reduction
     FirstDir <- FirstDerSineTaper(N = nrow(passInSineUnder), k)
+
     if(!returnSineMat){
       if(is.null(passInSineMat)){ # no tapers will be passed to EigenCoeffft
         Y <- eigenCoefSineFFT(N = nrow(passInSineMat), k, xt, deltat = deltat, pad = TRUE, penalty = penalty)
@@ -268,6 +269,7 @@ standardInverseSineDer <- function(xt, N, k, deltat = 1, passInSineMat = NULL,
                                   returnSineMat = TRUE, pad = TRUE, penalty = penalty)
       }
     }
+
     stdInverse <- tcrossprod(FirstDir, Y$EigenCoef)
   }
 
@@ -1502,7 +1504,7 @@ singleIterationForParallel <- function(xt, k, p, deltat = 1, w = NULL, dpss = FA
                                        confLevel = (1-(1/length(xt))),
                                        # altSig = FALSE,
                                        returnFTestVars = FALSE,
-                                       penalty = 1, weightSine = 1){
+                                       penalty = 1){
   N = length(xt)
 
   if(is.null(undersampleNumber)){
@@ -1519,18 +1521,14 @@ singleIterationForParallel <- function(xt, k, p, deltat = 1, w = NULL, dpss = FA
                                                     returnDPSS = FALSE, passInDPSS = dp,
                                                     passInDPSSUnder = dpUnder, penalty = penalty)
     fStuff <- regressionDPSSInstFreq(N = N, k = k, w = w, instFreqEigen = instFreqEigen$PSI,
-                                     p = p, passInDPSS = dpUnder ,returnDPSS = FALSE,
+                                     p = p, passInDPSS = dp ,returnDPSS = FALSE,
                                      returnRp = FALSE, withoutzeroPoly = TRUE)
   }
   else{ #Sine Tapers are used
 
     sine <- sineTaperMatrix(N = N, k = k)
     sineUnder <- sineTaperMatrix(N = undersampleNumber, k = k)
-    if(weightSine != 1){
-      weights <- 1/seq(from = 1, to = weightSine*k, length.out = k)
-      sine <- sine %*% diag(weights)
-      sineUnder <- sineUnder %*% diag(weights)
-    }
+
 
     instFreqEigen <- eigenCoefSineInstFrequency(xt = xt, N = N, k = k,deltat = deltat,
                                                     returnSineMat = FALSE, passInSineTapers = sine,
@@ -1538,7 +1536,7 @@ singleIterationForParallel <- function(xt, k, p, deltat = 1, w = NULL, dpss = FA
 
     fStuff <- regressionSineInstFreq(N = N, k = k, instFreqEigen = instFreqEigen$PSI,
                                      p = p, returnSineTapers = FALSE,
-                                     passInSineMat = sineUnder,
+                                     passInSineMat = sine,
                                      returnRp = FALSE, withoutzeroPoly = TRUE)
   }
 
