@@ -686,11 +686,16 @@ RnpMat <- function(N,P){
 #' @param round if 16 you will obtain not zero in k != p mod 2
 #'
 #' @return matrix
-UDpss <- function(N, k, p, w, round = 14){
+UDpss <- function(N, k, p, w, round = 14, passInDPSS = NULL){
   n <- 1:N
+  if(is.null(passInDPSS)){
+    v <- multitaper::dpss(N, k, nw = N*w)$v
+  }else{
+    v <- passInDPSS
+  }
   uMat <- matrix(nrow = k, ncol = p+1)
   for(i in 0:p){
-    uMat[,i+1] <- as.matrix(apply(multitaper::dpss(N, k, nw = N*w)$v *
+    uMat[,i+1] <- as.matrix(apply(v *
                                     ((2/(N-1)) * (n-1) - 1)^i, 2, FUN = sum))
   }
   uMat <- round(uMat, round)
@@ -1052,9 +1057,9 @@ eigenFunctionDerDpss <- function(N, k, p, w, f){
 #' @param w Band Width parameter passed into dpss
 #'
 #' @return List of H hat matrix and G polynomial matrix
-HatMatGMatDpss <- function(N, k, p, w){
+HatMatGMatDpss <- function(N, k, p, w, passInDPSS = NULL){
 
-  Umat <- UDpss(N = N, k = k, p = p, w = w)
+  Umat <- UDpss(N = N, k = k, p = p, w = w, passInDPSS = passInDPSS)
   Rmat <- RnpMat(N = N,P = p)
   dpssGram <- GramSchmidtMod(uMat = Umat, rMat = Rmat)
 
@@ -1300,7 +1305,7 @@ regressionDPSSInstFreq <- function(N, k, w, instFreqEigen, p,
   }
 
   if(returnGCHatp){
-    dpGram <- HatMatGMatDpss(N = N, k = k, p = p, w = w)
+    dpGram <- HatMatGMatDpss(N = N, k = k, p = p, w = w, passInDPSS = v)
     if(withoutzeroPoly){
       H <- dpGram$H[,-1] # removes the 0th order column
       G <- dpGram$G[,-1]
@@ -1335,7 +1340,7 @@ regressionDPSSInstFreq <- function(N, k, w, instFreqEigen, p,
       }
     }
   }else{
-    dpGram <- HatMatGMatDpss(N = N, k = k, p = p, w = w)
+    dpGram <- HatMatGMatDpss(N = N, k = k, p = p, w = w, passInDPSS = v)
     if(withoutzeroPoly){
       H <- dpGram$H[,-1] # removes the 0th order column
       G <- dpGram$G[,-1]
