@@ -342,13 +342,20 @@ compInverseSine <- function(N, k, xt, f, p, deltat = 1, polynomialPart = FALSE, 
 #' @param p Highest degree der used/ highest degree polynomial 0 to p
 #' @param round default 15 decimals to obtain exactly 0 in the non mod 2 points,
 #' I believe it has to do with the rounding on pi for why its not exactly zero.
+#' @param passInSineTapers used for speeding up the calculation.
 #'
 #' @return matrix
-USine <- function(N, k, p, round = 15){
+USine <- function(N, k, p, round = 15, passInSineTapers = NULL){
   n <- 1:N
+  if(is.null(passInSineTapers)){
+    v <- sineTaperMatrix(N, k)
+  }else{
+    v <- passInSineTapers
+  }
+
   uMat <- matrix(nrow = k, ncol = p + 1)
   for(i in 0:p){
-    uMat[,i+1] <- as.matrix(apply(sineTaperMatrix(N, k) *
+    uMat[,i+1] <- as.matrix(apply(v *
                                     ((2/(N-1)) * (n-1) - 1)^i, 2, FUN = sum))
   }
   uMat <- round(uMat, round)
@@ -361,11 +368,12 @@ USine <- function(N, k, p, round = 15){
 #' @param N Total Number of Observations
 #' @param k Number of tapers
 #' @param p Highest degree polynomial
+#' @param passInSineTapers used for speeding up the calculation.
 #'
 #' @return List of H hat matrix and G polynomial matrix
-HatMatGMatSine <- function(N, k, p){
+HatMatGMatSine <- function(N, k, p, passInSineTapers = NULL){
 
-  Umat <- USine(N, k, p)
+  Umat <- USine(N, k, p, passInSineTapers = passInSineTapers)
   Rmat <- RnpMat(N = N,P = p)
   sineGram <- GramSchmidtMod(uMat = Umat, rMat = Rmat)
 
@@ -554,11 +562,11 @@ regressionSineInstFreq <- function(N, k, instFreqEigen, p,
     v <- sineTaperMatrix(N = N, k = k)
   }
   else{
-    v = passInSineMat
+    v <- passInSineMat
   }
 
   if(returnGCHatp){
-    SineGram <- HatMatGMatSine(N = N, k = k, p = p)
+    SineGram <- HatMatGMatSine(N = N, k = k, p = p, passInSineTapers = v)
     if(withoutzeroPoly){
       H <- SineGram$H[,-1] # removes the 0th order column
       G <- SineGram$G[,-1]
@@ -592,7 +600,7 @@ regressionSineInstFreq <- function(N, k, instFreqEigen, p,
       }
     }
   }else{
-    SineGram <- HatMatGMatSine(N = N, k = k, p = p)
+    SineGram <- HatMatGMatSine(N = N, k = k, p = p, passInSineTapers = v)
     if(withoutzeroPoly){
       H <- SineGram$H[,-1] # removes the 0th order column
       G <- SineGram$G[,-1]
