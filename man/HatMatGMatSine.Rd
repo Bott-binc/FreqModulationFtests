@@ -4,7 +4,7 @@
 \alias{HatMatGMatSine}
 \title{GramShmidt Orthonormalized Hat and Polynomial Matrices for Sine}
 \usage{
-HatMatGMatSine(N, k, p)
+HatMatGMatSine(N, k, p, passInSineTapers = NULL)
 }
 \arguments{
 \item{N}{Total Number of Observations}
@@ -12,6 +12,8 @@ HatMatGMatSine(N, k, p)
 \item{k}{Number of tapers}
 
 \item{p}{Highest degree polynomial}
+
+\item{passInSineTapers}{used for speeding up the calculation.}
 }
 \value{
 List of H hat matrix and G polynomial matrix

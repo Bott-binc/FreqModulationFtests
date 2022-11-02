@@ -4,7 +4,7 @@
 \alias{USine}
 \title{U_kp used in the regression for sine tapers}
 \usage{
-USine(N, k, p, round = 15)
+USine(N, k, p, round = 15, passInSineTapers = NULL)
 }
 \arguments{
 \item{N}{Total number of observations}
@@ -15,6 +15,8 @@ USine(N, k, p, round = 15)
 
 \item{round}{default 15 decimals to obtain exactly 0 in the non mod 2 points,
 I believe it has to do with the rounding on pi for why its not exactly zero.}
+
+\item{passInSineTapers}{used for speeding up the calculation.}
 }
 \value{
 matrix

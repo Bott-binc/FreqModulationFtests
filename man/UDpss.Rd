@@ -4,7 +4,7 @@
 \alias{UDpss}
 \title{Matrix of Ukp's defined by 2.36 in Kians thesis for the DPSS}
 \usage{
-UDpss(N, k, p, w, round = 14)
+UDpss(N, k, p, w, round = 14, passInDPSS = NULL)
 }
 \arguments{
 \item{N}{Total number of points in your series including zero pad}

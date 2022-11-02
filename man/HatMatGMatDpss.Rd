@@ -4,7 +4,7 @@
 \alias{HatMatGMatDpss}
 \title{GramShmidt Orthonormalized Hat and Polynomial Matrices for Dpss}
 \usage{
-HatMatGMatDpss(N, k, p, w)
+HatMatGMatDpss(N, k, p, w, passInDPSS = NULL)
 }
 \arguments{
 \item{N}{Total Number of Observations}
