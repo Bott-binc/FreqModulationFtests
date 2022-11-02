@@ -941,13 +941,16 @@ F4Testpar <- function(xt, N, k, p, deltat = 1, dpss = FALSE, undersampleNumber =
 #' @param penalty 1 is no penalty , 0.2  would give seq(from =  1, to =  1/(0.2*k, length.out = k)
 #' penalty to each respective taper
 #' @param R = 1 by default: Number of times the specific frequency must be detected to be considered significant
+#' @param penaltyOnTapersStdInv applys the penalty to all tapers in the calculation instead of just weighting the
+#' eigenCoef's
 #'
 #' @return $F3testStat, $Freq, $sigFreq, prop
 #'
 #' @export
 F3Testpar <- function(xt, k, p, N = length(xt), deltat = 1, dpss = FALSE, undersampleNumber = 100,
                       penalty = 1, R = 1, cores = 1,
-                      confLevel = (1 - (1/length(xt))), returnFTestVars = FALSE){
+                      confLevel = (1 - (1/length(xt))), returnFTestVars = FALSE,
+                      penaltyOnTapersStdInv = FALSE){
 
   if(is.null(undersampleNumber)){
     stop("need to set undersample amount")
@@ -965,7 +968,7 @@ F3Testpar <- function(xt, k, p, N = length(xt), deltat = 1, dpss = FALSE, unders
           return(singleIterationForParallel(xt = xt, k = x, p = p, deltat = deltat,
                                             undersampleNumber = undersampleNumber, dpss = FALSE,
                                             confLevel = (1-(1/length(xt))), returnFTestVars = FALSE,
-                                            penalty = penalty))
+                                            penalty = penalty, penaltyOnTapersStdInv = penaltyOnTapersStdInv))
         }, mc.cores = cores, mc.cleanup = TRUE, mc.preschedule = TRUE)
       }
       # user wants the F test variables as well -----------------------------------------
@@ -981,7 +984,7 @@ F3Testpar <- function(xt, k, p, N = length(xt), deltat = 1, dpss = FALSE, unders
           return(singleIterationForParallel(xt = xt, k = x, p = p, deltat = deltat,
                                             undersampleNumber = undersampleNumber, dpss = FALSE,
                                             confLevel = (1-(1/length(xt))), returnFTestVars = TRUE,
-                                            penalty = penalty))
+                                            penalty = penalty, penaltyOnTapersStdInv = penaltyOnTapersStdInv))
         }, mc.cores = cores, mc.cleanup = TRUE, mc.preschedule = TRUE)
       }
 
