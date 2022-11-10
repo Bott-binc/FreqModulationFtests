@@ -17,7 +17,7 @@ F3Testpar(
   cores = 1,
   confLevel = (1 - (1/length(xt))),
   returnFTestVars = FALSE,
-  weightSine = 1
+  penaltyOnTapersStdInv = FALSE
 )
 }
 \arguments{
@@ -46,6 +46,9 @@ penalty to each respective taper}
 
 \item{returnFTestVars}{= FALSE.  Used for when more information about inner Ftests is needed.
 NOTE: this will be very memory intensive and is only implimented for altSig = FALSE}
+
+\item{penaltyOnTapersStdInv}{applys the penalty to all tapers in the calculation instead of just weighting the
+eigenCoef's}
 }
 \value{
 $F3testStat, $Freq, $sigFreq, prop

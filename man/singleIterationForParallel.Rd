@@ -15,7 +15,7 @@ singleIterationForParallel(
   confLevel = (1 - (1/length(xt))),
   returnFTestVars = FALSE,
   penalty = 1,
-  weightSine = 1
+  penaltyOnTapersStdInv = FALSE
 )
 }
 \arguments{
@@ -39,6 +39,9 @@ singleIterationForParallel(
 
 \item{penalty}{1 is no penalty , 0.2  would give seq(from =  1, to =  1/(0.2*k, length.out = k)
 penalty to each respective taper}
+
+\item{penaltyOnTapersStdInv}{applys the penalty to all tapers in the calculation instead of just weighting the
+eigenCoef's}
 }
 \value{
 $F3Mod, $Freq, $significantFreq, $k

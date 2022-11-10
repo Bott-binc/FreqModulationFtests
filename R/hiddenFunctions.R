@@ -105,12 +105,18 @@ eigenCoefSineFFT <- function(N, k, Xt, deltat = 1, passInTaper = NULL, returnSin
                                                           by = 1/(N*deltat))))
   }else{
 
+
     nFFT <- 2^ceiling(log2(2*N))
     nextPowerOfTwo <- 2^ceiling(log2(2*N)-1)
     taper <- sine * Xt
     pad <- rbind(taper, matrix(0, nrow = nFFT - N, ncol = k))
     EigenCoef <- mvfft(pad)[1:(nextPowerOfTwo + 1), ,drop = FALSE]
-    if(penalty != 1){
+    if(penalty == "custom"){
+
+      weightMat <- matrix((1/2*cos((pi*1:k)/k) + 1/2), nrow = nrow(EigenCoef), ncol = k, byrow = TRUE)
+      EigenCoef <- EigenCoef * weightMat
+    }
+    else if(penalty != 1){
       EigenCoef <- t(apply(EigenCoef, MARGIN = 1, FUN = function(x){x/seq(from = 1, to = penalty*k, length.out = k)}))
     }
     ret <- data.frame(EigenCoef = EigenCoef, Freq = seq(from = 0, to = 1/(2*deltat),
@@ -787,6 +793,7 @@ eigenCoefdpssFFT <- function(n, k, w, Xt, deltat = 1, passInDPSSMat = NULL, pad 
       vec <- dp[,i] * as.matrix(Xt)
       EigenCoef[,i] <- fft(vec)
     }
+
     if(penalty != 1){
       EigenCoef <- t(apply(EigenCoef, MARGIN = 1, FUN = function(x){x/seq(from = 1, to = penalty*k, length.out = k)}))
     }
@@ -801,7 +808,16 @@ eigenCoefdpssFFT <- function(n, k, w, Xt, deltat = 1, passInDPSSMat = NULL, pad 
     taper <- dp * Xt
     pad <- rbind(taper, matrix(0, nrow = nFFT - n, ncol = k))
     EigenCoef <- mvfft(pad)[1:(nextPowerOfTwo + 1), ,drop = FALSE]
-    if(penalty != 1){
+
+    if(is.matrix(penalty)){
+      EigenCoef <- EigenCoef * penalty
+    }
+    else if(penalty == "mtm"){
+      spec <- multitaper::spec.mtm(ts(Xt, deltat = deltat), nw = n*w,k = k, adaptiveWeighting = TRUE,
+                                   returnInternals = TRUE, plot = FALSE)
+      EigenCoef <- EigenCoef * spec$mtm$eigenCoefWt
+    }
+    else if(penalty != 1){
       EigenCoef <- t(apply(EigenCoef, MARGIN = 1, FUN = function(x){x/seq(from = 1, to = penalty*k, length.out = k)}))
     }
     ret <- data.frame(EigenCoef = EigenCoef, Freq = seq(from = 0, to = 1/(2*deltat),

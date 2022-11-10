@@ -12,7 +12,8 @@ eigenCoefSineInstFrequency(
   returnSineMat = FALSE,
   passInSineTapers = NULL,
   passInSineUnder = NULL,
-  penalty = 1
+  penalty = 1,
+  penaltyOnTapersStdInv = FALSE
 )
 }
 \arguments{
@@ -32,6 +33,9 @@ eigenCoefSineInstFrequency(
 
 \item{penalty}{1 is no penalty , 0.2  would give seq(from =  1, to =  1/(0.2*k, length.out = k)
 penalty to each respective taper}
+
+\item{penaltyOnTapersStdInv}{applys the penalty to all tapers in the calculation instead of just weighting the
+eigenCoef's}
 }
 \value{
 returns $PSI kxn matrix, $Freq which are the columns of PSI.  If
