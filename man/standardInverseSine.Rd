@@ -13,6 +13,7 @@ standardInverseSine(
   retSineTapers = FALSE,
   passInSineUnder = NULL,
   penalty = 1,
+  penaltyType = "ScaledExp",
   penaltyOnTapersStdInv = FALSE
 )
 }

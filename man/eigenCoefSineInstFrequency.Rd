@@ -13,7 +13,8 @@ eigenCoefSineInstFrequency(
   passInSineTapers = NULL,
   passInSineUnder = NULL,
   penalty = 1,
-  penaltyOnTapersStdInv = FALSE
+  penaltyOnTapersStdInv = FALSE,
+  penaltyType = "ScaledExp"
 )
 }
 \arguments{

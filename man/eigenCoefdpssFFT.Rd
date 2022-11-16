@@ -12,7 +12,8 @@ eigenCoefdpssFFT(
   deltat = 1,
   passInDPSSMat = NULL,
   pad = FALSE,
-  penalty = 1
+  penalty = 1,
+  penaltyType = "ScaledExp"
 )
 }
 \arguments{

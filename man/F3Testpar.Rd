@@ -13,6 +13,7 @@ F3Testpar(
   dpss = FALSE,
   undersampleNumber = 100,
   penalty = 1,
+  penaltyType = "ScaledExp",
   R = 1,
   cores = 1,
   confLevel = (1 - (1/length(xt))),
@@ -37,6 +38,10 @@ F3Testpar(
 
 \item{penalty}{1 is no penalty , 0.2  would give seq(from =  1, to =  1/(0.2*k, length.out = k)
 penalty to each respective taper}
+
+\item{penaltyType}{What type of penalty you want to use, "ScaledExp" is the most harsh and the best right now,
+"mtm" is for adaptive multitaper weighting, "Cos" is for a cosine weighting scheme, "Clip" is 1 for a percentage of the
+k's then is 0 for the rest.  The percentage is specified by a fraction in the penalty variable}
 
 \item{R}{= 1 by default: Number of times the specific frequency must be detected to be considered significant}
 

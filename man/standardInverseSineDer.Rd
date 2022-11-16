@@ -12,7 +12,8 @@ standardInverseSineDer(
   passInSineMat = NULL,
   returnSineMat = FALSE,
   passInSineUnder = NULL,
-  penalty = 1
+  penalty = 1,
+  penaltyType = "ScaledExp"
 )
 }
 \arguments{

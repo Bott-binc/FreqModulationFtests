@@ -13,7 +13,8 @@ instFreqDPSS(
   passInDPSS = NULL,
   returnDPSS = FALSE,
   passInDPSSUnder = NULL,
-  penalty = 1
+  penalty = 1,
+  penaltyType = "ScaledExp"
 )
 }
 \arguments{

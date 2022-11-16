@@ -13,7 +13,8 @@ standardInverseDPSSFirstDir(
   passInDPSS = NULL,
   returnDPSS = FALSE,
   passInDPSSReduced = NULL,
-  penalty = 1
+  penalty = 1,
+  penaltyType = "ScaledExp"
 )
 }
 \arguments{

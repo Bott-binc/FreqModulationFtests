@@ -14,7 +14,8 @@ eigenCoefDPSSInstFrequency(
   returnDPSS = FALSE,
   passInDPSS = NULL,
   passInDPSSUnder = NULL,
-  penalty = 1
+  penalty = 1,
+  penaltyType = "ScaledExp"
 )
 }
 \arguments{

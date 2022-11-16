@@ -13,7 +13,8 @@ standardInverseDPSS(
   retDPSS = FALSE,
   passInDPSS = NULL,
   passInDPSSReduced = NULL,
-  penalty = 1
+  penalty = 1,
+  penaltyType = "ScaledExp"
 )
 }
 \arguments{

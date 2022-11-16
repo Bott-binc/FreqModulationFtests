@@ -943,12 +943,15 @@ F4Testpar <- function(xt, N, k, p, deltat = 1, dpss = FALSE, undersampleNumber =
 #' @param R = 1 by default: Number of times the specific frequency must be detected to be considered significant
 #' @param penaltyOnTapersStdInv applys the penalty to all tapers in the calculation instead of just weighting the
 #' eigenCoef's
+#' @param penaltyType What type of penalty you want to use, "ScaledExp" is the most harsh and the best right now,
+#' "mtm" is for adaptive multitaper weighting, "Cos" is for a cosine weighting scheme, "Clip" is 1 for a percentage of the
+#' k's then is 0 for the rest.  The percentage is specified by a fraction in the penalty variable
 #'
 #' @return $F3testStat, $Freq, $sigFreq, prop
 #'
 #' @export
 F3Testpar <- function(xt, k, p, N = length(xt), deltat = 1, dpss = FALSE, undersampleNumber = 100,
-                      penalty = 1, R = 1, cores = 1,
+                      penalty = 1, penaltyType = "ScaledExp", R = 1, cores = 1,
                       confLevel = (1 - (1/length(xt))), returnFTestVars = FALSE,
                       penaltyOnTapersStdInv = FALSE){
 
@@ -961,14 +964,16 @@ F3Testpar <- function(xt, k, p, N = length(xt), deltat = 1, dpss = FALSE, unders
         fullDat <- parallel::mclapply(X = k,FUN = function(x){
           return(singleIterationForParallel(xt = xt, k = x, w = ((x+1)/(2*length(xt))), p = p, deltat = deltat,
                                             undersampleNumber = undersampleNumber, dpss = TRUE,
-                                            confLevel = (1-(1/length(xt))), returnFTestVars = FALSE, penalty = penalty))
+                                            confLevel = (1-(1/length(xt))), returnFTestVars = FALSE,
+                                            penalty = penalty, penaltyType = penaltyType))
         }, mc.cores = cores, mc.cleanup = TRUE, mc.preschedule = TRUE)
       }else{ # Sine Tapers Standard -----------
         fullDat <- parallel::mclapply(X = k,FUN = function(x){
           return(singleIterationForParallel(xt = xt, k = x, p = p, deltat = deltat,
                                             undersampleNumber = undersampleNumber, dpss = FALSE,
                                             confLevel = (1-(1/length(xt))), returnFTestVars = FALSE,
-                                            penalty = penalty, penaltyOnTapersStdInv = penaltyOnTapersStdInv))
+                                            penalty = penalty, penaltyType = penaltyType,
+                                            penaltyOnTapersStdInv = penaltyOnTapersStdInv))
         }, mc.cores = cores, mc.cleanup = TRUE, mc.preschedule = TRUE)
       }
       # user wants the F test variables as well -----------------------------------------
@@ -977,14 +982,16 @@ F3Testpar <- function(xt, k, p, N = length(xt), deltat = 1, dpss = FALSE, unders
         fullDat <- parallel::mclapply(X = k,FUN = function(x){
           return(singleIterationForParallel(xt = xt, k = x, w = ((x+1)/(2*length(xt))), p = p, deltat = deltat,
                                             undersampleNumber = undersampleNumber, dpss = TRUE,
-                                            confLevel = (1-(1/length(xt))), returnFTestVars = TRUE, penalty = penalty))
+                                            confLevel = (1-(1/length(xt))), returnFTestVars = TRUE,
+                                            penalty = penalty, penaltyType = penaltyType))
         }, mc.cores = cores, mc.cleanup = TRUE, mc.preschedule = TRUE)
       }else{
         fullDat <- parallel::mclapply(X = k,FUN = function(x){
           return(singleIterationForParallel(xt = xt, k = x, p = p, deltat = deltat,
                                             undersampleNumber = undersampleNumber, dpss = FALSE,
                                             confLevel = (1-(1/length(xt))), returnFTestVars = TRUE,
-                                            penalty = penalty, penaltyOnTapersStdInv = penaltyOnTapersStdInv))
+                                            penalty = penalty, penaltyType = penaltyType,
+                                            penaltyOnTapersStdInv = penaltyOnTapersStdInv))
         }, mc.cores = cores, mc.cleanup = TRUE, mc.preschedule = TRUE)
       }
 
@@ -1026,3 +1033,6 @@ F3Testpar <- function(xt, k, p, N = length(xt), deltat = 1, dpss = FALSE, unders
 
 
 }
+
+
+

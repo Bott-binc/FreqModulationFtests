@@ -12,7 +12,8 @@ eigenCoefSineFFT(
   passInTaper = NULL,
   returnSineMat = FALSE,
   pad = TRUE,
-  penalty = 1
+  penalty = 1,
+  penaltyType = "ScaledExp"
 )
 }
 \arguments{
