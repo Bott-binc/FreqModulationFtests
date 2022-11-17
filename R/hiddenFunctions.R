@@ -127,7 +127,7 @@ eigenCoefSineFFT <- function(N, k, Xt, deltat = 1, passInTaper = NULL,
     }
     else if(penaltyType == "Clip"){
       clipPoint <- penalty#2/3
-      weight <- c(rep(1, length.out = floor(k*clipPoint)), rep(0, length.out = k - floor(k*clipPoint)))
+      weight <- c(rep(1, length.out = floor(k*clipPoint)), rep(0, length.out = k - floor(k*clipPoint)))#c(rep(1, length.out = penalty), rep(0, length.out = k - penalty)) #
       weightMat <- matrix(weight, nrow = nrow(EigenCoef), ncol = k, byrow = TRUE)
       EigenCoef <- EigenCoef * weightMat
     }

@@ -40,7 +40,7 @@ F3Testpar(
 penalty to each respective taper}
 
 \item{penaltyType}{What type of penalty you want to use, "ScaledExp" is the most harsh and the best right now,
-"mtm" is for adaptive multitaper weighting, "Cos" is for a cosine weighting scheme, "Clip" is 1 for a percentage of the
+"mtm" is for adaptive multitaper weighting, "Cos" is for a cosine weighting scheme, "Clip" is 1 for the number passed into penalty
 k's then is 0 for the rest.  The percentage is specified by a fraction in the penalty variable}
 
 \item{R}{= 1 by default: Number of times the specific frequency must be detected to be considered significant}
@@ -56,7 +56,7 @@ NOTE: this will be very memory intensive and is only implimented for altSig = FA
 eigenCoef's}
 }
 \value{
-$F3testStat, $Freq, $sigFreq, prop
+$F3testStat, $Freq, $sigFreq, prop, aggrTestResult zero if fail to reject, 1 if rejected at the specified R
 }
 \description{
 w is chosen by shannons number based on k
