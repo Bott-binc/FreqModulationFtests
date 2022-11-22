@@ -58,8 +58,9 @@ gumbelModulationGeneration <- function(N,P,
     f4 <- freq[which.min(abs(freq-fQuart))]
 
     # creating time indexes
-    tstep <- 2.0/(N-1) # creates the step for the specific N so we end up with t in -1 to 1
-    tt <- n * tstep - 1.0  # this runs from -1 to 1
+    # tstep <- 2.0/(N-1) # creates the step for the specific N so we end up with t in -1 to 1
+    # tt <- n * tstep - 1.0  # this runs from -1 to 1
+    tt <- seq(from = -1, to = 1, length.out = N)
 
     #modulating functions
     Linear <-  (linCoefs[1] + linCoefs[2] * tt)   #linear
@@ -268,8 +269,9 @@ WhiteModulationGeneration <- function(N,P,
     f4 <- freq[which.min(abs(freq-fQuart))]
 
     # creating time indexes
-    tstep <- 2.0/(N-1) # creates the step for the specific N so we end up with t in -1 to 1
-    tt <- n * tstep - 1.0  # this runs from -1 to 1
+    # tstep <- 2.0/(N-1) # creates the step for the specific N so we end up with t in -1 to 1
+    # tt <- n * tstep - 1.0  # this runs from -1 to 1
+    tt <- seq(from = -1, to = 1, length.out = N)
 
     #modulating functions
     Linear <-  (linCoefs[1] + linCoefs[2] * tt)   #linear
