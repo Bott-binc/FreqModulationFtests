@@ -132,7 +132,12 @@ eigenCoefSineFFT <- function(N, k, Xt, deltat = 1, passInTaper = NULL,
       EigenCoef <- EigenCoef * weightMat
     }
     else if(penaltyType == "ScaledExp"){
-      EigenCoef <- t(apply(EigenCoef, MARGIN = 1, FUN = function(x){x/seq(from = 1, to = penalty*k, length.out = k)}))
+      if(penalty == 1){
+        #do nothing as no penalty is selected
+      }else{
+
+        EigenCoef <- t(apply(EigenCoef, MARGIN = 1, FUN = function(x){x/seq(from = 1, to = penalty*k, length.out = k)}))
+      }
     }
     ret <- data.frame(EigenCoef = EigenCoef, Freq = seq(from = 0, to = 1/(2*deltat),
                                                         by = 1/(2*nextPowerOfTwo*deltat)))
@@ -852,7 +857,11 @@ eigenCoefdpssFFT <- function(n, k, w, Xt, deltat = 1, passInDPSSMat = NULL,
       EigenCoef <- EigenCoef * spec$mtm$eigenCoefWt
     }
     else if(penaltyType == "ScaledExp"){
-      EigenCoef <- t(apply(EigenCoef, MARGIN = 1, FUN = function(x){x/seq(from = 1, to = penalty*k, length.out = k)}))
+      if(penalty == 1){
+        # do nothing as that is no penalty
+      }else{
+        EigenCoef <- t(apply(EigenCoef, MARGIN = 1, FUN = function(x){x/seq(from = 1, to = penalty*k, length.out = k)}))
+      }
     }
     else if(penaltyType == "Clip"){
       clipPoint <- penalty#2/3
