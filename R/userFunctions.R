@@ -704,7 +704,7 @@ F3Test <- function(xt, N, k, p, deltat = 1, w = NULL, dpss = FALSE,
                                                         returnDPSS = FALSE, passInDPSS = dp,
                                                         passInDPSSUnder = dpUnder)
         fStuff <- regressionDPSSInstFreq(N = N, k = k, w = w, instFreqEigen = instFreqEigen$PSI,
-                                         p = p, passInDPSS = dpUnder ,returnDPSS = FALSE,
+                                         p = p, passInDPSS = dp ,returnDPSS = FALSE,
                                          returnRp = FALSE, withoutzeroPoly = TRUE)
       }
       else{ #Sine Tapers are used
@@ -716,7 +716,7 @@ F3Test <- function(xt, N, k, p, deltat = 1, w = NULL, dpss = FALSE,
 
         fStuff <- regressionSineInstFreq(N = N, k = k, instFreqEigen = instFreqEigen$PSI,
                                          p = p, returnSineTapers = FALSE,
-                                         passInSineMat = sineUnder,
+                                         passInSineMat = sine,
                                          returnRp = FALSE, withoutzeroPoly = TRUE)
       }
     }
