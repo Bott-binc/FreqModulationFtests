@@ -1265,3 +1265,140 @@ F3Testpar <- function(xt, k, p, N = length(xt), deltat = 1, dpss = FALSE, unders
 
 
 
+# Simulation Functions ------------------
+
+
+#' Simulation of modulation width vs frequency for f3Mod
+#'
+#' This was used to make the heat maps in thesis
+#'
+#' @param K Number of tapers
+#' @param N Length of time series
+#' @param numSim number of simulations to be conducted
+#' @param lengthWp number of wp's to check between the range of wp's tested from 4*w to 0.0001
+#' @param date eg 221206 would be yymmdd
+#' @param Amplitude 1.4 will give SNR of 1
+#' @param FileDiscripter What makes this sim different than the others done, like SNRHigh
+#' @param DirForSave Where you would like the data to be saved
+#' @param cores number of cores used, Windows can only use 1
+#' @param saveRDS if you would like to save the simulation results
+#' @param savePlot if you want to save the .png plot to the dir as well
+#'
+#' @return returns the simulation results
+#' @export
+
+HeatMapWpVsFreqF3ModWhite <- function(K, N, numSim = 500,
+                                      lengthWp = 200,
+                                      date,
+                                      Amplitude = 1.4,
+                                      FileDiscripter = "",
+                                      DirForSave = "~/",
+                                      cores = 1, saveData = TRUE,
+                                      savePlot = TRUE){
+
+  # User Set Parameters---------
+  w <- (K + 1)/(2*N) # This is so we can test DPSS as well
+  WpToTest <- seq(from = 4*w, to = 1e-4, length.out = lengthWp) # each will be tested under the same noise for each simulation iteration 1e-2
+  seeds <- 1:numSim
+  FileName <- paste0("k", K, "N", N, "Sim", numSim, "WLines", date, FileDiscripter) #WideRange
+  #Amp = 3.1 for SNR of 5
+  #Amp = 1.4 for SNR of 1
+  # Creating Matrix and details about simulation ---------
+
+  TotalNumberOfSimulations <- numSim*length(WpToTest)
+  print(paste0("Total number of simulations to do is: ", TotalNumberOfSimulations))
+
+  kIndex <- 0
+  for(k in K){
+    kIndex <- kIndex + 1
+    for(i in 1:numSim){
+      print(paste0("Simulation Number", i))
+      oneSim <- mclapply(X = WpToTest, FUN = function(x){
+        dat <- WhiteModulationGeneration(N = N, P = 1, wLinear = x, linCoefs = c(0,1),
+                                         AmpLinear = 1.4, fLin = 0.2, seed = seeds[i])$xt
+        F3 <- F3Test(xt = dat, N = N, k = k, p = 1, dpss = TRUE, undersample = TRUE,
+                     undersampleNumber = 100, w = w)$F3testStat
+        return(F3)
+      }, mc.cores = cores, mc.preschedule = TRUE, mc.cleanup = TRUE)
+      if(k == K[1] & i == 1){ # this is the first iteration
+        ResultsArray <- array(dim = c(length(K), numSim, length(WpToTest), length(oneSim[[1]])))
+        datforFreq <- WhiteModulationGeneration(N = N, P = 1, wLinear = WpToTest[1], linCoefs = c(0,1),
+                                                AmpLinear = 1.4, fLin = 0.2, seed = seeds[i])
+        F3Freq <- F3Test(xt = datforFreq$xt, N = N, k = k, p = 1, dpss = FALSE, undersample = TRUE,
+                         undersampleNumber = 100)
+        Freq <- F3Freq$Freq
+        SNR <- round(var(datforFreq$xtNoNoise)/var(datforFreq$noise), 2)
+      }
+      #mat <- matrix(nrow = length(oneSim), ncol = length(oneSim[[1]]$Freq))
+
+      # for(j in 1:length(oneSim)){ # changes list object to a matrix
+      #     mat[j,] <- oneSim[[j]]$F3testStat
+      # }
+      ResultsArray[kIndex, i, ,] <- matrix(unlist(oneSim), nrow = length(oneSim), byrow = TRUE)
+    }
+  }
+
+  # heatmap(ResultsArray[1,1,,], Rowv = NA, Colv = NA,
+  #         ColSideColors = as.character(Freq))
+
+
+
+  results <- ResultsArray[1,,,]
+  cutoff <- qf(p = 1-1/N, df1 = 1, df2 = (K-1-1), lower.tail = TRUE)
+  for(i in 1:numSim){
+    results[i,,] <- sapply(results[i,,], FUN = function(x){
+      if(x >= cutoff){
+        return(1)
+      }else{
+        return(0)
+      }
+    })
+  }
+  sumMatrix <- matrix(0, nrow = length(WpToTest), ncol = length(Freq))
+  for(i in 1:numSim){
+    sumMatrix <- results[i,,] + sumMatrix
+  }
+  rownames(sumMatrix) <- WpToTest
+  colnames(sumMatrix) <- Freq
+  #dataMelt <- melt(ResultsArray[1,1,,])
+  if(saveData){
+    if(paste0(DirForSave, "/Data") %in% list.dirs(path = DirForSave)){
+      # do nothing because the directory exists
+    }else{
+      dir.create(paste0(DirForSave, "/Data"))
+    }
+    saveRDS(sumMatrix, file = paste0(DirForSave, "Data/", FileName, ".RDS"))
+  }
+
+  dataMelt <- melt(sumMatrix)
+  # dataMelt$Var1 <- WpToTest
+  # dataMelt$Var2 <- Freq
+
+
+  # ggplot(dataMelt, aes(Var1,Var2)) + geom_tile(aes(fill = value)) +
+  #   scale_fill_viridis(discrete = FALSE, name = "Detections") + xlab("Wp") + #scale_fill_gradient2(low = "lightblue",mid = "black", high = "red", midpoint = numSim/2, name = "Detections")
+  #   ylab("Freq") + geom_hline(yintercept = 0.2 + (K+1)/(2*N), col = "green", linetype = "dotted") +
+  #  geom_hline(yintercept = 0.2 - (K+1)/(2*N), col = "green", linetype = "dotted") +
+  #   ggtitle(paste0("Number of Detections at 1-1/N of F3mod Under White Noise SNR of 1 in ", numSim, " Trials, for K = ", K, " N = ", N))
+
+  colors <- c("W MTM = Wp" = "orange", "Prediction" = "red", "W MTM" = "green")
+  ggplot(dataMelt, aes(Var1,Var2)) + geom_tile(aes(fill = value)) +
+    scale_fill_distiller( name = "Detections", direction = 1, values = seq(from = 0, to = 1, by = 0.1 )) +
+    xlab("Wp") + ylab("Freq") +
+    geom_vline(aes(xintercept = (K+1)/(2*N), color = "W MTM = Wp"), linetype = 4) + # this is wp = w
+    geom_abline(aes(intercept = 0.2, slope = 1, color = "Prediction")) + # y = 1x + 0.2, our hypothesis of where the modulation is
+    geom_abline(aes(intercept = 0.2, slope = -1, color = "Prediction")) + # y = -x + 0.2 the mirrored line
+    geom_hline(aes(yintercept = 0.2 + (K+1)/(2*N), color = "+W MTM"), linetype = "dotted") + # w multitaper
+    geom_hline(aes(yintercept = 0.2 - (K+1)/(2*N), col = "+W MTM"), linetype = "dotted") + # -w multitaper
+    ylim(c(0.175, 0.225))  + xlim(c(0, 4*w)) +
+    labs(color = "Legend") + scale_color_manual(values = colors) +
+    ggtitle(paste0("Number of Detections at 1-1/N of F3mod Under White Noise SNR of",  SNR,
+                   "in ", numSim, " Trials, for K = ", K, " N = ", N))
+
+  if(savePlot){
+    ggsave(paste0(DirForSave, "/", FileName, ".png"), device = png, width = 9, height = 5, units = "in")
+  }
+
+
+  return(Results = sumMatrix)
+}
