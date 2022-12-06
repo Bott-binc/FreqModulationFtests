@@ -33,7 +33,8 @@ HeatMapWpVsFreqF3ModWhite(
 
 \item{FileDiscripter}{What makes this sim different than the others done, like SNRHigh}
 
-\item{DirForSave}{Where you would like the data to be saved}
+\item{DirForSave}{Where you would like the data to be saved if you want to use
+you're current directory use "."}
 
 \item{cores}{number of cores used, Windows can only use 1}
 

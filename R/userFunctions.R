@@ -1279,7 +1279,8 @@ F3Testpar <- function(xt, k, p, N = length(xt), deltat = 1, dpss = FALSE, unders
 #' @param date eg 221206 would be yymmdd
 #' @param Amplitude 1.4 will give SNR of 1
 #' @param FileDiscripter What makes this sim different than the others done, like SNRHigh
-#' @param DirForSave Where you would like the data to be saved
+#' @param DirForSave Where you would like the data to be saved if you want to use
+#' you're current directory use "."
 #' @param cores number of cores used, Windows can only use 1
 #' @param saveRDS if you would like to save the simulation results
 #' @param savePlot if you want to save the .png plot to the dir as well
@@ -1304,6 +1305,13 @@ HeatMapWpVsFreqF3ModWhite <- function(K, N, numSim = 500,
   #Amp = 3.1 for SNR of 5
   #Amp = 1.4 for SNR of 1
   # Creating Matrix and details about simulation ---------
+ if(saveData){
+   if(paste0(DirForSave, "/Data") %in% list.dirs(path = DirForSave)){
+     # do nothing because the directory exists
+   }else{
+     stop("need to create /Data directory in save location before running function")
+   }
+ }
 
   TotalNumberOfSimulations <- numSim*length(WpToTest)
   print(paste0("Total number of simulations to do is: ", TotalNumberOfSimulations))
@@ -1362,11 +1370,6 @@ HeatMapWpVsFreqF3ModWhite <- function(K, N, numSim = 500,
   colnames(sumMatrix) <- Freq
   #dataMelt <- melt(ResultsArray[1,1,,])
   if(saveData){
-    if(paste0(DirForSave, "/Data") %in% list.dirs(path = DirForSave)){
-      # do nothing because the directory exists
-    }else{
-      dir.create(paste0(DirForSave, "/Data"))
-    }
     saveRDS(sumMatrix, file = paste0(DirForSave, "Data/", FileName, ".RDS"))
   }
 
@@ -1382,7 +1385,7 @@ HeatMapWpVsFreqF3ModWhite <- function(K, N, numSim = 500,
   #   ggtitle(paste0("Number of Detections at 1-1/N of F3mod Under White Noise SNR of 1 in ", numSim, " Trials, for K = ", K, " N = ", N))
 
   colors <- c("W MTM = Wp" = "orange", "Prediction" = "red", "W MTM" = "green")
-  ggplot(dataMelt, aes(Var1,Var2)) + geom_tile(aes(fill = value)) +
+  plot <- ggplot(dataMelt, aes(Var1,Var2)) + geom_tile(aes(fill = value)) +
     scale_fill_distiller( name = "Detections", direction = 1, values = seq(from = 0, to = 1, by = 0.1 )) +
     xlab("Wp") + ylab("Freq") +
     geom_vline(aes(xintercept = (K+1)/(2*N), color = "W MTM = Wp"), linetype = 4) + # this is wp = w
@@ -1396,9 +1399,9 @@ HeatMapWpVsFreqF3ModWhite <- function(K, N, numSim = 500,
                    "in ", numSim, " Trials, for K = ", K, " N = ", N))
 
   if(savePlot){
-    ggsave(paste0(DirForSave, "/", FileName, ".png"), device = png, width = 9, height = 5, units = "in")
+    ggsave(paste0(DirForSave, "/", FileName, ".png"), plot = plot, device = png, width = 9, height = 5, units = "in")
   }
 
 
-  return(Results = sumMatrix)
+  return(list(Results = sumMatrix, Plot = plot))
 }
