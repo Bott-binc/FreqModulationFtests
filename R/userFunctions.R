@@ -1395,8 +1395,8 @@ HeatMapWpVsFreqF3ModWhite <- function(K, N, numSim = 500,
     geom_hline(aes(yintercept = 0.2 - (K+1)/(2*N), col = "+W MTM"), linetype = "dotted") + # -w multitaper
     ylim(c(0.175, 0.225))  + xlim(c(0, 4*w)) +
     labs(color = "Legend") + scale_color_manual(values = colors) +
-    ggtitle(paste0("Number of Detections at 1-1/N of F3mod Under White Noise SNR of",  SNR,
-                   "in ", numSim, " Trials, for K = ", K, " N = ", N))
+    ggtitle(paste0("Number of Detections at 1-1/N of F3mod Under White Noise SNR of ",  SNR,
+                   " in ", numSim, " Trials, for K = ", K, " N = ", N))
 
   if(savePlot){
     ggsave(paste0(DirForSave, "/", FileName, ".png"), plot = plot, device = png, width = 9, height = 5, units = "in")
