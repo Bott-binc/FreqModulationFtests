@@ -231,7 +231,7 @@ standardInverseSine <- function(xt, N, k, deltat = 1, passInSineMat = NULL,
       }
   }else{
     if(is.null(passInSineUnder)){
-      stdInverse <- tcrossprod(penaltyV, Y$EigenCoef)
+      stdInverse <- tcrossprod(v, Y$EigenCoef)
     }else{#reduced matrix of tapers used here
       stdInverse <- tcrossprod(passInSineUnder, Y$EigenCoef)
     }
