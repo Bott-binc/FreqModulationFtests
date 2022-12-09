@@ -676,7 +676,7 @@ F3Test <- function(xt, N, k, p, deltat = 1, w = NULL, dpss = FALSE,
         }
 
         instFreqEigen <- eigenCoefDPSSInstFrequency(xt = xt, N = N, k = k, w = w, deltat = deltat,
-                                                        returnDPSS = TRUE,)
+                                                        returnDPSS = TRUE)
         fStuff <- regressionDPSSInstFreq(N = N, k = k, w = w, instFreqEigen = instFreqEigen$PSI,
                                          p = p, passInDPSS = instFreqEigen$DPSS,returnDPSS = FALSE,
                                          returnRp = FALSE,  withoutzeroPoly = TRUE)
