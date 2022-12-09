@@ -604,6 +604,8 @@ F2Test <- function(xt, N, k, p, deltat = 1, w = NULL, dpss = FALSE, passInInstFr
 
 #' F3 test statistic
 #'
+#' Df1 = 1 , Df2 = K-P
+#'
 #' @param xt time series
 #' @param N Total number of observations
 #' @param k Number of tapers
@@ -1298,6 +1300,7 @@ HeatMapWpVsFreqF3ModWhite <- function(K, N, numSim = 500,
                                       savePlot = TRUE){
 
   # User Set Parameters---------
+
   w <- (K + 1)/(2*N) # This is so we can test DPSS as well
   WpToTest <- seq(from = 4*w, to = 1e-4, length.out = lengthWp) # each will be tested under the same noise for each simulation iteration 1e-2
   seeds <- 1:numSim
@@ -1352,7 +1355,7 @@ HeatMapWpVsFreqF3ModWhite <- function(K, N, numSim = 500,
 
 
   results <- ResultsArray[1,,,]
-  cutoff <- qf(p = 1-1/N, df1 = 1, df2 = (K-1-1), lower.tail = TRUE)
+  cutoff <- qf(p = 1-1/N, df1 = 1, df2 = (K-1), lower.tail = TRUE) #df2 is k - p
   for(i in 1:numSim){
     results[i,,] <- sapply(results[i,,], FUN = function(x){
       if(x >= cutoff){

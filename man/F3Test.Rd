@@ -46,5 +46,5 @@ also cause zero padding to take place.  the user DOES NOT need to manually zero 
 $F3testStat, $Freq, $necessaryTestStuff used to pass into another ftest function
 }
 \description{
-F3 test statistic
+Df1 = 1 , Df2 = K-P
 }
