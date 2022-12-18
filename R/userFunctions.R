@@ -418,7 +418,7 @@ WhiteModulationGeneration <- function(N,P,
     plot(xt, x = 1:N, type = "l")
   }
 
-  return(list(xt = xt, xtNoNoise = modulation, noise = noise, correctionCoef = correct))
+  return(list(xt = xt, xtNoNoise = modulation, noise = noise, correctionCoef = correct, fs = c(f1, f2, f3, f4)))
 }
 
 

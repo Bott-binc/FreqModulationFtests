@@ -955,6 +955,7 @@ standardInverseDPSS <- function(xt, N, k, w, deltat = 1, retDPSS = FALSE,
   #   #index <- index + 1
   #   stdInverse[,i] <- v %*% as.matrix(Y$EigenCoef[i,])
   # }
+
   if(is.null(passInDPSSReduced)){
     stdInverse <- tcrossprod(v,Y$EigenCoef)
   }else{
@@ -1160,6 +1161,67 @@ HatMatGMatDpss <- function(N, k, p, w, passInDPSS = NULL){
   return(list(H = dpssGram$H, G = dpssGram$G))
 }
 
+#'  Time domain slepians **Untested**
+#'
+#'  Calculates the time domain version of the slepians, it is not used in any of
+#'  the functions but could be usefull to know in the future.
+#'
+#' @param N Total number of observations
+#' @param w bandwidth parameter
+#' @param k number of tapers
+#' @param returnDPSS returnDPSS for limiting calculations of dpss
+#' @param passInFullDPSS this is the object returned by dpss.  both $v and $eigen
+#'
+#' @return matrix of der for each t = 0, ..., N-1 by k = 0, ..., k-1
+
+TimeDomSlepians <- function(N, w, k, passInFullDPSS = NULL, returnDPSS = FALSE){
+
+  if(is.null(passInFullDPSS)){
+    dpMat <- matrix(nrow = N, ncol = k)
+    dp <- multitaper::dpss(N, k, N*w)
+    dpMat <- dp$v
+  }
+  else{
+    dp <- passInFullDPSS
+    dpMat <- dp$v
+  }
+
+  diff <- 1:(N - 1)
+  #
+  # #Generating rho matrix
+  firstCol <- c(2*w, sin(2*pi*w*diff)/(pi*diff))
+  #Generating rho matrix
+  # rho <- matrix(nrow = N, ncol = N)
+  # for(i in 1:N){
+  #   for(j in 1:N){
+  #     diff <- i-j
+  #     if(diff == 0){
+  #       rho[i,j] <- 2*w
+  #     }
+  #     else{
+  #       rho[i,j] <-  sin(2*pi*w*diff)/(pi*diff)
+  #     }
+  #   }
+  # }
+
+  # due to the symmetry of the matrix generated with the double for loop above,
+  #we can do it with only a vector and a single for loop making it much faster!
+  rho <- matrix(nrow = N, ncol = N)
+  rho[,1] <- firstCol
+  for(i in 2:N){
+    rho[seq(from = i, to = N, by = 1), i] <- firstCol[1:(N-(i-1))]
+    rho[seq(from = 1, to = (i-1), by = 1), i] <- firstCol[i:2]#((N-(i-1))+1):N]
+  }
+
+  #(2.32) in kians thesis
+  V <- t(apply((rho %*% dpMat), MARGIN = 1, FUN = function(x) {x/dp$eigen}))#matrix(dp$eigen, nrow = N, ncol = k, byrow = TRUE)
+  if(!returnDPSS){
+    return(list(V = V))
+  }
+  else{
+    return(list(V = V, DPSS = dp))
+  }
+}
 
 
 #' First derivative of time domain slepians
