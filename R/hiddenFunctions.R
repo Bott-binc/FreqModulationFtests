@@ -82,7 +82,7 @@ eigenCoefSine <- function(n, k, Xt, f, deltat = 1, sineRet = FALSE){
 eigenCoefSineFFT <- function(N, k, Xt, deltat = 1, passInTaper = NULL,
                              returnSineMat = FALSE, pad = TRUE,
                              penalty = 1, penaltyType = "ScaledExp"){
-  if(penaltyType %in% c("ScaledExp", "Cos", "Clip")){
+  if(penaltyType %in% c("ScaledExp", "Cos", "Clip", "CustomE", "CustomO")){
     #do nothing and continue
   }else{
     stop("No penalty type that is available was selected, please check documentation")
@@ -93,7 +93,7 @@ eigenCoefSineFFT <- function(N, k, Xt, deltat = 1, passInTaper = NULL,
   }
   EigenCoef <- matrix(nrow = N,ncol = k)
   if(is.null(passInTaper)){
-    sine <- sineTaperMatrix(N, k)
+    sine <- FreqModulationFtests:::sineTaperMatrix(N, k)
   }
   else{
     sine = passInTaper
@@ -129,6 +129,22 @@ eigenCoefSineFFT <- function(N, k, Xt, deltat = 1, passInTaper = NULL,
       clipPoint <- penalty#2/3
       weight <- c(rep(1, length.out = floor(k*clipPoint)), rep(0, length.out = k - floor(k*clipPoint)))#c(rep(1, length.out = penalty), rep(0, length.out = k - penalty)) #
       weightMat <- matrix(weight, nrow = nrow(EigenCoef), ncol = k, byrow = TRUE)
+      EigenCoef <- EigenCoef * weightMat
+    }
+    else if(penaltyType == "CustomO"){
+      # this is coded to remove the even right now
+      odd <- rep(c(1,0), length.out = k) # this will keep all the odd ones and remove even ones
+      clipPoint <- penalty#2/3
+      weight <- c(rep(1, length.out = floor(k*clipPoint)), rep(0, length.out = k - floor(k*clipPoint)))
+      weightMat <- matrix(odd * weight, nrow = nrow(EigenCoef), ncol = k, byrow = TRUE)
+      EigenCoef <- EigenCoef * weightMat
+    }
+    else if(penaltyType == "CustomE"){
+      # this is coded to remove the even right now
+      odd <- rep(c(0,1), length.out = k) # this will keep all the odd ones and remove even ones
+      clipPoint <- penalty#2/3
+      weight <- c(rep(1, length.out = floor(k*clipPoint)), rep(0, length.out = k - floor(k*clipPoint)))
+      weightMat <- matrix(odd * weight, nrow = nrow(EigenCoef), ncol = k, byrow = TRUE)
       EigenCoef <- EigenCoef * weightMat
     }
     else if(penaltyType == "ScaledExp"){
