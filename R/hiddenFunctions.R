@@ -82,7 +82,7 @@ eigenCoefSine <- function(n, k, Xt, f, deltat = 1, sineRet = FALSE){
 eigenCoefSineFFT <- function(N, k, Xt, deltat = 1, passInTaper = NULL,
                              returnSineMat = FALSE, pad = TRUE,
                              penalty = 1, penaltyType = "ScaledExp"){
-  if(penaltyType %in% c("ScaledExp", "Cos", "Clip", "CustomE", "CustomO")){
+  if(penaltyType %in% c("ScaledExp", "Cos", "Clip", "CustomE", "CustomO", "Custom")){
     #do nothing and continue
   }else{
     stop("No penalty type that is available was selected, please check documentation")
@@ -146,6 +146,13 @@ eigenCoefSineFFT <- function(N, k, Xt, deltat = 1, passInTaper = NULL,
       weight <- c(rep(1, length.out = floor(k*clipPoint)), rep(0, length.out = k - floor(k*clipPoint)))
       weightMat <- matrix(odd * weight, nrow = nrow(EigenCoef), ncol = k, byrow = TRUE)
       EigenCoef <- EigenCoef * weightMat
+    }
+    else if(penaltyType == "Custom"){
+      # this is coded to remove the even right now
+      #weight <- rep(c(1,0), length.out = k) # this will keep all the odd ones and remove even ones
+      #weightMat <- matrix(weight, nrow = nrow(EigenCoef), ncol = k, byrow = TRUE)
+
+      EigenCoef <- apply(Y$EigenCoef, MARGIN = 2, FUN = Mod)^2 #* weightMat
     }
     else if(penaltyType == "ScaledExp"){
       if(penalty == 1){
