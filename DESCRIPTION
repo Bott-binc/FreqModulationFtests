@@ -1,7 +1,7 @@
 Package: FreqModulationFtests
 Type: Package
 Title: Time series testing for significant frequencies using multitaper method
-Version: 0.1.9
+Version: 0.2.0
 Author: Benjamin Ott, with contributions from Kian Blanchette
 Maintainer: The package maintainer <benjaminOtt@trentu.ca>
 Description: Allows for testing of significant frequencies in a time series with 

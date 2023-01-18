@@ -151,8 +151,10 @@ eigenCoefSineFFT <- function(N, k, Xt, deltat = 1, passInTaper = NULL,
       # this is coded to remove the even right now
       #weight <- rep(c(1,0), length.out = k) # this will keep all the odd ones and remove even ones
       #weightMat <- matrix(weight, nrow = nrow(EigenCoef), ncol = k, byrow = TRUE)
+      weight <- c(rep(0, penalty), rep(1, k-penalty))
+      weightMat <- matrix(weight, nrow = nrow(EigenCoef), ncol = k, byrow = TRUE)
+      EigenCoef <- EigenCoef*weight #* weightMat
 
-      EigenCoef <- apply(Y$EigenCoef, MARGIN = 2, FUN = Mod)^2 #* weightMat
     }
     else if(penaltyType == "ScaledExp"){
       if(penalty == 1){
@@ -320,22 +322,26 @@ standardInverseSineDer <- function(xt, N, k, deltat = 1, passInSineMat = NULL,
 
     if(!returnSineMat){
       if(is.null(passInSineMat)){ # no tapers will be passed to EigenCoeffft
-        Y <- eigenCoefSineFFT(N = nrow(passInSineMat), k, xt, deltat = deltat, pad = TRUE, penalty = penalty)
+        Y <- eigenCoefSineFFT(N = nrow(passInSineMat), k, xt, deltat = deltat,
+                              pad = TRUE, penalty = penalty, penaltyType = penaltyType)
       }
       else{ # passing in sine tapers from outside function
         Y <- eigenCoefSineFFT(N = nrow(passInSineMat), k, xt, deltat = deltat,
-                                  passInTaper = passInSineMat, pad = TRUE, penalty = penalty)
+                                  passInTaper = passInSineMat, pad = TRUE,
+                              penalty = penalty, penaltyType = penaltyType)
       }
     }
     else{
       if(is.null(passInSineMat)){ # no tapers will be passed to EigenCoeffft
         Y <- eigenCoefSineFFT(N = nrow(passInSineMat), k, xt, deltat = deltat,
-                                  returnSineMat = TRUE, pad = TRUE, penalty = penalty)
+                                  returnSineMat = TRUE, pad = TRUE, penalty = penalty
+                              ,penaltyType = penaltyType)
       }
       else{ # passing in sine tapers from outside function
         Y <- eigenCoefSineFFT(N = nrow(passInSineMat), k, xt, deltat = deltat,
                                   passInTaper = passInSineMat,
-                                  returnSineMat = TRUE, pad = TRUE, penalty = penalty)
+                                  returnSineMat = TRUE, pad = TRUE, penalty = penalty,
+                              penaltyType = penaltyType)
       }
     }
 
