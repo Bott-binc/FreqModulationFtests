@@ -326,9 +326,10 @@ standardInverseSineDer <- function(xt, N, k, deltat = 1, passInSineMat = NULL,
                               pad = TRUE, penalty = penalty, penaltyType = penaltyType)
       }
       else{ # passing in sine tapers from outside function
+        #this is the main one
         Y <- eigenCoefSineFFT(N = nrow(passInSineMat), k, xt, deltat = deltat,
                                   passInTaper = passInSineMat, pad = TRUE,
-                              penalty = penalty, penaltyType = penaltyType)
+                              penalty = penalty)
       }
     }
     else{
