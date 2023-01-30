@@ -1178,14 +1178,14 @@ F3Testpar <- function(xt, k, p, N = length(xt), deltat = 1, dpss = FALSE, unders
         fullDat <- parallel::mclapply(X = k,FUN = function(x){
           return(singleIterationForParallel(xt = xt, k = x, w = ((x+1)/(2*length(xt))), p = p, deltat = deltat,
                                             undersampleNumber = undersampleNumber, dpss = TRUE,
-                                            confLevel = (1-(1/length(xt))), returnFTestVars = FALSE,
+                                            confLevel = confLevel, returnFTestVars = FALSE,
                                             penalty = penalty, penaltyType = penaltyType))
         }, mc.cores = cores, mc.cleanup = TRUE, mc.preschedule = TRUE)
       }else{ # Sine Tapers Standard -----------
         fullDat <- parallel::mclapply(X = k,FUN = function(x){
           return(singleIterationForParallel(xt = xt, k = x, p = p, deltat = deltat,
                                             undersampleNumber = undersampleNumber, dpss = FALSE,
-                                            confLevel = (1-(1/length(xt))), returnFTestVars = FALSE,
+                                            confLevel = confLevel, returnFTestVars = FALSE,
                                             penalty = penalty, penaltyType = penaltyType,
                                             penaltyOnTapersStdInv = penaltyOnTapersStdInv))
         }, mc.cores = cores, mc.cleanup = TRUE, mc.preschedule = TRUE)
@@ -1196,14 +1196,14 @@ F3Testpar <- function(xt, k, p, N = length(xt), deltat = 1, dpss = FALSE, unders
         fullDat <- parallel::mclapply(X = k,FUN = function(x){
           return(singleIterationForParallel(xt = xt, k = x, w = ((x+1)/(2*length(xt))), p = p, deltat = deltat,
                                             undersampleNumber = undersampleNumber, dpss = TRUE,
-                                            confLevel = (1-(1/length(xt))), returnFTestVars = TRUE,
+                                            confLevel = confLevel, returnFTestVars = TRUE,
                                             penalty = penalty, penaltyType = penaltyType))
         }, mc.cores = cores, mc.cleanup = TRUE, mc.preschedule = TRUE)
       }else{
         fullDat <- parallel::mclapply(X = k,FUN = function(x){
           return(singleIterationForParallel(xt = xt, k = x, p = p, deltat = deltat,
                                             undersampleNumber = undersampleNumber, dpss = FALSE,
-                                            confLevel = (1-(1/length(xt))), returnFTestVars = TRUE,
+                                            confLevel = confLevel, returnFTestVars = TRUE,
                                             penalty = penalty, penaltyType = penaltyType,
                                             penaltyOnTapersStdInv = penaltyOnTapersStdInv))
         }, mc.cores = cores, mc.cleanup = TRUE, mc.preschedule = TRUE)
