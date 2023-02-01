@@ -161,7 +161,9 @@ eigenCoefSineFFT <- function(N, k, Xt, deltat = 1, passInTaper = NULL,
         #do nothing as no penalty is selected
       }else{
 
-        EigenCoef <- t(apply(EigenCoef, MARGIN = 1, FUN = function(x){x/seq(from = 1, to = penalty*k, length.out = k)}))
+       # EigenCoef <- t(apply(EigenCoef, MARGIN = 1, FUN = function(x){x/seq(from = 1, to = penalty*k, length.out = k)}))
+        weight <- 1/seq(from = 1, to = penalty*k, length.out = k)
+        EigenCoef <- EigenCoef * matrix(weight, nrow = nrow(EigenCoef), ncol = k, byrow = TRUE)
       }
     }
     ret <- data.frame(EigenCoef = EigenCoef, Freq = seq(from = 0, to = 1/(2*deltat),
