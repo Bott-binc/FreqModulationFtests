@@ -297,11 +297,13 @@ WhiteModulationGeneration <- function(N,P,
       }
 
       #then computing the 'integrals'
-
-      modulationLinear <- cumsum(FMLinear)*2*pi
+      intLin <- cumsum(FMLinear)
+      modulationLinear <- intLin*2*pi
       InnerCosLin <- 2*pi*f1*n + modulationLinear
 
       modulation <- AmpLinear*cos(InnerCosLin)
+      ret <- list(phiLinear = FMLinear)
+      fs <-  c(f1)
     }
     else if(P == 2){
 
@@ -321,14 +323,17 @@ WhiteModulationGeneration <- function(N,P,
       }
 
       #then computing the 'integrals'
-
-      modulationLinear <- cumsum(FMLinear)*2*pi
-      modulationQuadratic <- cumsum(FMQuadratic)*2*pi
+      intLin <- cumsum(FMLinear)
+      intQuad <- cumsum(FMQuadratic)
+      modulationLinear <- intLin*2*pi
+      modulationQuadratic <- intQuad*2*pi
 
       InnerCosLin <- 2*pi*f1*n + modulationLinear
       InnerCosQuad <- 2*pi*f2*n + modulationQuadratic
 
       modulation <- AmpLinear*cos(InnerCosLin) + AmpQuad*cos(InnerCosQuad)
+      ret <- list(phiLinear = FMLinear, phiQuad = FMQuadratic)
+      fs <-  c(f1, f2)
 
     }
     else if(P == 3){
@@ -353,10 +358,12 @@ WhiteModulationGeneration <- function(N,P,
       }
 
       #then computing the 'integrals'
-
-      modulationLinear <- cumsum(FMLinear)*2*pi
-      modulationQuadratic <- cumsum(FMQuadratic)*2*pi
-      modulationCubic <- cumsum(FMCubic)*2*pi
+      intLin <- cumsum(FMLinear)
+      intQuad <- cumsum(FMQuadratic)
+      intCube <- cumsum(FMCubic)
+      modulationLinear <- intLin*2*pi
+      modulationQuadratic <- intQuad*2*pi
+      modulationCubic <- intCube*2*pi
 
 
       InnerCosLin <- 2*pi*f1*n + modulationLinear
@@ -365,6 +372,9 @@ WhiteModulationGeneration <- function(N,P,
 
       modulation <- AmpLinear*cos(InnerCosLin) + AmpQuad*cos(InnerCosQuad) +
         AmpCube*cos(InnerCosCube)
+
+      ret <- list(phiLinear = FMLinear, phiQuad = FMQuadratic, phiCube = FMCubic)
+      fs <-  c(f1, f2, f3)
     }
     else{
       correctionLinearbw <- wLinear/(ceiling((bwLin)*100)/100) # finds closest correction factor to three digits below the desired bandwidth
@@ -387,11 +397,14 @@ WhiteModulationGeneration <- function(N,P,
       }
 
       #then computing the 'integrals'
-
-      modulationLinear <- cumsum(FMLinear)*2*pi
-      modulationQuadratic <- cumsum(FMQuadratic)*2*pi
-      modulationCubic <- cumsum(FMCubic)*2*pi
-      modulationQuartic <- cumsum(FMQuartic)*2*pi
+      intLin <- cumsum(FMLinear)
+      intQuad <- cumsum(FMQuadratic)
+      intCube <- cumsum(FMCubic)
+      intQuart <- cumsum(FMQuartic)
+      modulationLinear <- intLin*2*pi
+      modulationQuadratic <- intQuad*2*pi
+      modulationCubic <- intCube*2*pi
+      modulationQuartic <- intQuart*2*pi
 
       InnerCosLin <- 2*pi*f1*n + modulationLinear
       InnerCosQuad <- 2*pi*f2*n + modulationQuadratic
@@ -400,6 +413,10 @@ WhiteModulationGeneration <- function(N,P,
 
       modulation <- AmpLinear*cos(InnerCosLin) + AmpQuad*cos(InnerCosQuad) +
         AmpCube*cos(InnerCosCube) + AmpQuart*cos(InnerCosQuart)
+
+      ret <- list(phiLinear = FMLinear, phiQuad = FMQuadratic, phiCube = FMCubic, phiQuart = FMQuartic)
+      fs <-  c(f1, f2, f3, f4)
+
     }
 
     if(!is.null(seed)){ # allows the user to keep the noise generation the same
@@ -418,7 +435,7 @@ WhiteModulationGeneration <- function(N,P,
     plot(xt, x = 1:N, type = "l")
   }
 
-  return(list(xt = xt, xtNoNoise = modulation, noise = noise, correctionCoef = correct, fs = c(f1, f2, f3, f4)))
+  return(list(xt = xt, xtNoNoise = modulation, noise = noise, correctionCoef = correct, phis = ret, fs = fs ))
 }
 
 
@@ -1172,6 +1189,9 @@ F3Testpar <- function(xt, k, p, N = length(xt), deltat = 1, dpss = FALSE, unders
   if(is.null(undersampleNumber)){
     stop("need to set undersample amount")
   }
+  if(is.null(p)){
+    stop("need to set a polynomial degree amount = p")
+  }
   #if(!altSig){
     if(!returnFTestVars){
       if(dpss){ # DPSS Tapers Standard ---------
@@ -1210,6 +1230,7 @@ F3Testpar <- function(xt, k, p, N = length(xt), deltat = 1, dpss = FALSE, unders
       }
 
     }
+
     Freq = fullDat[[1]]$Freq
 
 
