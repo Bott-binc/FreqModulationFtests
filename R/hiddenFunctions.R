@@ -162,7 +162,7 @@ eigenCoefSineFFT <- function(N, k, Xt, deltat = 1, passInTaper = NULL,
       }else{
 
        # EigenCoef <- t(apply(EigenCoef, MARGIN = 1, FUN = function(x){x/seq(from = 1, to = penalty*k, length.out = k)}))
-        weight <- 1/seq(from = 1, to = penalty*k, length.out = k)
+        weight <- 1/seq(from = 1, to = max(1, penalty*k), length.out = k)
         EigenCoef <- EigenCoef * matrix(weight, nrow = nrow(EigenCoef), ncol = k, byrow = TRUE)
       }
     }
@@ -891,7 +891,7 @@ eigenCoefdpssFFT <- function(n, k, w, Xt, deltat = 1, passInDPSSMat = NULL,
       if(penalty == 1){
         # do nothing as that is no penalty
       }else{
-        EigenCoef <- t(apply(EigenCoef, MARGIN = 1, FUN = function(x){x/seq(from = 1, to = penalty*k, length.out = k)}))
+        EigenCoef <- t(apply(EigenCoef, MARGIN = 1, FUN = function(x){x/seq(from = 1, to = max(1,penalty*k), length.out = k)}))
       }
     }
     else if(penaltyType == "Clip"){
