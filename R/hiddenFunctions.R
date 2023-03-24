@@ -1703,6 +1703,7 @@ singleIterationForParallel <- function(xt, k, p, deltat = 1, w = NULL, dpss = FA
                                        penalty = 1, penaltyType = "ScaledExp",
                                        penaltyOnTapersStdInv = FALSE){
 
+
   N = length(xt)
   if(penaltyType == "mtm" & dpss == FALSE){
     stop("Adaptive weighting only works for dpss, set dpss = TRUE")
