@@ -887,6 +887,10 @@ eigenCoefdpssFFT <- function(n, k, w, Xt, deltat = 1, passInDPSSMat = NULL,
                                    returnInternals = TRUE, plot = FALSE)
       EigenCoef <- EigenCoef * spec$mtm$eigenCoefWt
     }
+    else if(penaltyType == "Even"){
+      weight <- rep(c(1,0), length.out = k)
+        EigenCoef <- t(apply(EigenCoef, MARGIN = 1, FUN = function(x){x*weight}))
+    }
     else if(penaltyType == "ScaledExp"){
       if(penalty == 1){
         # do nothing as that is no penalty
