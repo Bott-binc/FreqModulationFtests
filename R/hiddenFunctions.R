@@ -1612,6 +1612,124 @@ GramSchmidtMod <- function(uMat, rMat){
   return(list(H = uMat, G = rMat))
 }
 
+
+# Reduction functions ------------------------------
+# this is the function used for reductions.  I decided to write it differently than the others above due to its complex nature and to follow along with the
+#theory that I created for it.  Hopefully this will allow for a better understanding of the theory.
+
+
+
+#' Full computation of the reduction including the original F3/F4. the non full computational version is faster and will be implemented in the running function
+#' , undersample = TRUE, undersampleNumber = 100, need to still be implemented as well as the removal of the 0 and the nyquist frequencies
+#'
+#' @param Xt
+#' @param K
+#' @param N
+#' @param sine
+#' @param p
+#'
+#' @return
+#' @export
+#'
+#' @examples
+reductionSingleKFullComputation <- function(Xt, K,N, sine = TRUE, p = 1, penalty = 1, penaltyType = "ScaledExp", deltat = 1, pad = FALSE ){
+  if(sine){
+    v <- sineTaperMatrix(N = N, k = K)#multitaper::dpss(n = N, K = K, nw = N*w)$v
+    vDot <- FirstDerSineTaper(N = N, k = K)
+    #these are the reduced terms
+    vPrime <- v[,-K]
+    vDotPrime <- vDot[,-K]
+
+
+    Y <- eigenCoefSineFFT(N = N, k = K, Xt = Xt, deltat = deltat, passInTaper = v, pad = pad, penalty = penalty, penaltyType = penaltyType)
+    YRe <- t(Re(Y$EigenCoef))
+    YComp <- t(Im(Y$EigenCoef))
+
+    # this only needs to be computed once for the sine, but will need to be computed twice for the dpss, so I just did it twice for both right now
+    YPrime <- eigenCoefSineFFT(N = N, k = K-1, Xt = Xt, deltat = deltat, passInTaper = vPrime, pad = pad, penalty = penalty, penaltyType = penaltyType)
+    YRePrime <- t(Re(YPrime$EigenCoef))# <- Re(Y$EigenCoef[,-K])
+    YCompPrime <- t(Im(YPrime$EigenCoef))# <- Im(Y$EigenCoef[,-K])
+
+
+
+
+    # Creating the pieces needed for the numerator of psi -------------------------
+
+    U <- v %*% YRe # this is the real part of Z at f
+    W <- v %*% YComp
+    Udot <- vDot %*% YRe
+    Wdot <- vDot %*% YComp
+
+
+    UPrime <- vPrime %*% YRePrime # this is the real part of Z at f
+    WPrime <- vPrime %*% YCompPrime
+    UdotPrime <- vDotPrime %*% YRePrime
+    WdotPrime <- vDotPrime %*% YCompPrime
+
+
+    psi <- (U*Wdot - Udot * W)/(2*pi*(U^2 + W^2))
+    psiPrime <- (UPrime*WdotPrime - UdotPrime * WPrime)/(2*pi*(UPrime^2 + WPrime^2))
+    psiDiffFull <- psi - psiPrime
+
+
+
+    ## Creating H and H prime --------------------------
+
+    Umat <- USine(N = N, k = K, p = p, passInSineTapers = v, round = 14)
+    Rmat <- RnpMat(N = N,P = p)
+    SineGram <- GramSchmidtMod(uMat = Umat, rMat = Rmat)
+    H <- SineGram$H[,-1] # removes the 0th order column
+    #G <- SineGram$G[,-1] # G is only used in F2 not F3 so it doesnt make a difference
+
+    UmatPrime <- USine(N = N, k = (K-1), p = p, passInSineTapers = vPrime, round = 14)
+    RmatPrime <- RnpMat(N = N,P = p)
+    SineGramPrime <- GramSchmidtMod(uMat = UmatPrime, rMat = RmatPrime)
+    HPrime <- SineGramPrime$H[,-1] # removes the 0th order column
+    #GPrime <- SineGramPrime$G[,-1] # G is only used in F2 not F3 so it doesnt make a difference
+
+    Hdiff <- H[-K] - HPrime[]
+    # Chat now -------------------------
+    PSI <-  (t(v) %*% psi)
+    cHat <- H %*% PSI # this is H(v^tpsi) = H*PSI
+    # Chat Prime
+    PSIPrime <- (t(vPrime) %*% psiPrime)
+    cHatPrime <- HPrime %*% PSIPrime
+
+    # Chat Diff
+    PSIdiff <- t(v) %*% psiDiffFull
+    cHatDiff <- (Hdiff %*% PSIPrime) + H[K] * (v[,K] %*% psiPrime) +  H %*% PSIdiff
+
+
+    # ||PSI||^2
+    modSqPSI <- colSums(PSI^2)
+    modSqPSIPrime <-colSums(PSIPrime^2)
+    modSqDiffFull <- modSqPSI - modSqPSIPrime
+    #modSqPSIdiff <- colSums(PSIdiff^2)
+    #modSqDiff <- 2*(t(rbind(PSIPrime, (v[,K] %*% psiPrime))) %*% PSIdiff) + (v[,K] %*% psiPrime)*(v[,K] %*% psiPrime)
+
+    # ||PSI||^2/chat^2
+    ratio <- modSqPSI/(cHat^2)
+    ratioPrime <- modSqPSIPrime/(cHatPrime^2)
+    ratioDiff <- ((modSqDiffFull) - ratioPrime*(2*cHatPrime*cHatDiff + cHatDiff^2))/(cHatPrime^2 + 2*cHatPrime*cHatDiff + cHatDiff^2) # this denominator is
+    #just chat
+
+    Ftest <- (K-1)/(ratioPrime - 1 + ratioDiff)
+    Ftest
+
+    FtestDiff <- (ratioDiff*(1-K))/((ratioPrime + ratioDiff - 1)*(ratioPrime - 1))
+    FtestPrime <- (K-1)/(ratioPrime - 1)
+    Ft <- FtestPrime + FtestDiff
+
+
+
+  }
+    return(list(FPrime = FtestPrime, FTest = Ftest, FtestDiff = FtestDiff, Freq = Y$Freq, ratios = list(ratio = ratio, ratioPrime = ratioPrime, ratioDiff = ratioDiff)))
+
+  }
+
+
+
+
 # Inner Ftest Functions -------------------------
 
 
@@ -1704,8 +1822,9 @@ singleIterationForParallel <- function(xt, k, p, deltat = 1, w = NULL, dpss = FA
                                        confLevel = (1-(1/length(xt))),
                                        # altSig = FALSE,
                                        returnFTestVars = FALSE,
-                                       penalty = 1, penaltyType = "ScaledExp",
-                                       penaltyOnTapersStdInv = FALSE){
+                                       penalty = 1, penaltyType = "ScaledExp", reduction = FALSE,
+                                       penaltyOnTapersStdInv = FALSE,
+                                       warningIgnore = TRUE){
 
 
   N = length(xt)
@@ -1715,119 +1834,133 @@ singleIterationForParallel <- function(xt, k, p, deltat = 1, w = NULL, dpss = FA
   if(is.null(undersampleNumber)){
     stop("need to set undersample amount")
   }
-  if(dpss){ #Use DPSS taper
-    if(is.null(w)){
-      stop("need to set w for dpss")
+
+  # Reduced Ftest ----------------------------------------------------------------------------------------------
+  if(reduction){
+    if(warningIgnore == FALSE){
+      if(k %%2 == 1){ # odd k
+        warning("Using reduction on an odd k, not recommended")
+      }
     }
-    dp <- multitaper::dpss(n = N, k = k, nw = N*w)
-    dpUnder <- multitaper::dpss(n = undersampleNumber, k = k, nw = N*w)
-    instFreqEigen <- eigenCoefDPSSInstFrequency(xt = xt, N = N, k = k, w = w,
-                                                    deltat = deltat,
-                                                    returnDPSS = FALSE, passInDPSS = dp,
-                                                    passInDPSSUnder = dpUnder, penalty = penalty,
-                                                penaltyType = penaltyType)
-    fStuff <- regressionDPSSInstFreq(N = N, k = k, w = w, instFreqEigen = instFreqEigen$PSI,
-                                     p = p, passInDPSS = dp ,returnDPSS = FALSE,
-                                     returnRp = FALSE, withoutzeroPoly = TRUE)
+
+    # this is where the new reduction function needs to go
+
+
+  }else{ # No reduction --------------------------------------------------------------------------------------
+    if(dpss){ #Use DPSS taper
+      if(is.null(w)){
+        stop("need to set w for dpss")
+      }
+      dp <- multitaper::dpss(n = N, k = k, nw = N*w)
+      dpUnder <- multitaper::dpss(n = undersampleNumber, k = k, nw = N*w)
+      instFreqEigen <- eigenCoefDPSSInstFrequency(xt = xt, N = N, k = k, w = w,
+                                                  deltat = deltat,
+                                                  returnDPSS = FALSE, passInDPSS = dp,
+                                                  passInDPSSUnder = dpUnder, penalty = penalty,
+                                                  penaltyType = penaltyType)
+      fStuff <- regressionDPSSInstFreq(N = N, k = k, w = w, instFreqEigen = instFreqEigen$PSI,
+                                       p = p, passInDPSS = dp ,returnDPSS = FALSE,
+                                       returnRp = FALSE, withoutzeroPoly = TRUE)
+    }
+    else{ #Sine Tapers are used
+
+      sine <- sineTaperMatrix(N = N, k = k)
+      sineUnder <- sineTaperMatrix(N = undersampleNumber, k = k)
+
+
+      instFreqEigen <- eigenCoefSineInstFrequency(xt = xt, N = N, k = k,deltat = deltat,
+                                                  returnSineMat = FALSE, passInSineTapers = sine,
+                                                  passInSineUnder = sineUnder, penalty = penalty,
+                                                  penaltyType = penaltyType,
+                                                  penaltyOnTapersStdInv = penaltyOnTapersStdInv)
+
+      fStuff <- regressionSineInstFreq(N = N, k = k, instFreqEigen = instFreqEigen$PSI,
+                                       p = p, returnSineTapers = FALSE,
+                                       passInSineMat = sine,
+                                       returnRp = FALSE, withoutzeroPoly = TRUE)
+    }
+
+
+    #removingzero and nyquist frequencies
+    zeroNyquist <- c(length(instFreqEigen$Freq),which(instFreqEigen$Freq == 0))
+    instFreqEigen$Freq <- instFreqEigen$Freq[-zeroNyquist]
+    Freq <- instFreqEigen$Freq
+    instFreqEigen$PSI <- instFreqEigen$PSI[,-zeroNyquist]
+    fStuff$cHat <- fStuff$cHat[,-zeroNyquist]
+
+    normPhiSq <- colSums(instFreqEigen$PSI^2)
+    normcHatWOutZeroSq <- 0
+
+
+    if(!returnFTestVars){
+
+      if(p ==1){
+        F3 <-  matrix(nrow = 1, ncol = length(instFreqEigen$Freq))
+        colnames(F3) <- Freq
+        significantFreq <- list()
+
+        normcHatWOutZeroSq <- normcHatWOutZeroSq + fStuff$cHat^2
+        F3[p,] <- (fStuff$cHat)^2/
+          ((normPhiSq - normcHatWOutZeroSq)/(k - p))
+        FcutOff <- qf(confLevel, df1 = 1, df2 = (k-p), lower.tail = TRUE)
+        significantFreq[[p]] <- Freq[which(F3[p,] >= FcutOff)]
+
+      }else{
+        F3 <-  matrix(nrow = nrow(fStuff$cHat), ncol = length(instFreqEigen$Freq))
+        colnames(F3) <- Freq
+        significantFreq <- list()
+        for(P in 1:nrow(fStuff$cHat)){ # this is 1:p as we are removing zero so P-1 is actually P
+
+          normcHatWOutZeroSq <- normcHatWOutZeroSq + fStuff$cHat[P,]^2
+          F3[P,] <- (fStuff$cHat[P,])^2/
+            ((normPhiSq - normcHatWOutZeroSq)/(k - P))
+          FcutOff <- qf(confLevel, df1 = 1, df2 = (k-P), lower.tail = TRUE)
+          significantFreq[[P]] <- Freq[which(F3[P,] >= FcutOff)]
+
+
+        }
+      }
+      return(list(F3Mod = F3, Freq = Freq, significantFreq = significantFreq,
+                  k = k))
+
+    }else{# if the Ftest variables needed to be returned
+      if(dpss){
+        tapers <- dpUnder
+      }else{
+        tapers <- sineUnder
+      }
+
+      if(p ==1){
+        F3 <-  matrix(nrow = 1, ncol = length(instFreqEigen$Freq))
+        colnames(F3) <- Freq
+        significantFreq <- list()
+
+        normcHatWOutZeroSq <- normcHatWOutZeroSq + fStuff$cHat^2
+        F3[p,] <- (fStuff$cHat)^2/
+          ((normPhiSq - normcHatWOutZeroSq)/(k - p))
+        FcutOff <- qf(confLevel, df1 = 1, df2 = (k-p), lower.tail = TRUE)
+        significantFreq[[p]] <- Freq[which(F3[p,] >= FcutOff)]
+
+      }else{
+        F3 <-  matrix(nrow = nrow(fStuff$cHat), ncol = length(instFreqEigen$Freq))
+        colnames(F3) <- Freq
+        significantFreq <- list()
+        for(P in 1:nrow(fStuff$cHat)){ # this is 1:p as we are removing zero so P-1 is actually P
+
+          normcHatWOutZeroSq <- normcHatWOutZeroSq + fStuff$cHat[P,]^2
+          F3[P,] <- (fStuff$cHat[P,])^2/
+            ((normPhiSq - normcHatWOutZeroSq)/(k - P))
+          FcutOff <- qf(confLevel, df1 = 1, df2 = (k-P), lower.tail = TRUE)
+          significantFreq[[P]] <- Freq[which(F3[P,] >= FcutOff)]
+
+
+        }
+      }
+      return(list(F3Mod = F3, Freq = Freq, significantFreq = significantFreq,
+                  k = k, ftestvars = list(instFreqEigen = instFreqEigen,
+                                          fStuff = fStuff, tapers = tapers)))
+    }
   }
-  else{ #Sine Tapers are used
-
-    sine <- sineTaperMatrix(N = N, k = k)
-    sineUnder <- sineTaperMatrix(N = undersampleNumber, k = k)
-
-
-    instFreqEigen <- eigenCoefSineInstFrequency(xt = xt, N = N, k = k,deltat = deltat,
-                                                    returnSineMat = FALSE, passInSineTapers = sine,
-                                                    passInSineUnder = sineUnder, penalty = penalty,
-                                                penaltyType = penaltyType,
-                                                penaltyOnTapersStdInv = penaltyOnTapersStdInv)
-
-    fStuff <- regressionSineInstFreq(N = N, k = k, instFreqEigen = instFreqEigen$PSI,
-                                     p = p, returnSineTapers = FALSE,
-                                     passInSineMat = sine,
-                                     returnRp = FALSE, withoutzeroPoly = TRUE)
-  }
-
-
-  #removingzero and nyquist frequencies
-  zeroNyquist <- c(length(instFreqEigen$Freq),which(instFreqEigen$Freq == 0))
-  instFreqEigen$Freq <- instFreqEigen$Freq[-zeroNyquist]
-  Freq <- instFreqEigen$Freq
-  instFreqEigen$PSI <- instFreqEigen$PSI[,-zeroNyquist]
-  fStuff$cHat <- fStuff$cHat[,-zeroNyquist]
-
-  normPhiSq <- colSums(instFreqEigen$PSI^2)
-  normcHatWOutZeroSq <- 0
-
-
- if(!returnFTestVars){
-
-     if(p ==1){
-       F3 <-  matrix(nrow = 1, ncol = length(instFreqEigen$Freq))
-       colnames(F3) <- Freq
-       significantFreq <- list()
-
-       normcHatWOutZeroSq <- normcHatWOutZeroSq + fStuff$cHat^2
-       F3[p,] <- (fStuff$cHat)^2/
-         ((normPhiSq - normcHatWOutZeroSq)/(k - p))
-       FcutOff <- qf(confLevel, df1 = 1, df2 = (k-p), lower.tail = TRUE)
-       significantFreq[[p]] <- Freq[which(F3[p,] >= FcutOff)]
-
-     }else{
-       F3 <-  matrix(nrow = nrow(fStuff$cHat), ncol = length(instFreqEigen$Freq))
-       colnames(F3) <- Freq
-       significantFreq <- list()
-       for(P in 1:nrow(fStuff$cHat)){ # this is 1:p as we are removing zero so P-1 is actually P
-
-         normcHatWOutZeroSq <- normcHatWOutZeroSq + fStuff$cHat[P,]^2
-         F3[P,] <- (fStuff$cHat[P,])^2/
-           ((normPhiSq - normcHatWOutZeroSq)/(k - P))
-         FcutOff <- qf(confLevel, df1 = 1, df2 = (k-P), lower.tail = TRUE)
-         significantFreq[[P]] <- Freq[which(F3[P,] >= FcutOff)]
-
-
-       }
-     }
-     return(list(F3Mod = F3, Freq = Freq, significantFreq = significantFreq,
-                 k = k))
-
- }else{# if the Ftest variables needed to be returned
-   if(dpss){
-     tapers <- dpUnder
-   }else{
-     tapers <- sineUnder
-   }
-
-     if(p ==1){
-       F3 <-  matrix(nrow = 1, ncol = length(instFreqEigen$Freq))
-       colnames(F3) <- Freq
-       significantFreq <- list()
-
-       normcHatWOutZeroSq <- normcHatWOutZeroSq + fStuff$cHat^2
-       F3[p,] <- (fStuff$cHat)^2/
-         ((normPhiSq - normcHatWOutZeroSq)/(k - p))
-       FcutOff <- qf(confLevel, df1 = 1, df2 = (k-p), lower.tail = TRUE)
-       significantFreq[[p]] <- Freq[which(F3[p,] >= FcutOff)]
-
-     }else{
-       F3 <-  matrix(nrow = nrow(fStuff$cHat), ncol = length(instFreqEigen$Freq))
-       colnames(F3) <- Freq
-       significantFreq <- list()
-       for(P in 1:nrow(fStuff$cHat)){ # this is 1:p as we are removing zero so P-1 is actually P
-
-         normcHatWOutZeroSq <- normcHatWOutZeroSq + fStuff$cHat[P,]^2
-         F3[P,] <- (fStuff$cHat[P,])^2/
-           ((normPhiSq - normcHatWOutZeroSq)/(k - P))
-         FcutOff <- qf(confLevel, df1 = 1, df2 = (k-P), lower.tail = TRUE)
-         significantFreq[[P]] <- Freq[which(F3[P,] >= FcutOff)]
-
-
-       }
-     }
-     return(list(F3Mod = F3, Freq = Freq, significantFreq = significantFreq,
-                 k = k, ftestvars = list(instFreqEigen = instFreqEigen,
-                                         fStuff = fStuff, tapers = tapers)))
- }
 
 
 
