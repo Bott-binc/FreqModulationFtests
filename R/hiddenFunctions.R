@@ -1619,20 +1619,25 @@ GramSchmidtMod <- function(uMat, rMat){
 
 
 
-#' Full computation of the reduction including the original F3/F4. the non full computational version is faster and will be implemented in the running function
+#' Full computation of the reduction including the original F3/F4.  Note that this only works for linear modulation with the current derrivation.
+#'  the non full computational version is faster and will be implemented in the running function
 #' , undersample = TRUE, undersampleNumber = 100, need to still be implemented as well as the removal of the 0 and the nyquist frequencies
 #'
 #' @param Xt
 #' @param K
 #' @param N
+#' @param penalty
+#' @param penaltyType
+#' @param deltat
+#' @param pad
 #' @param sine
-#' @param p
 #'
 #' @return
 #' @export
 #'
 #' @examples
-reductionSingleKFullComputation <- function(Xt, K,N, sine = TRUE, p = 1, penalty = 1, penaltyType = "ScaledExp", deltat = 1, pad = FALSE ){
+reductionSingleKFullComputation <- function(Xt, K,N, sine = TRUE, penalty = 1, penaltyType = "ScaledExp", deltat = 1, pad = FALSE,confLevel = (1 - (1/length(Xt)))){
+  p <- 1
   if(sine){
     v <- sineTaperMatrix(N = N, k = K)#multitaper::dpss(n = N, K = K, nw = N*w)$v
     vDot <- FirstDerSineTaper(N = N, k = K)
@@ -1699,6 +1704,15 @@ reductionSingleKFullComputation <- function(Xt, K,N, sine = TRUE, p = 1, penalty
     PSIdiff <- t(v) %*% psiDiffFull
     cHatDiff <- (Hdiff %*% PSIPrime) + H[K] * (v[,K] %*% psiPrime) +  H %*% PSIdiff
 
+    #removingzero and nyquist frequencies
+    zeroNyquist <- c(length(Y$Freq),which(Y$Freq == 0))
+    Y$Freq <- Y$Freq[-zeroNyquist]
+    PSI <- PSI[,-zeroNyquist]
+    PSIPrime <- PSIPrime[,-zeroNyquist]
+    PSIdiff <- PSIdiff[,-zeroNyquist]
+    cHat <- cHat[,-zeroNyquist]
+    cHatPrime <- cHatPrime[,-zeroNyquist]
+    cHatDiff <- cHatDiff[,-zeroNyquist]
 
     # ||PSI||^2
     modSqPSI <- colSums(PSI^2)
@@ -1713,17 +1727,35 @@ reductionSingleKFullComputation <- function(Xt, K,N, sine = TRUE, p = 1, penalty
     ratioDiff <- ((modSqDiffFull) - ratioPrime*(2*cHatPrime*cHatDiff + cHatDiff^2))/(cHatPrime^2 + 2*cHatPrime*cHatDiff + cHatDiff^2) # this denominator is
     #just chat
 
+
+
     Ftest <- (K-1)/(ratioPrime - 1 + ratioDiff)
     Ftest
 
     FtestDiff <- (ratioDiff*(1-K))/((ratioPrime + ratioDiff - 1)*(ratioPrime - 1))
     FtestPrime <- (K-1)/(ratioPrime - 1)
-    Ft <- FtestPrime + FtestDiff
+
+    FCutOff <- qf(confLevel, df1 = 1, df2 = (K-p), lower.tail = TRUE)
+    significantFreq <- Y$Freq[which(Ftest >= FCutOff)]
+
+    FCutOffPrime <- (8/9)*FCutOff
+    significantFreqRed <- Y$Freq[which(FtestPrime >= FCutOffPrime)]
+
+
+
 
 
 
   }
-    return(list(FPrime = FtestPrime, FTest = Ftest, FtestDiff = FtestDiff, Freq = Y$Freq, ratios = list(ratio = ratio, ratioPrime = ratioPrime, ratioDiff = ratioDiff)))
+    return(list(FPrime = FtestPrime, FTest = Ftest, FtestDiff = FtestDiff,
+                Freq = Y$Freq,
+                ratios = list(ratio = ratio,
+                              ratioPrime = ratioPrime,
+                              ratioDiff = ratioDiff),
+                significantFrequencies = list(significantFreqFull = significantFreq,
+                                              significantFreqPrime = significantFreqRed,
+                                              FCutOffFull = FCutOff,
+                                              FCutOffPrime = FCutOffPrime)))
 
   }
 
