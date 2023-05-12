@@ -16,7 +16,9 @@ singleIterationForParallel(
   returnFTestVars = FALSE,
   penalty = 1,
   penaltyType = "ScaledExp",
-  penaltyOnTapersStdInv = FALSE
+  reduction = FALSE,
+  penaltyOnTapersStdInv = FALSE,
+  warningIgnore = TRUE
 )
 }
 \arguments{

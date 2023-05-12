@@ -1619,144 +1619,381 @@ GramSchmidtMod <- function(uMat, rMat){
 
 
 
-#' Full computation of the reduction including the original F3/F4.  Note that this only works for linear modulation with the current derrivation.
-#'  the non full computational version is faster and will be implemented in the running function
-#' , undersample = TRUE, undersampleNumber = 100, need to still be implemented as well as the removal of the 0 and the nyquist frequencies
+#' Full computation of the reduction including the original F3/F4 if not in fast mode.  Note that this only works for linear modulation with the current derivation.
 #'
-#' @param Xt
-#' @param K
-#' @param N
-#' @param penalty
-#' @param penaltyType
-#' @param deltat
-#' @param pad
-#' @param sine
 #'
-#' @return
-#' @export
+#' @param Xt time series that you want to conduct test on
+#' @param K length of sine tapers
+#' @param N length of time series
+#' @param penalty = 1 by default.
+#' @param penaltyType = "ScaledExp" by default, "Clip" also available
+#' @param deltat = 1 by default
+#' @param pad = TRUE by default, dont need to pad manually
+#' @param confLevel = 1-1/N by default
+#' @param undersample = TRUE, if FALSE and using fast, it will automatically be set to TRUE and use the undersampleNumber imputted
+#' @param undersampleNumber = 100 by default
+#' @param fast = FALSE by default.  Allows for a faster running of the reduction alg.  no F3 is computed and no differences or intermediate terms are returned to the user.
 #'
-#' @examples
-reductionSingleKFullComputation <- function(Xt, K,N, sine = TRUE, penalty = 1, penaltyType = "ScaledExp", deltat = 1, pad = FALSE,confLevel = (1 - (1/length(Xt)))){
+#' @return if fast = FALSE, returns reduction test = FPrime, F3 = FTest, F3 - FPrime =  FtestDiff,
+#'Freq , ratios = list(ratio = ratio,
+#'              ratioPrime = ratioPrime,
+#'              ratioDiff = ratioDiff),
+#'significantFrequencies = list(significantFreqFull = significantFreq,
+#'                              significantFreqPrime = significantFreqRed,
+#'                              FCutOffFull = FCutOff,
+#'                              FCutOffPrime = FCutOffPrime)))
+
+reductionSingleKFullComputation <- function(Xt, K,N, penalty = 1, penaltyType = "ScaledExp", undersample = TRUE,
+                                            undersampleNumber = 100, deltat = 1, pad = TRUE, confLevel = (1 - (1/length(Xt))),
+                                            fast = FALSE){
   p <- 1
+  sine <- TRUE
   if(sine){
-    v <- sineTaperMatrix(N = N, k = K)#multitaper::dpss(n = N, K = K, nw = N*w)$v
-    vDot <- FirstDerSineTaper(N = N, k = K)
-    #these are the reduced terms
-    vPrime <- v[,-K]
-    vDotPrime <- vDot[,-K]
+    if(fast){
+      if(undersample == FALSE){
+        warning("Overwriting undersample = FALSE, fast only works with undersampling")
+      }
+      v <- sineTaperMatrix(N = N, k = K)#multitaper::dpss(n = N, K = K, nw = N*w)$v
+      vDot <- FirstDerSineTaper(N = N, k = K)
+      vUnder <- sineTaperMatrix(N = undersampleNumber, k = K)
+      vDotUnder <- FirstDerSineTaper(N = undersampleNumber, k = K)
+      #these are the reduced terms
+      vPrime <- v[,-K]
+      vPrimeUnder <- vUnder[,-K]
+      vDotPrime <- vDot[,-K]
+      vDotPrimeUnder <- vDotUnder[,-K]
 
+      # Y <- eigenCoefSineFFT(N = N, k = K, Xt = Xt, deltat = deltat, passInTaper = v, pad = pad, penalty = penalty, penaltyType = penaltyType)
+      # YRe <- t(Re(Y$EigenCoef))
+      # YComp <- t(Im(Y$EigenCoef))
 
-    Y <- eigenCoefSineFFT(N = N, k = K, Xt = Xt, deltat = deltat, passInTaper = v, pad = pad, penalty = penalty, penaltyType = penaltyType)
-    YRe <- t(Re(Y$EigenCoef))
-    YComp <- t(Im(Y$EigenCoef))
-
-    # this only needs to be computed once for the sine, but will need to be computed twice for the dpss, so I just did it twice for both right now
-    YPrime <- eigenCoefSineFFT(N = N, k = K-1, Xt = Xt, deltat = deltat, passInTaper = vPrime, pad = pad, penalty = penalty, penaltyType = penaltyType)
-    YRePrime <- t(Re(YPrime$EigenCoef))# <- Re(Y$EigenCoef[,-K])
-    YCompPrime <- t(Im(YPrime$EigenCoef))# <- Im(Y$EigenCoef[,-K])
-
-
-
-
-    # Creating the pieces needed for the numerator of psi -------------------------
-
-    U <- v %*% YRe # this is the real part of Z at f
-    W <- v %*% YComp
-    Udot <- vDot %*% YRe
-    Wdot <- vDot %*% YComp
-
-
-    UPrime <- vPrime %*% YRePrime # this is the real part of Z at f
-    WPrime <- vPrime %*% YCompPrime
-    UdotPrime <- vDotPrime %*% YRePrime
-    WdotPrime <- vDotPrime %*% YCompPrime
-
-
-    psi <- (U*Wdot - Udot * W)/(2*pi*(U^2 + W^2))
-    psiPrime <- (UPrime*WdotPrime - UdotPrime * WPrime)/(2*pi*(UPrime^2 + WPrime^2))
-    psiDiffFull <- psi - psiPrime
-
-
-
-    ## Creating H and H prime --------------------------
-
-    Umat <- USine(N = N, k = K, p = p, passInSineTapers = v, round = 14)
-    Rmat <- RnpMat(N = N,P = p)
-    SineGram <- GramSchmidtMod(uMat = Umat, rMat = Rmat)
-    H <- SineGram$H[,-1] # removes the 0th order column
-    #G <- SineGram$G[,-1] # G is only used in F2 not F3 so it doesnt make a difference
-
-    UmatPrime <- USine(N = N, k = (K-1), p = p, passInSineTapers = vPrime, round = 14)
-    RmatPrime <- RnpMat(N = N,P = p)
-    SineGramPrime <- GramSchmidtMod(uMat = UmatPrime, rMat = RmatPrime)
-    HPrime <- SineGramPrime$H[,-1] # removes the 0th order column
-    #GPrime <- SineGramPrime$G[,-1] # G is only used in F2 not F3 so it doesnt make a difference
-
-    Hdiff <- H[-K] - HPrime[]
-    # Chat now -------------------------
-    PSI <-  (t(v) %*% psi)
-    cHat <- H %*% PSI # this is H(v^tpsi) = H*PSI
-    # Chat Prime
-    PSIPrime <- (t(vPrime) %*% psiPrime)
-    cHatPrime <- HPrime %*% PSIPrime
-
-    # Chat Diff
-    PSIdiff <- t(v) %*% psiDiffFull
-    cHatDiff <- (Hdiff %*% PSIPrime) + H[K] * (v[,K] %*% psiPrime) +  H %*% PSIdiff
-
-    #removingzero and nyquist frequencies
-    zeroNyquist <- c(length(Y$Freq),which(Y$Freq == 0))
-    Y$Freq <- Y$Freq[-zeroNyquist]
-    PSI <- PSI[,-zeroNyquist]
-    PSIPrime <- PSIPrime[,-zeroNyquist]
-    PSIdiff <- PSIdiff[,-zeroNyquist]
-    cHat <- cHat[,-zeroNyquist]
-    cHatPrime <- cHatPrime[,-zeroNyquist]
-    cHatDiff <- cHatDiff[,-zeroNyquist]
-
-    # ||PSI||^2
-    modSqPSI <- colSums(PSI^2)
-    modSqPSIPrime <-colSums(PSIPrime^2)
-    modSqDiffFull <- modSqPSI - modSqPSIPrime
-    #modSqPSIdiff <- colSums(PSIdiff^2)
-    #modSqDiff <- 2*(t(rbind(PSIPrime, (v[,K] %*% psiPrime))) %*% PSIdiff) + (v[,K] %*% psiPrime)*(v[,K] %*% psiPrime)
-
-    # ||PSI||^2/chat^2
-    ratio <- modSqPSI/(cHat^2)
-    ratioPrime <- modSqPSIPrime/(cHatPrime^2)
-    ratioDiff <- ((modSqDiffFull) - ratioPrime*(2*cHatPrime*cHatDiff + cHatDiff^2))/(cHatPrime^2 + 2*cHatPrime*cHatDiff + cHatDiff^2) # this denominator is
-    #just chat
-
-
-
-    Ftest <- (K-1)/(ratioPrime - 1 + ratioDiff)
-    Ftest
-
-    FtestDiff <- (ratioDiff*(1-K))/((ratioPrime + ratioDiff - 1)*(ratioPrime - 1))
-    FtestPrime <- (K-1)/(ratioPrime - 1)
-
-    FCutOff <- qf(confLevel, df1 = 1, df2 = (K-p), lower.tail = TRUE)
-    significantFreq <- Y$Freq[which(Ftest >= FCutOff)]
-
-    FCutOffPrime <- (8/9)*FCutOff
-    significantFreqRed <- Y$Freq[which(FtestPrime >= FCutOffPrime)]
+      # this only needs to be computed once for the sine, but will need to be computed twice for the dpss, so I just did it twice for both right now
+      YPrime <- eigenCoefSineFFT(N = N, k = K-1, Xt = Xt, deltat = deltat, passInTaper = vPrime, pad = pad, penalty = penalty, penaltyType = penaltyType)
+      YRePrime <- t(Re(YPrime$EigenCoef))# <- Re(Y$EigenCoef[,-K])
+      YCompPrime <- t(Im(YPrime$EigenCoef))# <- Im(Y$EigenCoef[,-K])
 
 
 
 
+      # Creating the pieces needed for the numerator of psi -------------------------
+
+      # U <- vUnder %*% YRe # this is the real part of Z at f
+      # W <- vUnder %*% YComp
+      # Udot <- vDotUnder %*% YRe
+      # Wdot <- vDotUnder %*% YComp
 
 
+      UPrime <- vPrimeUnder %*% YRePrime # this is the real part of Z at f
+      WPrime <- vPrimeUnder %*% YCompPrime
+      UdotPrime <- vDotPrimeUnder %*% YRePrime
+      WdotPrime <- vDotPrimeUnder %*% YCompPrime
+
+
+      #psi <- (U*Wdot - Udot * W)/(2*pi*(U^2 + W^2))
+      psiPrime <- (UPrime*WdotPrime - UdotPrime * WPrime)/(2*pi*(UPrime^2 + WPrime^2))
+     # psiDiffFull <- psi - psiPrime
+
+
+
+      ## Creating H and H prime --------------------------
+
+      # Umat <- USine(N = N, k = K, p = p, passInSineTapers = v, round = 14)
+      # Rmat <- RnpMat(N = N,P = p)
+      # SineGram <- GramSchmidtMod(uMat = Umat, rMat = Rmat)
+      # H <- SineGram$H[,-1] # removes the 0th order column
+      #G <- SineGram$G[,-1] # G is only used in F2 not F3 so it doesnt make a difference
+
+      UmatPrime <- USine(N = N, k = (K-1), p = p, passInSineTapers = vPrime, round = 14)
+      RmatPrime <- RnpMat(N = N,P = p)
+      SineGramPrime <- GramSchmidtMod(uMat = UmatPrime, rMat = RmatPrime)
+      HPrime <- SineGramPrime$H[,-1] # removes the 0th order column
+      #GPrime <- SineGramPrime$G[,-1] # G is only used in F2 not F3 so it doesnt make a difference
+
+      #Hdiff <- H[-K] - HPrime[]
+      # Chat now -------------------------
+      #PSI <-  (t(vUnder) %*% psi)
+      #cHat <- H %*% PSI # this is H(v^tpsi) = H*PSI
+      # Chat Prime
+      PSIPrime <- crossprod(vPrimeUnder, psiPrime)#(t(vPrimeUnder) %*% psiPrime)
+      cHatPrime <- HPrime %*% PSIPrime
+
+      # Chat Diff
+      #PSIdiff <- t(vUnder) %*% psiDiffFull
+      #cHatDiff <- (Hdiff %*% PSIPrime) + H[K] * (vUnder[,K] %*% psiPrime) +  H %*% PSIdiff
+
+
+      #removingzero and nyquist frequencies
+      zeroNyquist <- c(length(YPrime$Freq),which(YPrime$Freq == 0))
+      YPrime$Freq <- YPrime$Freq[-zeroNyquist]
+      #PSI <- PSI[,-zeroNyquist]
+      PSIPrime <- PSIPrime[,-zeroNyquist]
+      #PSIdiff <- PSIdiff[,-zeroNyquist]
+      #cHat <- cHat[,-zeroNyquist]
+      cHatPrime <- cHatPrime[,-zeroNyquist]
+      #cHatDiff <- cHatDiff[,-zeroNyquist]
+
+      # ||PSI||^2
+      #modSqPSI <- colSums(PSI^2)
+      modSqPSIPrime <-colSums(PSIPrime^2)
+      #modSqDiffFull <- modSqPSI - modSqPSIPrime
+      #modSqPSIdiff <- colSums(PSIdiff^2)
+      #modSqDiff <- 2*(t(rbind(PSIPrime, (v[,K] %*% psiPrime))) %*% PSIdiff) + (v[,K] %*% psiPrime)*(v[,K] %*% psiPrime)
+
+      # ||PSI||^2/chat^2
+      #ratio <- modSqPSI/(cHat^2)
+      ratioPrime <- modSqPSIPrime/(cHatPrime^2)
+      #ratioDiff <- ((modSqDiffFull) - ratioPrime*(2*cHatPrime*cHatDiff + cHatDiff^2))/(cHatPrime^2 + 2*cHatPrime*cHatDiff + cHatDiff^2) # this denominator is
+      #just chat
+
+
+
+      # Ftest <- (K-1)/(ratioPrime - 1 + ratioDiff)
+      # Ftest
+      #
+      # FtestDiff <- (ratioDiff*(1-K))/((ratioPrime + ratioDiff - 1)*(ratioPrime - 1))
+      FtestPrime <- (K-1)/(ratioPrime - 1)
+
+      # FCutOff <- qf(confLevel, df1 = 1, df2 = (K-p), lower.tail = TRUE)
+      # significantFreq <- Y$Freq[which(Ftest >= FCutOff)]
+
+      FCutOffPrime <- (8/9)*qf(confLevel, df1 = 1, df2 = ((K-1)-p), lower.tail = TRUE)
+      significantFreqRed <- YPrime$Freq[which(FtestPrime >= FCutOffPrime)]
+
+
+      return(list(FPrime = FtestPrime,
+                  Freq = YPrime$Freq,
+                  significantFrequencies =  significantFreqRed,
+                  FCutOffPrime = FCutOffPrime))
+
+
+    }
+    else{
+      if(undersample == FALSE){
+        v <- sineTaperMatrix(N = N, k = K)#multitaper::dpss(n = N, K = K, nw = N*w)$v
+        vDot <- FirstDerSineTaper(N = N, k = K)
+        #these are the reduced terms
+        vPrime <- v[,-K]
+        vDotPrime <- vDot[,-K]
+
+
+        Y <- eigenCoefSineFFT(N = N, k = K, Xt = Xt, deltat = deltat, passInTaper = v, pad = pad, penalty = penalty, penaltyType = penaltyType)
+        YRe <- t(Re(Y$EigenCoef))
+        YComp <- t(Im(Y$EigenCoef))
+
+        # this only needs to be computed once for the sine, but will need to be computed twice for the dpss, so I just did it twice for both right now
+        YPrime <- eigenCoefSineFFT(N = N, k = K-1, Xt = Xt, deltat = deltat, passInTaper = vPrime, pad = pad, penalty = penalty, penaltyType = penaltyType)
+        YRePrime <- t(Re(YPrime$EigenCoef))# <- Re(Y$EigenCoef[,-K])
+        YCompPrime <- t(Im(YPrime$EigenCoef))# <- Im(Y$EigenCoef[,-K])
+
+
+
+
+        # Creating the pieces needed for the numerator of psi -------------------------
+
+        U <- v %*% YRe # this is the real part of Z at f
+        W <- v %*% YComp
+        Udot <- vDot %*% YRe
+        Wdot <- vDot %*% YComp
+
+
+        UPrime <- vPrime %*% YRePrime # this is the real part of Z at f
+        WPrime <- vPrime %*% YCompPrime
+        UdotPrime <- vDotPrime %*% YRePrime
+        WdotPrime <- vDotPrime %*% YCompPrime
+
+
+        psi <- (U*Wdot - Udot * W)/(2*pi*(U^2 + W^2))
+        psiPrime <- (UPrime*WdotPrime - UdotPrime * WPrime)/(2*pi*(UPrime^2 + WPrime^2))
+        psiDiffFull <- psi - psiPrime
+
+
+
+        ## Creating H and H prime --------------------------
+
+        Umat <- USine(N = N, k = K, p = p, passInSineTapers = v, round = 14)
+        Rmat <- RnpMat(N = N,P = p)
+        SineGram <- GramSchmidtMod(uMat = Umat, rMat = Rmat)
+        H <- SineGram$H[,-1] # removes the 0th order column
+        #G <- SineGram$G[,-1] # G is only used in F2 not F3 so it doesnt make a difference
+
+        UmatPrime <- USine(N = N, k = (K-1), p = p, passInSineTapers = vPrime, round = 14)
+        RmatPrime <- RnpMat(N = N,P = p)
+        SineGramPrime <- GramSchmidtMod(uMat = UmatPrime, rMat = RmatPrime)
+        HPrime <- SineGramPrime$H[,-1] # removes the 0th order column
+        #GPrime <- SineGramPrime$G[,-1] # G is only used in F2 not F3 so it doesnt make a difference
+
+        Hdiff <- H[-K] - HPrime[]
+        # Chat now -------------------------
+        PSI <-  (t(v) %*% psi)
+        cHat <- H %*% PSI # this is H(v^tpsi) = H*PSI
+        # Chat Prime
+        PSIPrime <- (t(vPrime) %*% psiPrime)
+        cHatPrime <- HPrime %*% PSIPrime
+
+        # Chat Diff
+        PSIdiff <- t(v) %*% psiDiffFull
+        cHatDiff <- (Hdiff %*% PSIPrime) + H[K] * (v[,K] %*% psiPrime) +  H %*% PSIdiff
+
+
+        #removingzero and nyquist frequencies
+        zeroNyquist <- c(length(Y$Freq),which(Y$Freq == 0))
+        Y$Freq <- Y$Freq[-zeroNyquist]
+        PSI <- PSI[,-zeroNyquist]
+        PSIPrime <- PSIPrime[,-zeroNyquist]
+        PSIdiff <- PSIdiff[,-zeroNyquist]
+        cHat <- cHat[,-zeroNyquist]
+        cHatPrime <- cHatPrime[,-zeroNyquist]
+        cHatDiff <- cHatDiff[,-zeroNyquist]
+
+        # ||PSI||^2
+        modSqPSI <- colSums(PSI^2)
+        modSqPSIPrime <-colSums(PSIPrime^2)
+        modSqDiffFull <- modSqPSI - modSqPSIPrime
+        #modSqPSIdiff <- colSums(PSIdiff^2)
+        #modSqDiff <- 2*(t(rbind(PSIPrime, (v[,K] %*% psiPrime))) %*% PSIdiff) + (v[,K] %*% psiPrime)*(v[,K] %*% psiPrime)
+
+        # ||PSI||^2/chat^2
+        ratio <- modSqPSI/(cHat^2)
+        ratioPrime <- modSqPSIPrime/(cHatPrime^2)
+        ratioDiff <- ((modSqDiffFull) - ratioPrime*(2*cHatPrime*cHatDiff + cHatDiff^2))/(cHatPrime^2 + 2*cHatPrime*cHatDiff + cHatDiff^2) # this denominator is
+        #just chat
+
+
+
+        Ftest <- (K-1)/(ratioPrime - 1 + ratioDiff)
+        Ftest
+
+        FtestDiff <- (ratioDiff*(1-K))/((ratioPrime + ratioDiff - 1)*(ratioPrime - 1))
+        FtestPrime <- (K-1)/(ratioPrime - 1)
+
+        FCutOff <- qf(confLevel, df1 = 1, df2 = (K-p), lower.tail = TRUE)
+        significantFreq <- Y$Freq[which(Ftest >= FCutOff)]
+
+        FCutOffPrime <- (8/9)*qf(confLevel, df1 = 1, df2 = ((K-1)-p), lower.tail = TRUE)
+        significantFreqRed <- Y$Freq[which(FtestPrime >= FCutOffPrime)]
+
+
+      }
+      else{ # are doing undersampling
+        v <- sineTaperMatrix(N = N, k = K)#multitaper::dpss(n = N, K = K, nw = N*w)$v
+        vDot <- FirstDerSineTaper(N = N, k = K)
+        vUnder <- sineTaperMatrix(N = undersampleNumber, k = K)
+        vDotUnder <- FirstDerSineTaper(N = undersampleNumber, k = K)
+        #these are the reduced terms
+        vPrime <- v[,-K]
+        vPrimeUnder <- vUnder[,-K]
+        vDotPrime <- vDot[,-K]
+        vDotPrimeUnder <- vDotUnder[,-K]
+
+        Y <- eigenCoefSineFFT(N = N, k = K, Xt = Xt, deltat = deltat, passInTaper = v, pad = pad, penalty = penalty, penaltyType = penaltyType)
+        YRe <- t(Re(Y$EigenCoef))
+        YComp <- t(Im(Y$EigenCoef))
+
+        # this only needs to be computed once for the sine, but will need to be computed twice for the dpss, so I just did it twice for both right now
+        YPrime <- eigenCoefSineFFT(N = N, k = K-1, Xt = Xt, deltat = deltat, passInTaper = vPrime, pad = pad, penalty = penalty, penaltyType = penaltyType)
+        YRePrime <- t(Re(YPrime$EigenCoef))# <- Re(Y$EigenCoef[,-K])
+        YCompPrime <- t(Im(YPrime$EigenCoef))# <- Im(Y$EigenCoef[,-K])
+
+
+
+
+        # Creating the pieces needed for the numerator of psi -------------------------
+
+        U <- vUnder %*% YRe # this is the real part of Z at f
+        W <- vUnder %*% YComp
+        Udot <- vDotUnder %*% YRe
+        Wdot <- vDotUnder %*% YComp
+
+
+        UPrime <- vPrimeUnder %*% YRePrime # this is the real part of Z at f
+        WPrime <- vPrimeUnder %*% YCompPrime
+        UdotPrime <- vDotPrimeUnder %*% YRePrime
+        WdotPrime <- vDotPrimeUnder %*% YCompPrime
+
+
+        psi <- (U*Wdot - Udot * W)/(2*pi*(U^2 + W^2))
+        psiPrime <- (UPrime*WdotPrime - UdotPrime * WPrime)/(2*pi*(UPrime^2 + WPrime^2))
+        psiDiffFull <- psi - psiPrime
+
+
+
+        ## Creating H and H prime --------------------------
+
+        Umat <- USine(N = N, k = K, p = p, passInSineTapers = v, round = 14)
+        Rmat <- RnpMat(N = N,P = p)
+        SineGram <- GramSchmidtMod(uMat = Umat, rMat = Rmat)
+        H <- SineGram$H[,-1] # removes the 0th order column
+        #G <- SineGram$G[,-1] # G is only used in F2 not F3 so it doesnt make a difference
+
+        UmatPrime <- USine(N = N, k = (K-1), p = p, passInSineTapers = vPrime, round = 14)
+        RmatPrime <- RnpMat(N = N,P = p)
+        SineGramPrime <- GramSchmidtMod(uMat = UmatPrime, rMat = RmatPrime)
+        HPrime <- SineGramPrime$H[,-1] # removes the 0th order column
+        #GPrime <- SineGramPrime$G[,-1] # G is only used in F2 not F3 so it doesnt make a difference
+
+        Hdiff <- H[-K] - HPrime[]
+        # Chat now -------------------------
+        PSI <-  (t(vUnder) %*% psi)
+        cHat <- H %*% PSI # this is H(v^tpsi) = H*PSI
+        # Chat Prime
+        PSIPrime <- (t(vPrimeUnder) %*% psiPrime)
+        cHatPrime <- HPrime %*% PSIPrime
+
+        # Chat Diff
+        PSIdiff <- t(vUnder) %*% psiDiffFull
+        cHatDiff <- (Hdiff %*% PSIPrime) + H[K] * (vUnder[,K] %*% psiPrime) +  H %*% PSIdiff
+
+
+        #removingzero and nyquist frequencies
+        zeroNyquist <- c(length(Y$Freq),which(Y$Freq == 0))
+        Y$Freq <- Y$Freq[-zeroNyquist]
+        PSI <- PSI[,-zeroNyquist]
+        PSIPrime <- PSIPrime[,-zeroNyquist]
+        PSIdiff <- PSIdiff[,-zeroNyquist]
+        cHat <- cHat[,-zeroNyquist]
+        cHatPrime <- cHatPrime[,-zeroNyquist]
+        cHatDiff <- cHatDiff[,-zeroNyquist]
+
+        # ||PSI||^2
+        modSqPSI <- colSums(PSI^2)
+        modSqPSIPrime <-colSums(PSIPrime^2)
+        modSqDiffFull <- modSqPSI - modSqPSIPrime
+        #modSqPSIdiff <- colSums(PSIdiff^2)
+        #modSqDiff <- 2*(t(rbind(PSIPrime, (v[,K] %*% psiPrime))) %*% PSIdiff) + (v[,K] %*% psiPrime)*(v[,K] %*% psiPrime)
+
+        # ||PSI||^2/chat^2
+        ratio <- modSqPSI/(cHat^2)
+        ratioPrime <- modSqPSIPrime/(cHatPrime^2)
+        ratioDiff <- ((modSqDiffFull) - ratioPrime*(2*cHatPrime*cHatDiff + cHatDiff^2))/(cHatPrime^2 + 2*cHatPrime*cHatDiff + cHatDiff^2) # this denominator is
+        #just chat
+
+
+
+        Ftest <- (K-1)/(ratioPrime - 1 + ratioDiff)
+        Ftest
+
+        FtestDiff <- (ratioDiff*(1-K))/((ratioPrime + ratioDiff - 1)*(ratioPrime - 1))
+        FtestPrime <- (K-1)/(ratioPrime - 1)
+
+        FCutOff <- qf(confLevel, df1 = 1, df2 = (K-p), lower.tail = TRUE)
+        significantFreq <- Y$Freq[which(Ftest >= FCutOff)]
+
+        FCutOffPrime <- (8/9)*qf(confLevel, df1 = 1, df2 = ((K-1)-p), lower.tail = TRUE)
+        significantFreqRed <- Y$Freq[which(FtestPrime >= FCutOffPrime)]
+
+
+      }
+      return(list(FPrime = FtestPrime, FTest = Ftest, FtestDiff = FtestDiff,
+                  Freq = Y$Freq,
+                  ratios = list(ratio = ratio,
+                                ratioPrime = ratioPrime,
+                                ratioDiff = ratioDiff),
+                  significantFrequencies = list(significantFreqFull = significantFreq,
+                                                significantFreqPrime = significantFreqRed,
+                                                FCutOffFull = FCutOff,
+                                                FCutOffPrime = FCutOffPrime)))
+    }
   }
-    return(list(FPrime = FtestPrime, FTest = Ftest, FtestDiff = FtestDiff,
-                Freq = Y$Freq,
-                ratios = list(ratio = ratio,
-                              ratioPrime = ratioPrime,
-                              ratioDiff = ratioDiff),
-                significantFrequencies = list(significantFreqFull = significantFreq,
-                                              significantFreqPrime = significantFreqRed,
-                                              FCutOffFull = FCutOff,
-                                              FCutOffPrime = FCutOffPrime)))
-
   }
 
 
