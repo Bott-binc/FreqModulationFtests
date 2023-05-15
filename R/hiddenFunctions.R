@@ -1648,7 +1648,7 @@ reductionSingleKFullComputation <- function(Xt, K,N, penalty = 1, penaltyType = 
                                             fast = FALSE){
   p <- 1
   sine <- TRUE
-  if(sine){
+  if(sine){ # this is redundant right now
     if(fast){
       if(undersample == FALSE){
         warning("Overwriting undersample = FALSE, fast only works with undersampling")
@@ -1691,7 +1691,7 @@ reductionSingleKFullComputation <- function(Xt, K,N, penalty = 1, penaltyType = 
 
       #psi <- (U*Wdot - Udot * W)/(2*pi*(U^2 + W^2))
       psiPrime <- (UPrime*WdotPrime - UdotPrime * WPrime)/(2*pi*(UPrime^2 + WPrime^2))
-     # psiDiffFull <- psi - psiPrime
+      # psiDiffFull <- psi - psiPrime
 
 
 
@@ -1759,15 +1759,15 @@ reductionSingleKFullComputation <- function(Xt, K,N, penalty = 1, penaltyType = 
       FCutOffPrime <- (8/9)*qf(confLevel, df1 = 1, df2 = ((K-1)-p), lower.tail = TRUE)
       significantFreqRed <- YPrime$Freq[which(FtestPrime >= FCutOffPrime)]
 
-
+      # Fast return -----------------------------
       return(list(FPrime = FtestPrime,
                   Freq = YPrime$Freq,
                   significantFrequencies =  significantFreqRed,
                   FCutOffPrime = FCutOffPrime))
 
 
-    }
-    else{
+    } # only computing the prime not the F3
+    else{ # computes F3 and reduced and FPrime
       if(undersample == FALSE){
         v <- sineTaperMatrix(N = N, k = K)#multitaper::dpss(n = N, K = K, nw = N*w)$v
         vDot <- FirstDerSineTaper(N = N, k = K)
@@ -1953,11 +1953,17 @@ reductionSingleKFullComputation <- function(Xt, K,N, penalty = 1, penaltyType = 
         cHat <- cHat[,-zeroNyquist]
         cHatPrime <- cHatPrime[,-zeroNyquist]
         cHatDiff <- cHatDiff[,-zeroNyquist]
-
+        psiPrime <- psiPrime[,-zeroNyquist]
+        browser()
         # ||PSI||^2
         modSqPSI <- colSums(PSI^2)
         modSqPSIPrime <-colSums(PSIPrime^2)
         modSqDiffFull <- modSqPSI - modSqPSIPrime
+        modSqDiff <- ratioDiffOtherTerms <- vector(length = ncol(PSIdiff))
+        for(i in 1:ncol(PSIdiff)){
+          modSqDiff[i] <- t(PSIdiff[,i]) %*% PSIdiff[,i]
+          ratioDiffOtherTerms[i] <- 2*(t(c(PSIPrime[,i], (vUnder[,K] %*% psiPrime[,i]))) %*% PSIdiff[,i]) + (vUnder[,K] %*% psiPrime[,i])*(vUnder[,K] %*% psiPrime[,i])
+        }
         #modSqPSIdiff <- colSums(PSIdiff^2)
         #modSqDiff <- 2*(t(rbind(PSIPrime, (v[,K] %*% psiPrime))) %*% PSIdiff) + (v[,K] %*% psiPrime)*(v[,K] %*% psiPrime)
 
@@ -1991,10 +1997,13 @@ reductionSingleKFullComputation <- function(Xt, K,N, penalty = 1, penaltyType = 
                   significantFrequencies = list(significantFreqFull = significantFreq,
                                                 significantFreqPrime = significantFreqRed,
                                                 FCutOffFull = FCutOff,
-                                                FCutOffPrime = FCutOffPrime)))
+                                                FCutOffPrime = FCutOffPrime),
+                  ratioDiffParts = list(modSqPSI = modSqPSI,
+                                        modSqPSIPrime = modSqPSIPrime,
+                                        )))
     }
   }
-  }
+}
 
 
 
@@ -2091,9 +2100,8 @@ singleIterationForParallel <- function(xt, k, p, deltat = 1, w = NULL, dpss = FA
                                        confLevel = (1-(1/length(xt))),
                                        # altSig = FALSE,
                                        returnFTestVars = FALSE,
-                                       penalty = 1, penaltyType = "ScaledExp", reduction = FALSE,
-                                       penaltyOnTapersStdInv = FALSE,
-                                       warningIgnore = TRUE){
+                                       penalty = 1, penaltyType = "ScaledExp",
+                                       penaltyOnTapersStdInv = FALSE){
 
 
   N = length(xt)
@@ -2104,18 +2112,6 @@ singleIterationForParallel <- function(xt, k, p, deltat = 1, w = NULL, dpss = FA
     stop("need to set undersample amount")
   }
 
-  # Reduced Ftest ----------------------------------------------------------------------------------------------
-  if(reduction){
-    if(warningIgnore == FALSE){
-      if(k %%2 == 1){ # odd k
-        warning("Using reduction on an odd k, not recommended")
-      }
-    }
-
-    # this is where the new reduction function needs to go
-
-
-  }else{ # No reduction --------------------------------------------------------------------------------------
     if(dpss){ #Use DPSS taper
       if(is.null(w)){
         stop("need to set w for dpss")
@@ -2190,6 +2186,7 @@ singleIterationForParallel <- function(xt, k, p, deltat = 1, w = NULL, dpss = FA
         }
       }
       return(list(F3Mod = F3, Freq = Freq, significantFreq = significantFreq,
+                  FcutOff = FcutOff,
                   k = k))
 
     }else{# if the Ftest variables needed to be returned
@@ -2226,13 +2223,41 @@ singleIterationForParallel <- function(xt, k, p, deltat = 1, w = NULL, dpss = FA
         }
       }
       return(list(F3Mod = F3, Freq = Freq, significantFreq = significantFreq,
-                  k = k, ftestvars = list(instFreqEigen = instFreqEigen,
+                  k = k, FcutOff = FcutOff, ftestvars = list(instFreqEigen = instFreqEigen,
                                           fStuff = fStuff, tapers = tapers)))
-    }
+
   }
-
-
-
 }
 
 
+
+singleIterationForParallelFPrime <- function(xt, k, deltat = 1,
+                                             undersampleNumber = 100,
+                                             confLevel = (1-(1/length(xt))),
+                                             dpss = FALSE,
+                                             penalty = 1, penaltyType = "ScaledExp"){
+
+  if(k %% 2 == 1){ # even k we wnat to just run f3 or f4
+    Ftest <- singleIterationForParallel(xt = xt, k = k, p = 1, deltat = deltat,
+                               dpss = dpss, undersampleNumber = undersampleNumber,
+                               confLevel = confLevel, returnFTestVars = TRUE, w = (k+1)/(2*length(xt)),
+                               penalty = penalty, penaltyType = penaltyType)
+    testStat <- Ftest$F3
+    significantFreq <- Ftest$significantFreq[[1]]
+    FCutOff <- Ftest$FcutOff
+    print("Used F3")
+  }else{
+    Ftest <- reductionSingleKFullComputation(Xt = xt, K = k, N = length(xt), penalty = penalty,
+                                    penaltyType = penaltyType, undersample = TRUE,
+                                    undersampleNumber = undersampleNumber, deltat = deltat,
+                                    pad = TRUE, confLevel = confLevel, fast = TRUE)
+    testStat <- Ftest$FPrime
+    significantFreq <- Ftest$significantFrequencies
+    FCutOff <- Ftest$FCutOffPrime
+    print("Used FPrime")
+  }
+
+  return(list(Ftest = testStat, Freq = Ftest$Freq, significantFreq = significantFreq,
+         FCutOff = FCutOff))
+
+}
