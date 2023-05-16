@@ -1844,18 +1844,25 @@ reductionSingleKFullComputation <- function(Xt, K,N, penalty = 1, penaltyType = 
         cHat <- cHat[,-zeroNyquist]
         cHatPrime <- cHatPrime[,-zeroNyquist]
         cHatDiff <- cHatDiff[,-zeroNyquist]
-
+        psiPrime <- psiPrime[,-zeroNyquist]
         # ||PSI||^2
         modSqPSI <- colSums(PSI^2)
         modSqPSIPrime <-colSums(PSIPrime^2)
-        modSqDiffFull <- modSqPSI - modSqPSIPrime
+
+        modSqDiff <- ratioDiffOtherTerms <- ratioDiffKMinOneTerm <- ratioDiffSumTerm <- vector(length = ncol(PSIdiff))
+        for(i in 1:ncol(PSIdiff)){ # could use an apply here, but this will work for now as im not too worried about speed
+          modSqDiff[i] <- t(PSIdiff[,i]) %*% PSIdiff[,i]
+          ratioDiffSumTerm[i] <- 2*(t(c(PSIPrime[,i], (v[,K] %*% psiPrime[,i]))) %*% PSIdiff[,i])
+          ratioDiffKMinOneTerm[i] <- (v[,K] %*% psiPrime[,i])*(v[,K] %*% psiPrime[,i])
+          ratioDiffOtherTerms[i] <-  ratioDiffSumTerm[i] + ratioDiffKMinOneTerm[i]
+        }
         #modSqPSIdiff <- colSums(PSIdiff^2)
         #modSqDiff <- 2*(t(rbind(PSIPrime, (v[,K] %*% psiPrime))) %*% PSIdiff) + (v[,K] %*% psiPrime)*(v[,K] %*% psiPrime)
 
         # ||PSI||^2/chat^2
         ratio <- modSqPSI/(cHat^2)
         ratioPrime <- modSqPSIPrime/(cHatPrime^2)
-        ratioDiff <- ((modSqDiffFull) - ratioPrime*(2*cHatPrime*cHatDiff + cHatDiff^2))/(cHatPrime^2 + 2*cHatPrime*cHatDiff + cHatDiff^2) # this denominator is
+        ratioDiff <- ((modSqDiff + ratioDiffOtherTerms) - ratioPrime*(2*cHatPrime*cHatDiff + cHatDiff^2))/(cHatPrime^2 + 2*cHatPrime*cHatDiff + cHatDiff^2) # this denominator is
         #just chat
 
 
@@ -1954,15 +1961,16 @@ reductionSingleKFullComputation <- function(Xt, K,N, penalty = 1, penaltyType = 
         cHatPrime <- cHatPrime[,-zeroNyquist]
         cHatDiff <- cHatDiff[,-zeroNyquist]
         psiPrime <- psiPrime[,-zeroNyquist]
-        browser()
         # ||PSI||^2
         modSqPSI <- colSums(PSI^2)
         modSqPSIPrime <-colSums(PSIPrime^2)
-        modSqDiffFull <- modSqPSI - modSqPSIPrime
-        modSqDiff <- ratioDiffOtherTerms <- vector(length = ncol(PSIdiff))
+
+        modSqDiff <- ratioDiffOtherTerms <- ratioDiffSumTerm <- ratioDiffKMinOneTerm <- vector(length = ncol(PSIdiff))
         for(i in 1:ncol(PSIdiff)){
           modSqDiff[i] <- t(PSIdiff[,i]) %*% PSIdiff[,i]
-          ratioDiffOtherTerms[i] <- 2*(t(c(PSIPrime[,i], (vUnder[,K] %*% psiPrime[,i]))) %*% PSIdiff[,i]) + (vUnder[,K] %*% psiPrime[,i])*(vUnder[,K] %*% psiPrime[,i])
+          ratioDiffSumTerm[i] <- 2*(t(c(PSIPrime[,i], (vUnder[,K] %*% psiPrime[,i]))) %*% PSIdiff[,i])
+          ratioDiffKMinOneTerm[i] <- (vUnder[,K] %*% psiPrime[,i])*(vUnder[,K] %*% psiPrime[,i])
+          ratioDiffOtherTerms[i] <-  ratioDiffSumTerm[i] + ratioDiffKMinOneTerm[i]
         }
         #modSqPSIdiff <- colSums(PSIdiff^2)
         #modSqDiff <- 2*(t(rbind(PSIPrime, (v[,K] %*% psiPrime))) %*% PSIdiff) + (v[,K] %*% psiPrime)*(v[,K] %*% psiPrime)
@@ -1970,7 +1978,7 @@ reductionSingleKFullComputation <- function(Xt, K,N, penalty = 1, penaltyType = 
         # ||PSI||^2/chat^2
         ratio <- modSqPSI/(cHat^2)
         ratioPrime <- modSqPSIPrime/(cHatPrime^2)
-        ratioDiff <- ((modSqDiffFull) - ratioPrime*(2*cHatPrime*cHatDiff + cHatDiff^2))/(cHatPrime^2 + 2*cHatPrime*cHatDiff + cHatDiff^2) # this denominator is
+        ratioDiff <- ((modSqDiff + ratioDiffOtherTerms) - ratioPrime*(2*cHatPrime*cHatDiff + cHatDiff^2))/(cHatPrime^2 + 2*cHatPrime*cHatDiff + cHatDiff^2) # this denominator is
         #just chat
 
 
@@ -2000,7 +2008,15 @@ reductionSingleKFullComputation <- function(Xt, K,N, penalty = 1, penaltyType = 
                                                 FCutOffPrime = FCutOffPrime),
                   ratioDiffParts = list(modSqPSI = modSqPSI,
                                         modSqPSIPrime = modSqPSIPrime,
-                                        )))
+                                        modSqDiff = modSqDiff,
+                                        ratioDiffSumTerm = ratioDiffSumTerm,
+                                        ratioDiffKMinOneTerm = ratioDiffKMinOneTerm,
+                                        cHatPrime = cHatPrime,
+                                        cHatDiff = cHatDiff),
+                  PSIterms = list(PSIPrime = PSIPrime,
+                                  PSIDiff = PSIdiff,
+                                  PSI = PSI,
+                                  psiPrime = psiPrime)))
     }
   }
 }
