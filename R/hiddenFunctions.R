@@ -1756,7 +1756,7 @@ reductionSingleKFullComputation <- function(Xt, K,N, penalty = 1, penaltyType = 
       # FCutOff <- qf(confLevel, df1 = 1, df2 = (K-p), lower.tail = TRUE)
       # significantFreq <- Y$Freq[which(Ftest >= FCutOff)]
 
-      FCutOffPrime <- (8/9)*qf(confLevel, df1 = 1, df2 = ((K-1)-p), lower.tail = TRUE)
+      FCutOffPrime <- ((K-p-1)/K-p)*qf(confLevel, df1 = 1, df2 = ((K-1)-p), lower.tail = TRUE)
       significantFreqRed <- YPrime$Freq[which(FtestPrime >= FCutOffPrime)]
 
       # Fast return -----------------------------
