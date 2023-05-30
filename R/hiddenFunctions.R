@@ -1876,7 +1876,7 @@ reductionSingleKFullComputation <- function(Xt, K,N, penalty = 1, penaltyType = 
         FCutOff <- qf(confLevel, df1 = 1, df2 = (K-p), lower.tail = TRUE)
         significantFreq <- Y$Freq[which(Ftest >= FCutOff)]
 
-        FCutOffPrime <- (8/9)*qf(confLevel, df1 = 1, df2 = ((K-1)-p), lower.tail = TRUE)
+        FCutOffPrime <- ((K-1-p)/(K-p))*qf(confLevel, df1 = 1, df2 = ((K-1)-p), lower.tail = TRUE)
         significantFreqRed <- Y$Freq[which(FtestPrime >= FCutOffPrime)]
 
 
@@ -1992,7 +1992,7 @@ reductionSingleKFullComputation <- function(Xt, K,N, penalty = 1, penaltyType = 
         FCutOff <- qf(confLevel, df1 = 1, df2 = (K-p), lower.tail = TRUE)
         significantFreq <- Y$Freq[which(Ftest >= FCutOff)]
 
-        FCutOffPrime <- (8/9)*qf(confLevel, df1 = 1, df2 = ((K-1)-p), lower.tail = TRUE)
+        FCutOffPrime <- (K-1-p)/(K-p)*qf(confLevel, df1 = 1, df2 = ((K-1)-p), lower.tail = TRUE)
         significantFreqRed <- Y$Freq[which(FtestPrime >= FCutOffPrime)]
 
 
@@ -2111,10 +2111,12 @@ singleIterationForParallel4 <- function(xt, N, k, p, deltat = 1, w = NULL, dpss 
 #' penalty to each respective taper
 #' @param penaltyOnTapersStdInv applys the penalty to all tapers in the calculation instead of just weighting the
 #' eigenCoef's
+#' @param reduction if using sine tapers, can use reduction of removing last taper to improve the even odd behaviour of k's
+#' @param penaltyType ScaledExp is the default and the one we recommend using at this time
 #'
 #' @return $F3Mod, $Freq, $significantFreq, $k
 
-singleIterationForParallel <- function(xt, k, p, deltat = 1, w = NULL, dpss = FALSE,
+singleIterationForParallel <- function(xt, k, p, deltat = 1, w = NULL, dpss = FALSE, reduction = TRUE,
                                        undersampleNumber = 100,
                                        confLevel = (1-(1/length(xt))),
                                        # altSig = FALSE,
@@ -2147,10 +2149,17 @@ singleIterationForParallel <- function(xt, k, p, deltat = 1, w = NULL, dpss = FA
                                        returnRp = FALSE, withoutzeroPoly = TRUE)
     }
     else{ #Sine Tapers are used
+      if(reduction){
+        K <- k
+        k <- K-1
+        sine <- sineTaperMatrix(N = N, k = k)
+        sineUnder <- sineTaperMatrix(N = undersampleNumber, k = k)
 
-      sine <- sineTaperMatrix(N = N, k = k)
-      sineUnder <- sineTaperMatrix(N = undersampleNumber, k = k)
+      }else{
+        sine <- sineTaperMatrix(N = N, k = k)
+        sineUnder <- sineTaperMatrix(N = undersampleNumber, k = k)
 
+      }
 
       instFreqEigen <- eigenCoefSineInstFrequency(xt = xt, N = N, k = k,deltat = deltat,
                                                   returnSineMat = FALSE, passInSineTapers = sine,
@@ -2184,9 +2193,16 @@ singleIterationForParallel <- function(xt, k, p, deltat = 1, w = NULL, dpss = FA
         significantFreq <- list()
 
         normcHatWOutZeroSq <- normcHatWOutZeroSq + fStuff$cHat^2
-        F3[p,] <- (fStuff$cHat)^2/
-          ((normPhiSq - normcHatWOutZeroSq)/(k - p))
-        FcutOff <- qf(confLevel, df1 = 1, df2 = (k-p), lower.tail = TRUE)
+        if(reduction){
+          F3[p,] <- (fStuff$cHat)^2/
+            ((normPhiSq - normcHatWOutZeroSq)/(K - p)) # this is the non reducced K
+          FcutOff <- (K-1-p)/(K-p)*qf(confLevel, df1 = 1, df2 = ((K-1)-p), lower.tail = TRUE)
+        }else{
+          F3[p,] <- (fStuff$cHat)^2/
+            ((normPhiSq - normcHatWOutZeroSq)/(k - p))
+          FcutOff <- qf(confLevel, df1 = 1, df2 = (k-p), lower.tail = TRUE)
+        }
+
         significantFreq[[p]] <- Freq[which(F3[p,] >= FcutOff)]
 
       }else{
@@ -2194,12 +2210,20 @@ singleIterationForParallel <- function(xt, k, p, deltat = 1, w = NULL, dpss = FA
         colnames(F3) <- Freq
         significantFreq <- list()
         for(P in 1:nrow(fStuff$cHat)){ # this is 1:p as we are removing zero so P-1 is actually P
+          if(reduction){
+            normcHatWOutZeroSq <- normcHatWOutZeroSq + fStuff$cHat[P,]^2
+            F3[P,] <- (fStuff$cHat[P,])^2/
+              ((normPhiSq - normcHatWOutZeroSq)/(K - P))
+            FcutOff <- (K-1-P)/(K-P)*qf(confLevel, df1 = 1, df2 = ((K-1)-P), lower.tail = TRUE)
+            significantFreq[[P]] <- Freq[which(F3[P,] >= FcutOff)]
+          }else{
+            normcHatWOutZeroSq <- normcHatWOutZeroSq + fStuff$cHat[P,]^2
+            F3[P,] <- (fStuff$cHat[P,])^2/
+              ((normPhiSq - normcHatWOutZeroSq)/(k - P))
+            FcutOff <- qf(confLevel, df1 = 1, df2 = (k-P), lower.tail = TRUE)
+            significantFreq[[P]] <- Freq[which(F3[P,] >= FcutOff)]
+          }
 
-          normcHatWOutZeroSq <- normcHatWOutZeroSq + fStuff$cHat[P,]^2
-          F3[P,] <- (fStuff$cHat[P,])^2/
-            ((normPhiSq - normcHatWOutZeroSq)/(k - P))
-          FcutOff <- qf(confLevel, df1 = 1, df2 = (k-P), lower.tail = TRUE)
-          significantFreq[[P]] <- Freq[which(F3[P,] >= FcutOff)]
 
 
         }
@@ -2221,10 +2245,18 @@ singleIterationForParallel <- function(xt, k, p, deltat = 1, w = NULL, dpss = FA
         significantFreq <- list()
 
         normcHatWOutZeroSq <- normcHatWOutZeroSq + fStuff$cHat^2
-        F3[p,] <- (fStuff$cHat)^2/
-          ((normPhiSq - normcHatWOutZeroSq)/(k - p))
-        FcutOff <- qf(confLevel, df1 = 1, df2 = (k-p), lower.tail = TRUE)
-        significantFreq[[p]] <- Freq[which(F3[p,] >= FcutOff)]
+        if(reduction){
+          F3[p,] <- (fStuff$cHat)^2/
+            ((normPhiSq - normcHatWOutZeroSq)/(K - p))
+          FcutOff <- (K-1-p)/(K-p)*qf(confLevel, df1 = 1, df2 = ((K-1)-p), lower.tail = TRUE)
+          significantFreq[[p]] <- Freq[which(F3[p,] >= FcutOff)]
+        }else{
+          F3[p,] <- (fStuff$cHat)^2/
+            ((normPhiSq - normcHatWOutZeroSq)/(k - p))
+          FcutOff <- qf(confLevel, df1 = 1, df2 = (k-p), lower.tail = TRUE)
+          significantFreq[[p]] <- Freq[which(F3[p,] >= FcutOff)]
+        }
+
 
       }else{
         F3 <-  matrix(nrow = nrow(fStuff$cHat), ncol = length(instFreqEigen$Freq))
@@ -2233,10 +2265,18 @@ singleIterationForParallel <- function(xt, k, p, deltat = 1, w = NULL, dpss = FA
         for(P in 1:nrow(fStuff$cHat)){ # this is 1:p as we are removing zero so P-1 is actually P
 
           normcHatWOutZeroSq <- normcHatWOutZeroSq + fStuff$cHat[P,]^2
-          F3[P,] <- (fStuff$cHat[P,])^2/
-            ((normPhiSq - normcHatWOutZeroSq)/(k - P))
-          FcutOff <- qf(confLevel, df1 = 1, df2 = (k-P), lower.tail = TRUE)
-          significantFreq[[P]] <- Freq[which(F3[P,] >= FcutOff)]
+          if(reduction){
+            F3[P,] <- (fStuff$cHat[P,])^2/
+              ((normPhiSq - normcHatWOutZeroSq)/(K - P))
+            FcutOff <- (K-1-P)/(K-P)*qf(confLevel, df1 = 1, df2 = ((K-1)-P), lower.tail = TRUE)
+            significantFreq[[P]] <- Freq[which(F3[P,] >= FcutOff)]
+          }else{
+            F3[P,] <- (fStuff$cHat[P,])^2/
+              ((normPhiSq - normcHatWOutZeroSq)/(k - P))
+            FcutOff <- qf(confLevel, df1 = 1, df2 = (k-P), lower.tail = TRUE)
+            significantFreq[[P]] <- Freq[which(F3[P,] >= FcutOff)]
+          }
+
 
 
         }

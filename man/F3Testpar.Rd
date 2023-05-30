@@ -11,6 +11,7 @@ F3Testpar(
   N = length(xt),
   deltat = 1,
   dpss = FALSE,
+  reduction = TRUE,
   undersampleNumber = 100,
   penalty = 1,
   penaltyType = "ScaledExp",
@@ -33,6 +34,8 @@ F3Testpar(
 \item{deltat}{Time interval between each observation}
 
 \item{dpss}{= FALSE unless you want to use dpss, it will do sine tapers by default}
+
+\item{reduction}{if using sine tapers, can use reduction of removing last taper to improve the even odd behaviour of k's}
 
 \item{undersampleNumber}{A numeric of the number the user wants to undersample, usually 100 is a good start}
 

@@ -1177,11 +1177,12 @@ F4Testpar <- function(xt, N, k, p, deltat = 1, dpss = FALSE, undersampleNumber =
 #' @param penaltyType What type of penalty you want to use, "ScaledExp" is the most harsh and the best right now,
 #' "mtm" is for adaptive multitaper weighting, "Cos" is for a cosine weighting scheme, "Clip" is 1 for the number passed into penalty
 #' k's then is 0 for the rest.  The percentage is specified by a fraction in the penalty variable
+#' @param reduction if using sine tapers, can use reduction of removing last taper to improve the even odd behaviour of k's
 #'
 #' @return $F3testStat, $Freq, $sigFreq, prop, aggrTestResult zero if fail to reject, 1 if rejected at the specified R
 #'
 #' @export
-F3Testpar <- function(xt, k, p, N = length(xt), deltat = 1, dpss = FALSE, undersampleNumber = 100,
+F3Testpar <- function(xt, k, p, N = length(xt), deltat = 1, dpss = FALSE, reduction = TRUE, undersampleNumber = 100,
                       penalty = 1, penaltyType = "ScaledExp", R = 1, cores = 1,
                       confLevel = (1 - (1/length(xt))), returnFTestVars = FALSE,
                       penaltyOnTapersStdInv = FALSE){
@@ -1203,7 +1204,7 @@ F3Testpar <- function(xt, k, p, N = length(xt), deltat = 1, dpss = FALSE, unders
         }, mc.cores = cores, mc.cleanup = TRUE, mc.preschedule = TRUE)
       }else{ # Sine Tapers Standard -----------
         fullDat <- parallel::mclapply(X = k,FUN = function(x){
-          return(singleIterationForParallel(xt = xt, k = x, p = p, deltat = deltat,
+          return(singleIterationForParallel(xt = xt, k = x, p = p, deltat = deltat, reduction = reduction,
                                             undersampleNumber = undersampleNumber, dpss = FALSE,
                                             confLevel = confLevel, returnFTestVars = FALSE,
                                             penalty = penalty, penaltyType = penaltyType,
@@ -1221,7 +1222,7 @@ F3Testpar <- function(xt, k, p, N = length(xt), deltat = 1, dpss = FALSE, unders
         }, mc.cores = cores, mc.cleanup = TRUE, mc.preschedule = TRUE)
       }else{
         fullDat <- parallel::mclapply(X = k,FUN = function(x){
-          return(singleIterationForParallel(xt = xt, k = x, p = p, deltat = deltat,
+          return(singleIterationForParallel(xt = xt, k = x, p = p, deltat = deltat, reduction = reduction,
                                             undersampleNumber = undersampleNumber, dpss = FALSE,
                                             confLevel = confLevel, returnFTestVars = TRUE,
                                             penalty = penalty, penaltyType = penaltyType,

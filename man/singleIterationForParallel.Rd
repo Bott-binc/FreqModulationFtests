@@ -11,6 +11,7 @@ singleIterationForParallel(
   deltat = 1,
   w = NULL,
   dpss = FALSE,
+  reduction = TRUE,
   undersampleNumber = 100,
   confLevel = (1 - (1/length(xt))),
   returnFTestVars = FALSE,
@@ -32,6 +33,8 @@ singleIterationForParallel(
 
 \item{dpss}{= FALSE uses sine instead}
 
+\item{reduction}{if using sine tapers, can use reduction of removing last taper to improve the even odd behaviour of k's}
+
 \item{undersampleNumber}{= 100 by default  this is the number used in undersampling the tapers}
 
 \item{confLevel}{level of confidence used in F3Mod, default is 1-1/N}
@@ -40,6 +43,8 @@ singleIterationForParallel(
 
 \item{penalty}{1 is no penalty , 0.2  would give seq(from =  1, to =  1/(0.2*k, length.out = k)
 penalty to each respective taper}
+
+\item{penaltyType}{ScaledExp is the default and the one we recommend using at this time}
 
 \item{penaltyOnTapersStdInv}{applys the penalty to all tapers in the calculation instead of just weighting the
 eigenCoef's}
