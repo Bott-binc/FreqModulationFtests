@@ -2116,14 +2116,13 @@ singleIterationForParallel4 <- function(xt, N, k, p, deltat = 1, w = NULL, dpss 
 #'
 #' @return $F3Mod, $Freq, $significantFreq, $k
 
-singleIterationForParallel <- function(xt, k, p, deltat = 1, w = NULL, dpss = FALSE, reduction = TRUE,
+singleIterationForParallel <- function(xt, k, p, deltat = 1, w = NULL, dpss = FALSE, reduction = FALSE,
                                        undersampleNumber = 100,
                                        confLevel = (1-(1/length(xt))),
                                        # altSig = FALSE,
                                        returnFTestVars = FALSE,
                                        penalty = 1, penaltyType = "ScaledExp",
                                        penaltyOnTapersStdInv = FALSE){
-
 
   N = length(xt)
   if(penaltyType == "mtm" & dpss == FALSE){

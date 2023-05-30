@@ -981,181 +981,15 @@ FtestCombined <- function(xt, N, k, p, deltat = 1, w = NULL, dpss = FALSE,
   }
 }
 
-#' F4Test
-#'
-#' @param xt time series
-#' @param N Total number of observations
-#' @param k Number of tapers
-#' @param p Highest degree polynomial you want to test for
-#' @param deltat Time interval between each observation
-#' @param w Only needed if dpss = TRUE
-#' @param dpss  = FALSE unless you want to use dpss, it will do sine tapers by default
-#' @param undersampleNumber A numeric of the number the user wants to undersample, usually 100 is a good start
-#'
-#' @return $F4testStat, $Freq, $F14TestStat this is the f1 not the f3 mod
-#'
-#' @export
-F4Test <- function(xt, N, k, p, deltat = 1, w = NULL, dpss = FALSE, undersampleNumber = 100){
-  initial <- TRUE
-  loopNum <- 0
-  for(K in k){
-    loopNum <- loopNum + 1
-
-    if(is.null(undersampleNumber)){
-      stop("need to set undersample amount")
-    }
-    if(dpss){ #Use DPSS taper
-      if(is.null(w)){
-        stop("need to set w for dpss")
-      }
-      dp <- multitaper::dpss(n = N, k = K, nw = N*w[loopNum])
-      dpUnder <- multitaper::dpss(n = undersampleNumber, k = K, nw = N*w[loopNum])
-      instFreqEigen <- eigenCoefDPSSInstFrequency(xt = xt, N = N, k = K, w = w[loopNum],
-                                                      deltat = deltat,
-                                                      returnDPSS = FALSE, passInDPSS = dp,
-                                                      passInDPSSUnder = dpUnder)
-      fStuff <- regressionDPSSInstFreq(N = N, k = K, w = w[loopNum], instFreqEigen = instFreqEigen$PSI,
-                                       p = p, passInDPSS = dpUnder ,returnDPSS = FALSE,
-                                       returnRp = FALSE, withoutzeroPoly = TRUE)
-    }
-    else{ #Sine Tapers are used
-      sine <- sineTaperMatrix(N = N, k = K)
-      sineUnder <- sineTaperMatrix(N = undersampleNumber, k = K)
-      instFreqEigen <- eigenCoefSineInstFrequency(xt = xt, N = N, k = K,deltat = deltat,
-                                                      returnSineMat = FALSE, passInSineTapers = sine,
-                                                      passInSineUnder = sineUnder)
-
-      fStuff <- regressionSineInstFreq(N = N, k = K, instFreqEigen = instFreqEigen$PSI,
-                                       p = p, returnSineTapers = FALSE,
-                                       passInSineMat = sineUnder,
-                                       returnRp = FALSE, withoutzeroPoly = TRUE)
-    }
-
-
-    #removingzero and nyquist frequencies
-    zeroNyquist <- c(length(instFreqEigen$Freq),which(instFreqEigen$Freq == 0))
-    instFreqEigen$Freq <- instFreqEigen$Freq[-zeroNyquist]
-    Freq <- instFreqEigen$Freq
-    instFreqEigen$PSI <- instFreqEigen$PSI[,-zeroNyquist]
-    fStuff$cHat <- fStuff$cHat[,-zeroNyquist]
-
-
-    if(initial){                            # K iterations X P polynomials X zeroPadd size
-      normcHatWOutZeroSq <- array(0, dim = c(length(k), nrow(fStuff$cHat), ncol(fStuff$cHat)))
-      normPSISq <- matrix(nrow = length(k), ncol = ncol(fStuff$cHat))
-      cHat <- array(0, dim=c(length(k), nrow(fStuff$cHat), ncol(fStuff$cHat)))
-      initial <- FALSE
-    }
-    normPSISq[loopNum,] <- colSums(instFreqEigen$PSI^2)
-
-    #p = 1 th for loop iteration
-    normcHatWOutZeroSq[loopNum,1,] <-  fStuff$cHat[1,]^2
-    cHat[loopNum,1,] <- fStuff$cHat[1,]^2
-    # F3[1,] <- (fStuff$cHat[1,])^2/
-    #   ((normPSISq - normcHatWOutZeroSq[k,1,])/(k - 1))
-    for(P in 2:nrow(fStuff$cHat)){ # this is 1:p as we are removing zero so P-1 is actually P
-      cHat[loopNum,P,] <- fStuff$cHat[P,]^2
-      normcHatWOutZeroSq[loopNum,P,] <- normcHatWOutZeroSq[loopNum,(P-1),] + fStuff$cHat[P,]^2
-      # F3[P,] <- (fStuff$cHat[P,])^2/
-      #   ((normPSISq - normcHatWOutZeroSq[k,P,])/(k - P))
-
-    }
-  }
-  F3 <- F1 <- matrix(nrow = nrow(fStuff$cHat), ncol = length(instFreqEigen$Freq))
-  colnames(F3) <- Freq
-
-  for(P in 1:nrow(fStuff$cHat)){
-    F1[P,] <- (colSums(normcHatWOutZeroSq[,P,])/sum(rep(P, times = length(k))))/
-      (((colSums(normPSISq - normcHatWOutZeroSq[,P,])))/(sum((k - rep(P, times=length(k))))))
-    F3[P,] <- (((colSums(cHat[,P,]^2)))/(length(k)))/
-      (((colSums(normPSISq - normcHatWOutZeroSq[,P,])))/(sum((k - rep(P, times=length(k))))))
-  }
-  #making the return
-  return(list(F4testStat = F3, Freq = Freq,
-              F14testStat = F1 ))
-}
 
 
 
-#' F4Test
-#'
-#' w is chosen by shannons number based on k
-#'
-#' @param xt time series
-#' @param N Total number of observations
-#' @param p Highest degree polynomial you want to test for
-#' @param deltat Time interval between each observation
-#' @param dpss  = FALSE unless you want to use dpss, it will do sine tapers by default
-#' @param undersampleNumber A numeric of the number the user wants to undersample, usually 100 is a good start
-#' @param k vector of tapers used in the f test
-#' @param cores must be 1 if on windows, number of cores used for parallelization
-#'
-#' @return $F4testStat, $Freq, $F14TestStat this is the f1 not the f3 mod
-#'
-#' @export
-F4Testpar <- function(xt, N, k, p, deltat = 1, dpss = FALSE, undersampleNumber = 100, cores = 1){
 
-  if(is.null(undersampleNumber)){
-    stop("need to set undersample amount")
-  }
 
-  if(dpss){
-    fullDat <- parallel::mclapply(X = k,FUN = function(x){
-      return(singleIterationForParallel4(xt = xt, N = N, k = x, w = ((x+1)/(2*length(xt))), p = p, deltat = deltat,
-                               undersampleNumber = undersampleNumber, dpss = TRUE))
-    }, mc.cores = cores, mc.cleanup = TRUE)
-  }else{
-    fullDat <- parallel::mclapply(X = k,FUN = function(x){
-      return(singleIterationForParallel4(xt = xt, N = N, k = x, p = p, deltat = deltat,
-                               undersampleNumber = undersampleNumber, dpss = FALSE))
-    }, mc.cores = cores, mc.cleanup = TRUE)
-  }
-
-  if(p != 1){
-                               # K iterations X P polynomials X zeroPadd size
-  normcHatWOutZeroSq <- array(0, dim = c(length(k), nrow(fullDat[[1]]$cHat), ncol(fullDat[[1]]$cHat)))
-  normPSISq <- matrix(nrow = length(k), ncol = ncol(fullDat[[1]]$cHat))
-  cHat <- array(0, dim=c(length(k), nrow(fullDat[[1]]$cHat), ncol(fullDat[[1]]$cHat)))
-  }else{
-    normcHatWOutZeroSq <- array(0, dim = c(length(k), length(fullDat[[1]]$cHat),1))
-    normPSISq <- matrix(nrow = length(k), ncol = 1)
-    cHat <- array(0, dim=c(length(k), length(fullDat[[1]]$cHat), 1))
-  }
-
-  for(loopNum in 1:length(k)){
-
-    normPSISq[loopNum,] <- colSums(fullDat[[loopNum]]$PSI^2)
-
-    #p = 1 th for loop iteration
-    normcHatWOutZeroSq[loopNum,1,] <-  fullDat[[loopNum]]$cHat[1,]^2
-    cHat[loopNum,1,] <- fullDat[[loopNum]]$cHat[1,]^2
-    # F3[1,] <- (fStuff$cHat[1,])^2/
-    #   ((normPSISq - normcHatWOutZeroSq[k,1,])/(k - 1))
-    for(P in 2:nrow(fullDat[[loopNum]]$cHat)){ # this is 1:p as we are removing zero so P-1 is actually P
-      cHat[loopNum,P,] <- fullDat[[loopNum]]$cHat[P,]^2
-      normcHatWOutZeroSq[loopNum,P,] <- normcHatWOutZeroSq[loopNum,(P-1),] + fullDat[[loopNum]]$cHat[P,]^2
-      # F3[P,] <- (fStuff$cHat[P,])^2/
-      #   ((normPSISq - normcHatWOutZeroSq[k,P,])/(k - P))
-
-    }
-  }
-  Freq <- fullDat[[1]]$Freq
-  F3 <- F1 <- matrix(nrow = nrow(fullDat[[1]]$cHat), ncol = length(Freq))
-  colnames(F3) <- Freq
-
-  for(P in 1:nrow(fullDat[[1]]$cHat)){
-    F1[P,] <- (colSums(normcHatWOutZeroSq[,P,])/sum(rep(P, times = length(k))))/
-      (((colSums(normPSISq - normcHatWOutZeroSq[,P,])))/(sum((k - rep(P, times=length(k))))))
-    F3[P,] <- (((colSums(cHat[,P,]^2)))/(length(k)))/
-      (((colSums(normPSISq - normcHatWOutZeroSq[,P,])))/(sum((k - rep(P, times=length(k))))))
-  }
-  #making the return
-  return(list(F4testStat = F3, Freq = Freq,
-              F14testStat = F1 ))
-}
 
 #' F3TestParallel
 #'
+#'This function still works, and I kept it so the older code would still work, but should be using the independent functions in practice for a specific given fTest.
 #' w is chosen by shannons number based on k
 #'
 #' @param xt time series
@@ -1182,7 +1016,7 @@ F4Testpar <- function(xt, N, k, p, deltat = 1, dpss = FALSE, undersampleNumber =
 #' @return $F3testStat, $Freq, $sigFreq, prop, aggrTestResult zero if fail to reject, 1 if rejected at the specified R
 #'
 #' @export
-F3Testpar <- function(xt, k, p, N = length(xt), deltat = 1, dpss = FALSE, reduction = TRUE, undersampleNumber = 100,
+F3Testpar <- function(xt, k, p, N = length(xt), deltat = 1, dpss = FALSE, reduction = FALSE, undersampleNumber = 100,
                       penalty = 1, penaltyType = "ScaledExp", R = 1, cores = 1,
                       confLevel = (1 - (1/length(xt))), returnFTestVars = FALSE,
                       penaltyOnTapersStdInv = FALSE){
@@ -1279,11 +1113,6 @@ F3Testpar <- function(xt, k, p, N = length(xt), deltat = 1, dpss = FALSE, reduct
       return(list(aggTestResult = aggTestResult, Freq = Freq, sigFreq = significantFrequencies,
                  proportionSig = prop))
     }
-
-
-
-
-
 
 }
 
