@@ -11,7 +11,7 @@ singleIterationForParallel(
   deltat = 1,
   w = NULL,
   dpss = FALSE,
-  reduction = TRUE,
+  reduction = FALSE,
   undersampleNumber = 100,
   confLevel = (1 - (1/length(xt))),
   returnFTestVars = FALSE,

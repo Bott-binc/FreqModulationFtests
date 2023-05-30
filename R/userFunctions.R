@@ -982,9 +982,216 @@ FtestCombined <- function(xt, N, k, p, deltat = 1, w = NULL, dpss = FALSE,
 }
 
 
+#' F4 Test
+#'
+#' Improves on F3 by allowing weighting.  If penalty is 1 then you obtain the F3 test.
+#'
+#' @param xt time series
+#' @param N = length(xt)Total number of observations
+#' @param p Highest degree polynomial you want to test for
+#' @param deltat Time interval between each observation
+#' @param dpss  = FALSE unless you want to use dpss, it will do sine tapers by default
+#' @param undersampleNumber A numeric of the number the user wants to undersample, usually 100 is a good start
+#' @param k vector of tapers used in the f test, will conduct all at the same time.
+#' @param cores must be 1 if on windows, number of cores used for parallelization
+#' @param confLevel default is 1-1/N, level of confidence used in the Ftest
+#' @param penalty 1 is no penalty , 0.1  would give seq(from =  1, to =  1/(0.1*k, length.out = k)
+#' penalty to each respective taper
+#' @param penaltyType What type of penalty you want to use, "ScaledExp" is the most harsh and the best right now,
+#' "mtm" is for adaptive multitaper weighting, "Cos" is for a cosine weighting scheme, "Clip" is 1 for the number passed into penalty
+#' k's then is 0 for the rest.  The percentage is specified by a fraction in the penalty variable
+#'
+#' @return F4 list conducted at each frequency and each k.  sigFreq is a binary list of all frequencies that are considered to be significant at the given cutoff FCutOff.  fTestVars are other information that may be usefull later.
+#' @export
+F4Test <- function(xt, k, p, N = length(xt), deltat = 1, dpss = FALSE, undersampleNumber = 100,
+                   penalty = 0.1, penaltyType = "ScaledExp", cores = 1,
+                   confLevel = (1 - (1/length(xt)))){
+
+  if(is.null(p)){
+    stop("need to set a polynomial degree  = p")
+  }
+
+  if(dpss){
+    fullDat <- parallel::mclapply(X = k,FUN = function(x){
+      return(singleIterationForParallel(xt = xt, k = x, w = ((x+1)/(2*length(xt))), p = p, deltat = deltat,
+                                        undersampleNumber = undersampleNumber, dpss = TRUE,
+                                        confLevel = confLevel, returnFTestVars = TRUE,
+                                        penalty = penalty, penaltyType = penaltyType))
+    }, mc.cores = cores, mc.cleanup = TRUE, mc.preschedule = TRUE)
+  }else{#it is using the sine tapers
+    fullDat <- parallel::mclapply(X = k,FUN = function(x){
+      return(singleIterationForParallel(xt = xt, k = x, p = p, deltat = deltat, reduction = FALSE,
+                                        undersampleNumber = undersampleNumber, dpss = FALSE,
+                                        confLevel = confLevel, returnFTestVars = TRUE,
+                                        penalty = penalty, penaltyType = penaltyType))
+    }, mc.cores = cores, mc.cleanup = TRUE, mc.preschedule = TRUE)
+  }
+
+  Freq = fullDat[[1]]$Freq
 
 
+  if(length(k) == 1){
+    Ftest <- as.vector(fullDat[[1]]$F3Mod)
+    FCutOff <- as.vector(fullDat[[1]]$FCutOff)
+    significantFreq <- as.vector(fullDat[[1]]$significantFreq)
+    ftestVars <- as.vector(fullDat[[1]]$ftestvars)
 
+    return(list(F4Prime = Ftest, Freq = Freq,
+                sigFreq = significantFreq,
+                FCutOff = FCutOff,
+                fTestVars = ftestVars))
+  }
+  else{
+    return(fullDat)
+  }
+}
+
+
+#F4Prime adn F3Prime if no weighting
+
+#' F4 Prime
+#'
+#' @param xt time series
+#' @param N = length(xt)Total number of observations
+#' @param p Highest degree polynomial you want to test for
+#' @param deltat Time interval between each observation
+#' @param dpss  = FALSE unless you want to use dpss, it will do sine tapers by default
+#' @param undersampleNumber A numeric of the number the user wants to undersample, usually 100 is a good start
+#' @param k vector of tapers used in the f test, will conduct all at the same time.
+#' @param cores must be 1 if on windows, number of cores used for parallelization
+#' @param confLevel default is 1-1/N, level of confidence used in the Ftest
+#' @param penalty 1 is no penalty , 0.1  would give seq(from =  1, to =  1/(0.1*k, length.out = k)
+#' penalty to each respective taper
+#' @param penaltyType What type of penalty you want to use, "ScaledExp" is the most harsh and the best right now,
+#' "mtm" is for adaptive multitaper weighting, "Cos" is for a cosine weighting scheme, "Clip" is 1 for the number passed into penalty
+#' k's then is 0 for the rest.  The percentage is specified by a fraction in the penalty variable
+#'
+#'
+#' @return  F4 list conducted at each frequency and each k.  sigFreq is a binary list of all frequencies that are considered to be significant at the given cutoff FCutOff..
+#' @export
+F4Prime <- function(xt, k, p, N = length(xt), deltat = 1, dpss = FALSE, undersampleNumber = 100,
+                    penalty = 0.1, penaltyType = "ScaledExp", cores = 1,
+                    confLevel = (1 - (1/length(xt)))){
+
+  if(is.null(p)){
+    stop("need to set a polynomial degree  = p")
+  }
+
+  if(dpss){
+    fullDat <- parallel::mclapply(X = k,FUN = function(x){
+      return(singleIterationForParallelFPrime(xt = xt, k = x, p = p, deltat = deltat,
+                                        undersampleNumber = undersampleNumber, dpss = TRUE,
+                                        confLevel = confLevel,
+                                        penalty = penalty, penaltyType = penaltyType))
+    }, mc.cores = cores, mc.cleanup = TRUE, mc.preschedule = TRUE)
+  }else{#it is using the sine tapers
+    fullDat <- parallel::mclapply(X = k,FUN = function(x){
+      return(singleIterationForParallelFPrime(xt = xt, k = x, p = p, deltat = deltat,
+                                        undersampleNumber = undersampleNumber, dpss = FALSE,
+                                        confLevel = confLevel,
+                                        penalty = penalty, penaltyType = penaltyType))
+    }, mc.cores = cores, mc.cleanup = TRUE, mc.preschedule = TRUE)
+  }
+
+  Freq = fullDat[[1]]$Freq
+
+
+  if(length(k) == 1){
+    Ftest <- as.vector(fullDat[[1]]$Ftest)
+    FCutOff <- as.vector(fullDat[[1]]$FCutOff)
+    significantFreq <- as.vector(fullDat[[1]]$significantFreq)
+
+
+    return(list(F4Prime = Ftest, Freq = Freq,
+                sigFreq = significantFreq,
+                FCutOff = FCutOff))
+  }
+  else{
+    return(fullDat)
+  }
+}
+
+#' Aggregate Test
+#'
+#'
+#' @param xt time series
+#' @param N = length(xt)Total number of observations
+#' @param p Highest degree polynomial you want to test for
+#' @param deltat Time interval between each observation
+#' @param dpss  = FALSE unless you want to use dpss, it will do sine tapers by default
+#' @param undersampleNumber A numeric of the number the user wants to undersample, usually 100 is a good start
+#' @param k vector of tapers used in the f test
+#' @param cores must be 1 if on windows, number of cores used for parallelization
+#' @param confLevel default is 1-1/N, level of confidence used in the Ftest
+#' @param penalty 1 is no penalty , 0.2  would give seq(from =  1, to =  1/(0.2*k, length.out = k)
+#' penalty to each respective taper
+#' @param R = 1 by default: Number of times the specific frequency must be detected to be considered significant
+#' @param penaltyType What type of penalty you want to use, "ScaledExp" is the most harsh and the best right now,
+#' "mtm" is for adaptive multitaper weighting, "Cos" is for a cosine weighting scheme, "Clip" is 1 for the number passed into penalty
+#' k's then is 0 for the rest.  The percentage is specified by a fraction in the penalty variable
+#' @param reduction if using sine tapers, can use reduction of removing last taper to improve the even odd behaviour of k's
+#'
+#' @return $F3testStat, $Freq, $sigFreq, prop, aggrTestResult zero if fail to reject, 1 if rejected at the specified R
+#'
+#' @export
+AggregateTest <- function(xt, k, p, N = length(xt), deltat = 1, dpss = FALSE, reduction = FALSE, undersampleNumber = 100,
+                      penalty = 1, penaltyType = "ScaledExp", R = 1, cores = 1,
+                      confLevel = (1 - (1/length(xt)))){
+
+  if(is.null(p)){
+    stop("need to set a polynomial degree amount = p")
+  }
+
+
+  if(dpss){
+    fullDat <- parallel::mclapply(X = k,FUN = function(x){
+      return(singleIterationForParallelAllTypeSwitcher(xt = xt, k = x, p = p, deltat = deltat, FPrime = FALSE,
+                                                       undersampleNumber = undersampleNumber, dpss = TRUE,
+                                                       confLevel = confLevel,
+                                                       penalty = penalty, penaltyType = penaltyType))
+    }, mc.cores = cores, mc.cleanup = TRUE, mc.preschedule = TRUE)
+  }else{ # using sine tapers
+    fullDat <- parallel::mclapply(X = k,FUN = function(x){
+      return(singleIterationForParallelAllTypeSwitcher(xt = xt, k = x, p = p, deltat = deltat, FPrime = reduction,
+                                        undersampleNumber = undersampleNumber, dpss = FALSE,
+                                        confLevel = confLevel,
+                                        penalty = penalty, penaltyType = penaltyType))
+    }, mc.cores = cores, mc.cleanup = TRUE, mc.preschedule = TRUE)
+  }
+
+  Freq = fullDat[[1]]$Freq
+
+
+  significantFrequencies <- matrix(0,nrow = p, ncol = length(Freq))
+  for(i in 1:length(k)){
+    for(j in 1:p){
+      if(length(as.vector(fullDat[[i]]$significantFreq[[j]])) == 0){
+
+      }else{
+        indexesOfSigFreq <- match(fullDat[[i]]$significantFreq[[j]], Freq)
+        significantFrequencies[j,indexesOfSigFreq] =
+          significantFrequencies[j,indexesOfSigFreq] + 1
+      }
+    }
+  }
+
+  if(R != 1){
+    aggTestResult <- t(apply(significantFrequencies,
+                             MARGIN = 1,
+                             FUN = function(x){
+                               failToReject <- which(x < R)
+                               x[failToReject] <- 0
+                               x[-failToReject] <- 1
+                               return(x)
+                             }))
+  }else{
+    aggTestResult <- significantFrequencies
+  }
+
+  #prop <- significantFrequencies/length(k)
+
+  return(list(aggTestResult = aggTestResult, Freq = Freq, sigFreq = significantFrequencies, F3TestStat = fullDat))
+}
 
 
 #' F3TestParallel
@@ -1011,12 +1218,10 @@ FtestCombined <- function(xt, N, k, p, deltat = 1, w = NULL, dpss = FALSE,
 #' @param penaltyType What type of penalty you want to use, "ScaledExp" is the most harsh and the best right now,
 #' "mtm" is for adaptive multitaper weighting, "Cos" is for a cosine weighting scheme, "Clip" is 1 for the number passed into penalty
 #' k's then is 0 for the rest.  The percentage is specified by a fraction in the penalty variable
-#' @param reduction if using sine tapers, can use reduction of removing last taper to improve the even odd behaviour of k's
-#'
 #' @return $F3testStat, $Freq, $sigFreq, prop, aggrTestResult zero if fail to reject, 1 if rejected at the specified R
 #'
 #' @export
-F3Testpar <- function(xt, k, p, N = length(xt), deltat = 1, dpss = FALSE, reduction = FALSE, undersampleNumber = 100,
+F3Testpar <- function(xt, k, p, N = length(xt), deltat = 1, dpss = FALSE, undersampleNumber = 100,
                       penalty = 1, penaltyType = "ScaledExp", R = 1, cores = 1,
                       confLevel = (1 - (1/length(xt))), returnFTestVars = FALSE,
                       penaltyOnTapersStdInv = FALSE){
@@ -1038,7 +1243,7 @@ F3Testpar <- function(xt, k, p, N = length(xt), deltat = 1, dpss = FALSE, reduct
         }, mc.cores = cores, mc.cleanup = TRUE, mc.preschedule = TRUE)
       }else{ # Sine Tapers Standard -----------
         fullDat <- parallel::mclapply(X = k,FUN = function(x){
-          return(singleIterationForParallel(xt = xt, k = x, p = p, deltat = deltat, reduction = reduction,
+          return(singleIterationForParallel(xt = xt, k = x, p = p, deltat = deltat, reduction = FALSE,
                                             undersampleNumber = undersampleNumber, dpss = FALSE,
                                             confLevel = confLevel, returnFTestVars = FALSE,
                                             penalty = penalty, penaltyType = penaltyType,
@@ -1056,7 +1261,7 @@ F3Testpar <- function(xt, k, p, N = length(xt), deltat = 1, dpss = FALSE, reduct
         }, mc.cores = cores, mc.cleanup = TRUE, mc.preschedule = TRUE)
       }else{
         fullDat <- parallel::mclapply(X = k,FUN = function(x){
-          return(singleIterationForParallel(xt = xt, k = x, p = p, deltat = deltat, reduction = reduction,
+          return(singleIterationForParallel(xt = xt, k = x, p = p, deltat = deltat, reduction = FALSE,
                                             undersampleNumber = undersampleNumber, dpss = FALSE,
                                             confLevel = confLevel, returnFTestVars = TRUE,
                                             penalty = penalty, penaltyType = penaltyType,
@@ -1115,6 +1320,11 @@ F3Testpar <- function(xt, k, p, N = length(xt), deltat = 1, dpss = FALSE, reduct
     }
 
 }
+
+
+
+
+
 
 
 

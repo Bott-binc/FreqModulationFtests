@@ -1018,6 +1018,7 @@ standardInverseDPSS <- function(xt, N, k, w, deltat = 1, retDPSS = FALSE,
 #' @param passInDPSSReduced if dpss undersampling was calculated already
 #' @param penalty 1 is no penalty , 0.2  would give seq(from =  1, to =  1/(0.2*k, length.out = k)
 #' penalty to each respective taper
+#' @param penaltyType "ScaledExp" is the current one at this point
 #'
 #' @return Standard Inverse Derivative Z' vector $StdInverse as well as $Freq which are the columns of stdInverse
 #' if returnDPSS = TRUE will also return $DPSS which is the dpss object
@@ -2289,14 +2290,27 @@ singleIterationForParallel <- function(xt, k, p, deltat = 1, w = NULL, dpss = FA
 
 
 
-singleIterationForParallelFPrime <- function(xt, k, deltat = 1,
+#' Single iteration for the FPrime test, set up to use mclapply to run more than one k at a time if wanting to
+#'
+#' @param xt time series input
+#' @param k number of tapers that one wants to use
+#' @param p what degree polynomial are we testing for
+#' @param deltat = 1 by default but can be changed
+#' @param undersampleNumber = 100, this is usually a good starting point
+#' @param confLevel = 1-1/N by default
+#' @param dpss = FALSE, if TRUE and using FPrime, it will still use sine tapers for the even K's as that is the only prime test set up
+#' @param penalty = 0.15, this is usually a good starting point, may need to be increased for prime test
+#' @param penaltyType = "ScaledExp", this is the best one at this point
+#'
+#' @return  returns the Ftest, Freq it tested at, significantFrequencies, and the cut off FCutOff for the specific test
+singleIterationForParallelFPrime <- function(xt, k, p = p, deltat = 1,
                                              undersampleNumber = 100,
                                              confLevel = (1-(1/length(xt))),
                                              dpss = FALSE,
                                              penalty = 1, penaltyType = "ScaledExp"){
 
   if(k %% 2 == 1){ # even k we wnat to just run f3 or f4
-    Ftest <- singleIterationForParallel(xt = xt, k = k, p = 1, deltat = deltat,
+    Ftest <- singleIterationForParallel(xt = xt, k = k, p = p, deltat = deltat,
                                dpss = dpss, undersampleNumber = undersampleNumber,
                                confLevel = confLevel, returnFTestVars = TRUE, w = (k+1)/(2*length(xt)),
                                penalty = penalty, penaltyType = penaltyType)
@@ -2305,17 +2319,66 @@ singleIterationForParallelFPrime <- function(xt, k, deltat = 1,
     FCutOff <- Ftest$FcutOff
     print("Used F3")
   }else{
-    Ftest <- reductionSingleKFullComputation(Xt = xt, K = k, N = length(xt), penalty = penalty,
-                                    penaltyType = penaltyType, undersample = TRUE,
-                                    undersampleNumber = undersampleNumber, deltat = deltat,
-                                    pad = TRUE, confLevel = confLevel, fast = TRUE)
-    testStat <- Ftest$FPrime
-    significantFreq <- Ftest$significantFrequencies
-    FCutOff <- Ftest$FCutOffPrime
+    Ftest <- singleIterationForParallel(xt = xt, k = k, p = p, deltat = deltat,reduction = TRUE,
+                                        dpss = FALSE, undersampleNumber = undersampleNumber,
+                                        confLevel = confLevel, returnFTestVars = TRUE, w = (k+1)/(2*length(xt)),
+                                        penalty = penalty, penaltyType = penaltyType)
+    testStat <- Ftest$F3
+    significantFreq <- Ftest$significantFreq[[1]]
+    FCutOff <- Ftest$FcutOff
     print("Used FPrime")
   }
 
   return(list(Ftest = testStat, Freq = Ftest$Freq, significantFreq = significantFreq,
          FCutOff = FCutOff))
+
+}
+
+
+#' Switch between F4 and FPrime tests, used in agg test.
+#'
+#' @param xt time series input
+#' @param k number of tapers that one wants to use
+#' @param p what degree polynomial are we testing for
+#' @param deltat = 1 by default but can be changed
+#' @param FPrime = TRUE, if so it uses the reduced test
+#' @param undersampleNumber = 100, this is usually a good starting point
+#' @param confLevel = 1-1/N by default
+#' @param dpss = FALSE, if TRUE and using FPrime, it will still use sine tapers for the even K's as that is the only prime test set up
+#' @param penalty = 0.15, this is usually a good starting point, may need to be increased for prime test
+#' @param penaltyType = "ScaledExp", this is the best one at this point
+#'
+#' @return see return for singleIterationForParallel
+singleIterationForParallelAllTypeSwitcher <- function(xt, k, p = p, deltat = 1, FPrime = TRUE,
+                                                      undersampleNumber = 100,
+                                                      confLevel = (1-(1/length(xt))),
+                                                      dpss = FALSE,
+                                                      penalty = 1, penaltyType = "ScaledExp"){
+
+  if(FPrime){
+    if(k %% 2 == 1){ # even k we wnat to just run f3 or f4
+      Ftest <- singleIterationForParallel(xt = xt, k = k, p = p, deltat = deltat,
+                                          dpss = dpss, undersampleNumber = undersampleNumber,
+                                          confLevel = confLevel, returnFTestVars = TRUE, w = (k+1)/(2*length(xt)),
+                                          penalty = penalty, penaltyType = penaltyType)
+
+      print("Used F3")
+    }else{
+      Ftest <- singleIterationForParallel(xt = xt, k = k, p = p, deltat = deltat,reduction = TRUE, # need to use sine tapers, thats why dpss = FALSE
+                                          dpss = FALSE, undersampleNumber = undersampleNumber,
+                                          confLevel = confLevel, returnFTestVars = TRUE, w = (k+1)/(2*length(xt)),
+                                          penalty = penalty, penaltyType = penaltyType)
+
+      print("Used FPrime")
+    }
+  }else{
+    Ftest <- singleIterationForParallel(xt = xt, k = k, p = p, deltat = deltat, reduction = FALSE,
+                                        dpss = dpss, undersampleNumber = undersampleNumber,
+                                        confLevel = confLevel, returnFTestVars = TRUE, w = (k+1)/(2*length(xt)),
+                                        penalty = penalty, penaltyType = penaltyType)
+
+  }
+
+  return(Ftest)
 
 }

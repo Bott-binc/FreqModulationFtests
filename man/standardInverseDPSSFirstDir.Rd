@@ -37,6 +37,8 @@ this includes both $v and $eigen}
 
 \item{penalty}{1 is no penalty , 0.2  would give seq(from =  1, to =  1/(0.2*k, length.out = k)
 penalty to each respective taper}
+
+\item{penaltyType}{"ScaledExp" is the current one at this point}
 }
 \value{
 Standard Inverse Derivative Z' vector $StdInverse as well as $Freq which are the columns of stdInverse
