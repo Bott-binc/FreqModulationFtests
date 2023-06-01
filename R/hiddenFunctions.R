@@ -2315,7 +2315,12 @@ singleIterationForParallelFPrime <- function(xt, k, p = p, deltat = 1,
                                confLevel = confLevel, returnFTestVars = TRUE, w = (k+1)/(2*length(xt)),
                                penalty = penalty, penaltyType = penaltyType)
     testStat <- Ftest$F3
-    significantFreq <- Ftest$significantFreq[[1]]
+    if(p == 1){
+      significantFreq <- Ftest$significantFreq[[1]]
+    }else{
+      significantFreq <- Ftest$significantFreq
+    }
+
     FCutOff <- Ftest$FcutOff
     print("Used F3")
   }else{
@@ -2324,7 +2329,11 @@ singleIterationForParallelFPrime <- function(xt, k, p = p, deltat = 1,
                                         confLevel = confLevel, returnFTestVars = TRUE, w = (k+1)/(2*length(xt)),
                                         penalty = penalty, penaltyType = penaltyType)
     testStat <- Ftest$F3
-    significantFreq <- Ftest$significantFreq[[1]]
+    if(p == 1){
+      significantFreq <- Ftest$significantFreq[[1]]
+    }else{
+      significantFreq <- Ftest$significantFreq
+    }
     FCutOff <- Ftest$FcutOff
     print("Used FPrime")
   }

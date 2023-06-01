@@ -1030,15 +1030,25 @@ F4Test <- function(xt, k, p, N = length(xt), deltat = 1, dpss = FALSE, undersamp
   Freq = fullDat[[1]]$Freq
 
 
-  if(length(k) == 1){
+  if(length(k) == 1 & p == 1){
     Ftest <- as.vector(fullDat[[1]]$F3Mod)
-    FCutOff <- as.vector(fullDat[[1]]$FCutOff)
+    FcutOff <- as.vector(fullDat[[1]]$FcutOff)
     significantFreq <- as.vector(fullDat[[1]]$significantFreq)
     ftestVars <- as.vector(fullDat[[1]]$ftestvars)
 
     return(list(F4Prime = Ftest, Freq = Freq,
                 sigFreq = significantFreq,
-                FCutOff = FCutOff,
+                FCutOff = FcutOff,
+                fTestVars = ftestVars))
+  }else if(length(k) == 1 & p != 1){
+    Ftest <- fullDat[[1]]$F3Mod
+    FcutOff <- fullDat[[1]]$FcutOff
+    significantFreq <- fullDat[[1]]$significantFreq
+    ftestVars <- fullDat[[1]]$ftestvars
+
+    return(list(F4Prime = Ftest, Freq = Freq,
+                sigFreq = significantFreq,
+                FCutOff = FcutOff,
                 fTestVars = ftestVars))
   }
   else{
@@ -1096,7 +1106,7 @@ F4Prime <- function(xt, k, p, N = length(xt), deltat = 1, dpss = FALSE, undersam
   Freq = fullDat[[1]]$Freq
 
 
-  if(length(k) == 1){
+  if(length(k) == 1 & p == 1){
     Ftest <- as.vector(fullDat[[1]]$Ftest)
     FCutOff <- as.vector(fullDat[[1]]$FCutOff)
     significantFreq <- as.vector(fullDat[[1]]$significantFreq)
@@ -1105,8 +1115,16 @@ F4Prime <- function(xt, k, p, N = length(xt), deltat = 1, dpss = FALSE, undersam
     return(list(F4Prime = Ftest, Freq = Freq,
                 sigFreq = significantFreq,
                 FCutOff = FCutOff))
-  }
-  else{
+  }else if(length(k) == 1 & p != 1){
+    Ftest <- fullDat[[1]]$Ftest
+    FCutOff <- fullDat[[1]]$FCutOff
+    significantFreq <- fullDat[[1]]$significantFreq
+
+
+    return(list(F4Prime = Ftest, Freq = Freq,
+                sigFreq = significantFreq,
+                FCutOff = FCutOff))
+  }else{
     return(fullDat)
   }
 }
@@ -1136,7 +1154,7 @@ F4Prime <- function(xt, k, p, N = length(xt), deltat = 1, dpss = FALSE, undersam
 #' @export
 AggregateTest <- function(xt, k, p, N = length(xt), deltat = 1, dpss = FALSE, reduction = FALSE, undersampleNumber = 100,
                       penalty = 1, penaltyType = "ScaledExp", R = 1, cores = 1,
-                      confLevel = (1 - (1/length(xt)))){
+                      confLevel = (1 - (1/length(xt))), returnEachKTest = FALSE){
 
   if(is.null(p)){
     stop("need to set a polynomial degree amount = p")
@@ -1189,8 +1207,11 @@ AggregateTest <- function(xt, k, p, N = length(xt), deltat = 1, dpss = FALSE, re
   }
 
   #prop <- significantFrequencies/length(k)
-
-  return(list(aggTestResult = aggTestResult, Freq = Freq, sigFreq = significantFrequencies, F3TestStat = fullDat))
+  if(returnEachKTest){
+    return(list(aggTestResult = aggTestResult, Freq = Freq, sigFreq = significantFrequencies, F3TestStat = fullDat))
+  }else{
+    return(list(aggTestResult = aggTestResult, Freq = Freq, sigFreq = significantFrequencies))
+  }
 }
 
 
