@@ -1036,7 +1036,7 @@ F4Test <- function(xt, k, p, N = length(xt), deltat = 1, dpss = FALSE, undersamp
     significantFreq <- as.vector(fullDat[[1]]$significantFreq)
     ftestVars <- as.vector(fullDat[[1]]$ftestvars)
 
-    return(list(F4Prime = Ftest, Freq = Freq,
+    return(list(F4 = Ftest, Freq = Freq,
                 sigFreq = significantFreq,
                 FCutOff = FcutOff,
                 fTestVars = ftestVars))
@@ -1046,7 +1046,7 @@ F4Test <- function(xt, k, p, N = length(xt), deltat = 1, dpss = FALSE, undersamp
     significantFreq <- fullDat[[1]]$significantFreq
     ftestVars <- fullDat[[1]]$ftestvars
 
-    return(list(F4Prime = Ftest, Freq = Freq,
+    return(list(F4 = Ftest, Freq = Freq,
                 sigFreq = significantFreq,
                 FCutOff = FcutOff,
                 fTestVars = ftestVars))
