@@ -81,8 +81,9 @@ eigenCoefSine <- function(n, k, Xt, f, deltat = 1, sineRet = FALSE){
 #' if returnSineMat = TRUE, will also return $SineMat
 eigenCoefSineFFT <- function(N, k, Xt, deltat = 1, passInTaper = NULL,
                              returnSineMat = FALSE, pad = TRUE,
-                             penalty = 1, penaltyType = "ScaledExp"){
-  if(penaltyType %in% c("ScaledExp", "Cos", "Clip", "CustomE", "CustomO", "Custom")){
+                             penalty = 1, penaltyType = "ScaledExp", reduced = FALSE){
+
+  if(penaltyType %in% c("ScaledExp", "Clip", "Cos")){
     #do nothing and continue
   }else{
     stop("No penalty type that is available was selected, please check documentation")
@@ -127,42 +128,28 @@ eigenCoefSineFFT <- function(N, k, Xt, deltat = 1, passInTaper = NULL,
     }
     else if(penaltyType == "Clip"){
       clipPoint <- penalty#2/3
-      weight <- c(rep(1, length.out = floor(k*clipPoint)), rep(0, length.out = k - floor(k*clipPoint)))#c(rep(1, length.out = penalty), rep(0, length.out = k - penalty)) #
-      weightMat <- matrix(weight, nrow = nrow(EigenCoef), ncol = k, byrow = TRUE)
-      EigenCoef <- EigenCoef * weightMat
-    }
-    else if(penaltyType == "CustomO"){
-      # this is coded to remove the even right now
-      odd <- rep(c(1,0), length.out = k) # this will keep all the odd ones and remove even ones
-      clipPoint <- penalty#2/3
-      weight <- c(rep(1, length.out = floor(k*clipPoint)), rep(0, length.out = k - floor(k*clipPoint)))
-      weightMat <- matrix(odd * weight, nrow = nrow(EigenCoef), ncol = k, byrow = TRUE)
-      EigenCoef <- EigenCoef * weightMat
-    }
-    else if(penaltyType == "CustomE"){
-      # this is coded to remove the even right now
-      odd <- rep(c(0,1), length.out = k) # this will keep all the odd ones and remove even ones
-      clipPoint <- penalty#2/3
-      weight <- c(rep(1, length.out = floor(k*clipPoint)), rep(0, length.out = k - floor(k*clipPoint)))
-      weightMat <- matrix(odd * weight, nrow = nrow(EigenCoef), ncol = k, byrow = TRUE)
-      EigenCoef <- EigenCoef * weightMat
-    }
-    else if(penaltyType == "Custom"){
-      # this is coded to remove the even right now
-      #weight <- rep(c(1,0), length.out = k) # this will keep all the odd ones and remove even ones
-      #weightMat <- matrix(weight, nrow = nrow(EigenCoef), ncol = k, byrow = TRUE)
-      weight <- c(rep(0, penalty), rep(1, k-penalty))
-      weightMat <- matrix(weight, nrow = nrow(EigenCoef), ncol = k, byrow = TRUE)
-      EigenCoef <- EigenCoef*weight #* weightMat
+      if(reduced){
+        weight <- c(rep(1, length.out = floor((k+1)*clipPoint)), rep(0, length.out = (k+1) - floor((k+1)*clipPoint)))#c(rep(1, length.out = penalty), rep(0, length.out = k - penalty)) #
+        weight <- weight[1:k] # we are taking all but the last one as the weights need to be the same as the weights coming from the non prime test
+      }else{
+        weight <- c(rep(1, length.out = floor(k*clipPoint)), rep(0, length.out = k - floor(k*clipPoint)))#c(rep(1, length.out = penalty), rep(0, length.out = k - penalty)) #
+      }
 
+      weightMat <- matrix(weight, nrow = nrow(EigenCoef), ncol = k, byrow = TRUE)
+      EigenCoef <- EigenCoef * weightMat
     }
     else if(penaltyType == "ScaledExp"){
       if(penalty == 1){
         #do nothing as no penalty is selected
       }else{
-
+        if(reduced){
+          weight <- 1/seq(from = 1, to = max(1, penalty*(k+1)), length.out = (k+1))
+          weight <- weight[1:k]# taking the first k weights from the non reduced version as the weights must be identical for the math to be true
+        }else{
+          weight <- 1/seq(from = 1, to = max(1, penalty*k), length.out = k)
+        }
        # EigenCoef <- t(apply(EigenCoef, MARGIN = 1, FUN = function(x){x/seq(from = 1, to = penalty*k, length.out = k)}))
-        weight <- 1/seq(from = 1, to = max(1, penalty*k), length.out = k)
+
         EigenCoef <- EigenCoef * matrix(weight, nrow = nrow(EigenCoef), ncol = k, byrow = TRUE)
       }
     }
@@ -232,7 +219,8 @@ standardInverseSine <- function(xt, N, k, deltat = 1, passInSineMat = NULL,
                                 retSineTapers = FALSE,
                                 passInSineUnder = NULL,
                                 penalty = 1, penaltyType = "ScaledExp",
-                                penaltyOnTapersStdInv = FALSE){
+                                penaltyOnTapersStdInv = FALSE,
+                                reduced = FALSE){
   if(is.null(passInSineMat)){
     v <- sineTaperMatrix(N, k)
   }
@@ -242,10 +230,10 @@ standardInverseSine <- function(xt, N, k, deltat = 1, passInSineMat = NULL,
 
   if(is.null(passInSineUnder)){ #using the penalty is the same here as passing in the tapers with the penalty on them instead
     Y <- eigenCoefSineFFT(N, k, xt, deltat = deltat, passInTaper = v,
-                          pad = FALSE, penalty = penalty, penaltyType = penaltyType)
+                          pad = FALSE, penalty = penalty, penaltyType = penaltyType, reduced = reduced)
   }else{
     Y <- eigenCoefSineFFT(N, k, xt, deltat = deltat, passInTaper = v,
-                          pad = TRUE, penalty = penalty, penaltyType = penaltyType)
+                          pad = TRUE, penalty = penalty, penaltyType = penaltyType, reduced = reduced)
   }
 
   if(penaltyOnTapersStdInv){ # we add the penalty and use this new set of tapers for the standard inverse
@@ -293,57 +281,57 @@ standardInverseSine <- function(xt, N, k, deltat = 1, passInSineMat = NULL,
 #' if returnSineMat = TRUE then will also return $SineMat
 standardInverseSineDer <- function(xt, N, k, deltat = 1, passInSineMat = NULL,
                                    returnSineMat = FALSE, passInSineUnder = NULL,
-                                   penalty = 1, penaltyType = "ScaledExp"){
+                                   penalty = 1, penaltyType = "ScaledExp", reduced = FALSE){
   if(is.null(passInSineUnder)){
     FirstDir <- FirstDerSineTaper(N, k)
     if(!returnSineMat){
       if(is.null(passInSineMat)){ # no tapers will be passed to EigenCoeffft
         Y <- eigenCoefSineFFT(N, k, xt, deltat = deltat, pad = FALSE,
-                              penalty = penalty, penaltyType = penaltyType)
+                              penalty = penalty, penaltyType = penaltyType,reduced = reduced)
       }
       else{ # passing in sine tapers from outside function
         Y <- eigenCoefSineFFT(N, k, xt, deltat = deltat, passInTaper = passInSineMat,
-                              pad = FALSE, penalty = penalty, penaltyType = penaltyType)
+                              pad = FALSE, penalty = penalty, penaltyType = penaltyType,reduced = reduced)
       }
     }
     else{
       if(is.null(passInSineMat)){ # no tapers will be passed to EigenCoeffft
         Y <- eigenCoefSineFFT(N, k, xt, deltat = deltat, returnSineMat = TRUE,
-                              penalty = penalty, penaltyType = penaltyType)
+                              penalty = penalty, penaltyType = penaltyType,reduced = reduced)
       }
       else{ # passing in sine tapers from outside function
         Y <- eigenCoefSineFFT(N, k, xt, deltat = deltat, passInTaper = passInSineMat,
                                   returnSineMat = TRUE, penalty = penalty,
-                              penaltyType = penaltyType)
+                              penaltyType = penaltyType,reduced = reduced)
       }
     }
     stdInverse <- tcrossprod(FirstDir, Y$EigenCoef)
   }
-  else{ # reduction
+  else{ # undersampling
     FirstDir <- FirstDerSineTaper(N = nrow(passInSineUnder), k)
 
     if(!returnSineMat){
       if(is.null(passInSineMat)){ # no tapers will be passed to EigenCoeffft
         Y <- eigenCoefSineFFT(N = nrow(passInSineMat), k, xt, deltat = deltat,
-                              pad = TRUE, penalty = penalty, penaltyType = penaltyType)
+                              pad = TRUE, penalty = penalty, penaltyType = penaltyType, reduced = reduced)
       }
       else{ # passing in sine tapers from outside function
         Y <- eigenCoefSineFFT(N = nrow(passInSineMat), k, xt, deltat = deltat,
                                   passInTaper = passInSineMat, pad = TRUE,
-                              penalty = penalty, penaltyType = penaltyType)
+                              penalty = penalty, penaltyType = penaltyType, reduced = reduced)
       }
     }
     else{
       if(is.null(passInSineMat)){ # no tapers will be passed to EigenCoeffft
         Y <- eigenCoefSineFFT(N = nrow(passInSineMat), k, xt, deltat = deltat,
                                   returnSineMat = TRUE, pad = TRUE, penalty = penalty
-                              ,penaltyType = penaltyType)
+                              ,penaltyType = penaltyType, reduced = reduced)
       }
       else{ # passing in sine tapers from outside function
         Y <- eigenCoefSineFFT(N = nrow(passInSineMat), k, xt, deltat = deltat,
                                   passInTaper = passInSineMat,
                                   returnSineMat = TRUE, pad = TRUE, penalty = penalty,
-                              penaltyType = penaltyType)
+                              penaltyType = penaltyType, reduced = reduced)
       }
     }
 
@@ -493,26 +481,30 @@ FirstDerSineTaper <- function(N,k){
 #' if returnSineMat = TRUE then list of $InstFreq, $Freq, and $SineMat
 instFreqSine <- function(xt, N, k, deltat, passInSineMat = NULL, returnSineMat = FALSE,
                          passInSineUnder = NULL, penalty = 1, penaltyType = "ScaledExp",
-                         penaltyOnTapersStdInv = FALSE){
+                         penaltyOnTapersStdInv = FALSE, reduced = FALSE){
   if(is.null(passInSineUnder)){
     if(is.null(passInSineMat)){ # need to create sine taper matrix in stdInverse then pass into stdInvDer
       stdInv <- standardInverseSine(xt = xt, N = N, k = k, deltat = deltat,
                                     retSineTapers = TRUE, penalty = penalty,
                                     penaltyType = penaltyType,
-                                    penaltyOnTapersStdInv = penaltyOnTapersStdInv)
+                                    penaltyOnTapersStdInv = penaltyOnTapersStdInv,
+                                    reduced = reduced)
       stdInvDer <- standardInverseSineDer(xt = xt, N = N, k = k,
                                           deltat = deltat, passInSineMat = stdInv$sineTapers
-                                          , penalty = penalty, penaltyType = penaltyType)
+                                          , penalty = penalty, penaltyType = penaltyType,
+                                          reduced = reduced)
       sineMat <- stdInv$sineTapers
     }
     else{ # we already have sine taper matrix so we will pass into stdinv, then into stdInvDer
       stdInv <- standardInverseSine(xt = xt, N = N, k = k, deltat = deltat,
                                     retSineTapers = FALSE, passInSineMat = passInSineMat
                                     , penalty = penalty, penaltyType = penaltyType,
-                                    penaltyOnTapersStdInv = penaltyOnTapersStdInv)
+                                    penaltyOnTapersStdInv = penaltyOnTapersStdInv,
+                                    reduced = reduced)
       stdInvDer <- standardInverseSineDer(xt = xt, N = N, k = k,
                                           deltat = deltat, passInSineMat = passInSineMat
-                                          , penalty = penalty, penaltyType = penaltyType)
+                                          , penalty = penalty, penaltyType = penaltyType,
+                                          reduced = reduced)
       sineMat <- passInSineMat
     }
   }else{ #need to do some undersampling!
@@ -521,11 +513,13 @@ instFreqSine <- function(xt, N, k, deltat, passInSineMat = NULL, returnSineMat =
                                     retSineTapers = TRUE, passInSineMat = FALSE,
                                     passInSineUnder = passInSineUnder, penalty = penalty,
                                     penaltyType = penaltyType,
-                                    penaltyOnTapersStdInv = penaltyOnTapersStdInv)
+                                    penaltyOnTapersStdInv = penaltyOnTapersStdInv,
+                                    reduced = reduced)
       stdInvDer <- standardInverseSineDer(xt = xt, N = N, k = k,
                                           deltat = deltat, passInSineMat = stdInv$sineTapers,
                                           passInSineUnder = passInSineUnder, penalty = penalty,
-                                          penaltyType = penaltyType)
+                                          penaltyType = penaltyType,
+                                          reduced = reduced)
       sineMat <- stdInv$sineTapers
     }
     else{ # we already have sine taper matrix so we will pass into stdinv, then into stdInvDer
@@ -533,11 +527,13 @@ instFreqSine <- function(xt, N, k, deltat, passInSineMat = NULL, returnSineMat =
                                     retSineTapers = FALSE, passInSineMat = passInSineMat,
                                     passInSineUnder = passInSineUnder, penalty = penalty,
                                     penaltyType = penaltyType,
-                                    penaltyOnTapersStdInv = penaltyOnTapersStdInv)
+                                    penaltyOnTapersStdInv = penaltyOnTapersStdInv,
+                                    reduced = reduced)
       stdInvDer <- standardInverseSineDer(xt = xt, N = N, k = k,
                                           deltat = deltat, passInSineMat = passInSineMat,
                                           passInSineUnder = passInSineUnder, penalty = penalty,
-                                          penaltyType = penaltyType)
+                                          penaltyType = penaltyType,
+                                          reduced = reduced)
       sineMat <- passInSineMat
     }
   }
@@ -580,20 +576,21 @@ eigenCoefSineInstFrequency <- function(xt, N, k, deltat,
                                            passInSineUnder = NULL,
                                            penalty = 1,
                                            penaltyOnTapersStdInv = FALSE,
-                                           penaltyType = "ScaledExp"){
+                                           penaltyType = "ScaledExp",
+                                           reduced = FALSE){
   if(is.null(passInSineUnder)){
     if(is.null(passInSineTapers)){ # need instFreq to create the sineTapers
       instFreq <- instFreqSine(xt = xt, N = N, k = k, deltat = deltat,
                                returnSineMat = TRUE, penalty = penalty,
                                penaltyType = penaltyType,
-                               penaltyOnTapersStdInv = penaltyOnTapersStdInv)
+                               penaltyOnTapersStdInv = penaltyOnTapersStdInv, reduced = reduced)
       sineTaper <- instFreq$SineMat
     }
     else{ # will pass in sinetapers to instFreq
       instFreq <- instFreqSine(xt = xt, N = N, k = k, deltat = deltat,
                                returnSineMat = FALSE, passInSineMat = passInSineTapers,
                                penalty = penalty, penaltyType = penaltyType,
-                               penaltyOnTapersStdInv = penaltyOnTapersStdInv)
+                               penaltyOnTapersStdInv = penaltyOnTapersStdInv,reduced = reduced)
       sineTaper <- passInSineTapers
     }
     v <- sineTaper
@@ -609,7 +606,7 @@ eigenCoefSineInstFrequency <- function(xt, N, k, deltat,
                                passInSineMat = passInSineTapers,
                                passInSineUnder = passInSineUnder,
                                penalty = penalty, penaltyType = penaltyType,
-                               penaltyOnTapersStdInv = penaltyOnTapersStdInv)
+                               penaltyOnTapersStdInv = penaltyOnTapersStdInv, reduced = reduced)
       sineTaper <- instFreq$SineMat
     }
     else{ # will pass in sinetapers to instFreq
@@ -618,7 +615,7 @@ eigenCoefSineInstFrequency <- function(xt, N, k, deltat,
                                passInSineMat = passInSineTapers,
                                passInSineUnder = passInSineUnder,
                                penalty = penalty, penaltyType = penaltyType,
-                               penaltyOnTapersStdInv = penaltyOnTapersStdInv)
+                               penaltyOnTapersStdInv = penaltyOnTapersStdInv, reduced = reduced)
       sineTaper <- passInSineTapers
     }
     v <- passInSineUnder
@@ -1073,7 +1070,7 @@ standardInverseDPSSFirstDir <- function(xt, N, w, k, deltat = 1, passInDPSS = NU
 
     Y <- eigenCoefdpssFFT(nrow(dp), k, w, xt, deltat = deltat, passInDPSSMat = dp, pad = TRUE, penalty = penalty)
 
-    stdInverse <- matrix(nrow = nrow(dp), ncol = length(Y$Freq))
+    #stdInverse <- matrix(nrow = nrow(dp), ncol = length(Y$Freq))
     #index <- 0
 
     stdInverse <- tcrossprod(FirstDir$Vdot,Y$EigenCoef)
@@ -1647,6 +1644,7 @@ GramSchmidtMod <- function(uMat, rMat){
 reductionSingleKFullComputation <- function(Xt, K,N, penalty = 1, penaltyType = "ScaledExp", undersample = TRUE,
                                             undersampleNumber = 100, deltat = 1, pad = TRUE, confLevel = (1 - (1/length(Xt))),
                                             fast = FALSE){
+
   p <- 1
   sine <- TRUE
   if(sine){ # this is redundant right now
@@ -1669,7 +1667,7 @@ reductionSingleKFullComputation <- function(Xt, K,N, penalty = 1, penaltyType = 
       # YComp <- t(Im(Y$EigenCoef))
 
       # this only needs to be computed once for the sine, but will need to be computed twice for the dpss, so I just did it twice for both right now
-      YPrime <- eigenCoefSineFFT(N = N, k = K-1, Xt = Xt, deltat = deltat, passInTaper = vPrime, pad = pad, penalty = penalty, penaltyType = penaltyType)
+      YPrime <- eigenCoefSineFFT(N = N, k = K-1, Xt = Xt, deltat = deltat, passInTaper = vPrime, pad = pad, penalty = penalty, penaltyType = penaltyType, reduced = TRUE)
       YRePrime <- t(Re(YPrime$EigenCoef))# <- Re(Y$EigenCoef[,-K])
       YCompPrime <- t(Im(YPrime$EigenCoef))# <- Im(Y$EigenCoef[,-K])
 
@@ -1782,7 +1780,7 @@ reductionSingleKFullComputation <- function(Xt, K,N, penalty = 1, penaltyType = 
         YComp <- t(Im(Y$EigenCoef))
 
         # this only needs to be computed once for the sine, but will need to be computed twice for the dpss, so I just did it twice for both right now
-        YPrime <- eigenCoefSineFFT(N = N, k = K-1, Xt = Xt, deltat = deltat, passInTaper = vPrime, pad = pad, penalty = penalty, penaltyType = penaltyType)
+        YPrime <- eigenCoefSineFFT(N = N, k = K-1, Xt = Xt, deltat = deltat, passInTaper = vPrime, pad = pad, penalty = penalty, penaltyType = penaltyType, reduced = TRUE)
         YRePrime <- t(Re(YPrime$EigenCoef))# <- Re(Y$EigenCoef[,-K])
         YCompPrime <- t(Im(YPrime$EigenCoef))# <- Im(Y$EigenCoef[,-K])
 
@@ -1898,7 +1896,7 @@ reductionSingleKFullComputation <- function(Xt, K,N, penalty = 1, penaltyType = 
         YComp <- t(Im(Y$EigenCoef))
 
         # this only needs to be computed once for the sine, but will need to be computed twice for the dpss, so I just did it twice for both right now
-        YPrime <- eigenCoefSineFFT(N = N, k = K-1, Xt = Xt, deltat = deltat, passInTaper = vPrime, pad = pad, penalty = penalty, penaltyType = penaltyType)
+        YPrime <- eigenCoefSineFFT(N = N, k = K-1, Xt = Xt, deltat = deltat, passInTaper = vPrime, pad = pad, penalty = penalty, penaltyType = penaltyType, reduced = TRUE)
         YRePrime <- t(Re(YPrime$EigenCoef))# <- Re(Y$EigenCoef[,-K])
         YCompPrime <- t(Im(YPrime$EigenCoef))# <- Im(Y$EigenCoef[,-K])
 
@@ -2165,7 +2163,8 @@ singleIterationForParallel <- function(xt, k, p, deltat = 1, w = NULL, dpss = FA
                                                   returnSineMat = FALSE, passInSineTapers = sine,
                                                   passInSineUnder = sineUnder, penalty = penalty,
                                                   penaltyType = penaltyType,
-                                                  penaltyOnTapersStdInv = penaltyOnTapersStdInv)
+                                                  penaltyOnTapersStdInv = penaltyOnTapersStdInv,
+                                                  reduced = reduction)
 
       fStuff <- regressionSineInstFreq(N = N, k = k, instFreqEigen = instFreqEigen$PSI,
                                        p = p, returnSineTapers = FALSE,
