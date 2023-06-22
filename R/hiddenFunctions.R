@@ -76,6 +76,9 @@ eigenCoefSine <- function(n, k, Xt, f, deltat = 1, sineRet = FALSE){
 #' @param pad if true, will automatically zero padd the fft
 #' @param penalty 1 is no penalty , 0.2  would give seq(from =  1, to =  1/(0.2*k, length.out = k)
 #' penalty to each respective taper
+#' @param penaltyType = "ScaledExp" by default, allows for others to be created in the future
+#' @param reduced used when prime test is conducted
+#'
 #'
 #' @return Matrix of $EigenCoef for each frequency, as well as the frequencies under $Freq in the list
 #' if returnSineMat = TRUE, will also return $SineMat
@@ -115,10 +118,18 @@ eigenCoefSineFFT <- function(N, k, Xt, deltat = 1, passInTaper = NULL,
                                                           to = (-1/(N*deltat)),
                                                           by = 1/(N*deltat))))
   }else{
+    if(pad != TRUE){
+      nFFT <- pad
+      rayleigh <- 1/(nFFT*deltat)
+      nyquist <- 1/(2*deltat)
+      freq <- seq(0,nyquist, by = rayleigh)
+      subBand <- which(freq < nyquist)
+      nextPowerOfTwo <- length(subBand) # this is equivilent to 2^ceiling(log2(x)-1) where x is the users choice instead of just 2*n
+    }else{
+      nFFT <- 2^ceiling(log2(2*N)) # this is the default
+      nextPowerOfTwo <- 2^ceiling(log2(2*N)-1)
+    }
 
-
-    nFFT <- 2^ceiling(log2(2*N))
-    nextPowerOfTwo <- 2^ceiling(log2(2*N)-1)
     taper <- sine * Xt
     pad <- rbind(taper, matrix(0, nrow = nFFT - N, ncol = k))
     EigenCoef <- mvfft(pad)[1:(nextPowerOfTwo + 1), ,drop = FALSE]
@@ -213,6 +224,10 @@ standardInverseSineSingleFreq <- function(xt, N, k, f, deltat = 1, FFT = FALSE){
 #' penalty to each respective taper
 #' @param penaltyOnTapersStdInv applys the penalty to all tapers in the calculation instead of just weighting the
 #' eigenCoef's
+#' @param penaltyType = "ScaledExp" by default, allows for others to be created in the future
+#' @param reduced used when prime test is conducted
+#' @param pad = TRUE, but allows for user setable if they want a different amount of padding
+#'
 #'
 #' @return returns matrix of standard inverse along with frequencies corresponding to the columns
 standardInverseSine <- function(xt, N, k, deltat = 1, passInSineMat = NULL,
@@ -220,7 +235,7 @@ standardInverseSine <- function(xt, N, k, deltat = 1, passInSineMat = NULL,
                                 passInSineUnder = NULL,
                                 penalty = 1, penaltyType = "ScaledExp",
                                 penaltyOnTapersStdInv = FALSE,
-                                reduced = FALSE){
+                                reduced = FALSE, pad = TRUE){
   if(is.null(passInSineMat)){
     v <- sineTaperMatrix(N, k)
   }
@@ -232,8 +247,8 @@ standardInverseSine <- function(xt, N, k, deltat = 1, passInSineMat = NULL,
     Y <- eigenCoefSineFFT(N, k, xt, deltat = deltat, passInTaper = v,
                           pad = FALSE, penalty = penalty, penaltyType = penaltyType, reduced = reduced)
   }else{
-    Y <- eigenCoefSineFFT(N, k, xt, deltat = deltat, passInTaper = v,
-                          pad = TRUE, penalty = penalty, penaltyType = penaltyType, reduced = reduced)
+    Y <- eigenCoefSineFFT(N, k, xt, deltat = deltat, passInTaper = v, penalty = penalty,
+                          penaltyType = penaltyType, reduced = reduced, pad = pad)
   }
 
   if(penaltyOnTapersStdInv){ # we add the penalty and use this new set of tapers for the standard inverse
@@ -276,12 +291,16 @@ standardInverseSine <- function(xt, N, k, deltat = 1, passInSineMat = NULL,
 #' @param passInSineUnder If sine undersampling matrix was calculated already
 #' @param penalty 1 is no penalty , 0.2  would give seq(from =  1, to =  1/(0.2*k, length.out = k)
 #' penalty to each respective taper
+#' @param penaltyType = "ScaledExp" by default, allows for others to be created in the future
+#' @param reduced used when prime test is conducted
+#' @param pad = TRUE, but allows for user setable if they want a different amount of padding
+#'
 #'
 #' @return list of $StdInverse and $Freq which are the columns of StdInverse,
 #' if returnSineMat = TRUE then will also return $SineMat
 standardInverseSineDer <- function(xt, N, k, deltat = 1, passInSineMat = NULL,
                                    returnSineMat = FALSE, passInSineUnder = NULL,
-                                   penalty = 1, penaltyType = "ScaledExp", reduced = FALSE){
+                                   penalty = 1, penaltyType = "ScaledExp", reduced = FALSE, pad = TRUE){
   if(is.null(passInSineUnder)){
     FirstDir <- FirstDerSineTaper(N, k)
     if(!returnSineMat){
@@ -297,12 +316,12 @@ standardInverseSineDer <- function(xt, N, k, deltat = 1, passInSineMat = NULL,
     else{
       if(is.null(passInSineMat)){ # no tapers will be passed to EigenCoeffft
         Y <- eigenCoefSineFFT(N, k, xt, deltat = deltat, returnSineMat = TRUE,
-                              penalty = penalty, penaltyType = penaltyType,reduced = reduced)
+                              penalty = penalty, penaltyType = penaltyType,reduced = reduced, pad = FALSE)
       }
       else{ # passing in sine tapers from outside function
         Y <- eigenCoefSineFFT(N, k, xt, deltat = deltat, passInTaper = passInSineMat,
                                   returnSineMat = TRUE, penalty = penalty,
-                              penaltyType = penaltyType,reduced = reduced)
+                              penaltyType = penaltyType,reduced = reduced, pad = FALSE)
       }
     }
     stdInverse <- tcrossprod(FirstDir, Y$EigenCoef)
@@ -313,25 +332,25 @@ standardInverseSineDer <- function(xt, N, k, deltat = 1, passInSineMat = NULL,
     if(!returnSineMat){
       if(is.null(passInSineMat)){ # no tapers will be passed to EigenCoeffft
         Y <- eigenCoefSineFFT(N = nrow(passInSineMat), k, xt, deltat = deltat,
-                              pad = TRUE, penalty = penalty, penaltyType = penaltyType, reduced = reduced)
+                               , penalty = penalty, penaltyType = penaltyType, reduced = reduced, pad = pad)
       }
       else{ # passing in sine tapers from outside function
         Y <- eigenCoefSineFFT(N = nrow(passInSineMat), k, xt, deltat = deltat,
-                                  passInTaper = passInSineMat, pad = TRUE,
-                              penalty = penalty, penaltyType = penaltyType, reduced = reduced)
+                                  passInTaper = passInSineMat,
+                              penalty = penalty, penaltyType = penaltyType, reduced = reduced, pad = pad)
       }
     }
     else{
       if(is.null(passInSineMat)){ # no tapers will be passed to EigenCoeffft
         Y <- eigenCoefSineFFT(N = nrow(passInSineMat), k, xt, deltat = deltat,
-                                  returnSineMat = TRUE, pad = TRUE, penalty = penalty
-                              ,penaltyType = penaltyType, reduced = reduced)
+                                  returnSineMat = TRUE, penalty = penalty
+                              ,penaltyType = penaltyType, reduced = reduced, pad = pad)
       }
       else{ # passing in sine tapers from outside function
         Y <- eigenCoefSineFFT(N = nrow(passInSineMat), k, xt, deltat = deltat,
                                   passInTaper = passInSineMat,
-                                  returnSineMat = TRUE, pad = TRUE, penalty = penalty,
-                              penaltyType = penaltyType, reduced = reduced)
+                                  returnSineMat = TRUE, penalty = penalty,
+                              penaltyType = penaltyType, reduced = reduced, pad = pad)
       }
     }
 
@@ -476,23 +495,26 @@ FirstDerSineTaper <- function(N,k){
 #' penalty to each respective taper
 #' @param penaltyOnTapersStdInv applys the penalty to all tapers in the calculation instead of just weighting the
 #' eigenCoef's
+#' @param penaltyType = "ScaledExp" by default, allows for others to be created in the future
+#' @param reduced used when prime test is conducted
+#' @param pad = TRUE, but allows for user setable if they want a different amount of padding
 #'
 #' @return list of $InstFreq and $Freq which is the column of instFreq
 #' if returnSineMat = TRUE then list of $InstFreq, $Freq, and $SineMat
 instFreqSine <- function(xt, N, k, deltat, passInSineMat = NULL, returnSineMat = FALSE,
                          passInSineUnder = NULL, penalty = 1, penaltyType = "ScaledExp",
-                         penaltyOnTapersStdInv = FALSE, reduced = FALSE){
+                         penaltyOnTapersStdInv = FALSE, reduced = FALSE, pad = TRUE){
   if(is.null(passInSineUnder)){
     if(is.null(passInSineMat)){ # need to create sine taper matrix in stdInverse then pass into stdInvDer
       stdInv <- standardInverseSine(xt = xt, N = N, k = k, deltat = deltat,
                                     retSineTapers = TRUE, penalty = penalty,
                                     penaltyType = penaltyType,
                                     penaltyOnTapersStdInv = penaltyOnTapersStdInv,
-                                    reduced = reduced)
+                                    reduced = reduced, pad = FALSE)
       stdInvDer <- standardInverseSineDer(xt = xt, N = N, k = k,
                                           deltat = deltat, passInSineMat = stdInv$sineTapers
                                           , penalty = penalty, penaltyType = penaltyType,
-                                          reduced = reduced)
+                                          reduced = reduced, pad = FALSE)
       sineMat <- stdInv$sineTapers
     }
     else{ # we already have sine taper matrix so we will pass into stdinv, then into stdInvDer
@@ -500,11 +522,11 @@ instFreqSine <- function(xt, N, k, deltat, passInSineMat = NULL, returnSineMat =
                                     retSineTapers = FALSE, passInSineMat = passInSineMat
                                     , penalty = penalty, penaltyType = penaltyType,
                                     penaltyOnTapersStdInv = penaltyOnTapersStdInv,
-                                    reduced = reduced)
+                                    reduced = reduced, pad = FALSE)
       stdInvDer <- standardInverseSineDer(xt = xt, N = N, k = k,
                                           deltat = deltat, passInSineMat = passInSineMat
                                           , penalty = penalty, penaltyType = penaltyType,
-                                          reduced = reduced)
+                                          reduced = reduced, pad = FALSE)
       sineMat <- passInSineMat
     }
   }else{ #need to do some undersampling!
@@ -514,12 +536,12 @@ instFreqSine <- function(xt, N, k, deltat, passInSineMat = NULL, returnSineMat =
                                     passInSineUnder = passInSineUnder, penalty = penalty,
                                     penaltyType = penaltyType,
                                     penaltyOnTapersStdInv = penaltyOnTapersStdInv,
-                                    reduced = reduced)
+                                    reduced = reduced, pad = pad)
       stdInvDer <- standardInverseSineDer(xt = xt, N = N, k = k,
                                           deltat = deltat, passInSineMat = stdInv$sineTapers,
                                           passInSineUnder = passInSineUnder, penalty = penalty,
                                           penaltyType = penaltyType,
-                                          reduced = reduced)
+                                          reduced = reduced, pad = pad)
       sineMat <- stdInv$sineTapers
     }
     else{ # we already have sine taper matrix so we will pass into stdinv, then into stdInvDer
@@ -528,12 +550,12 @@ instFreqSine <- function(xt, N, k, deltat, passInSineMat = NULL, returnSineMat =
                                     passInSineUnder = passInSineUnder, penalty = penalty,
                                     penaltyType = penaltyType,
                                     penaltyOnTapersStdInv = penaltyOnTapersStdInv,
-                                    reduced = reduced)
+                                    reduced = reduced, pad = pad)
       stdInvDer <- standardInverseSineDer(xt = xt, N = N, k = k,
                                           deltat = deltat, passInSineMat = passInSineMat,
                                           passInSineUnder = passInSineUnder, penalty = penalty,
                                           penaltyType = penaltyType,
-                                          reduced = reduced)
+                                          reduced = reduced, pad = pad)
       sineMat <- passInSineMat
     }
   }
@@ -567,6 +589,9 @@ instFreqSine <- function(xt, N, k, deltat, passInSineMat = NULL, returnSineMat =
 #' penalty to each respective taper
 #' @param penaltyOnTapersStdInv applys the penalty to all tapers in the calculation instead of just weighting the
 #' eigenCoef's
+#' @param penaltyType "ScaledExp is the default one right now
+#' @param reduced removes the lat taper when conducting the test, this is used in prime test
+#' @param pad sallows for user to set the pad
 #'
 #' @return returns $PSI kxn matrix, $Freq which are the columns of PSI.  If
 #' returnSineMat = TRUE, will also return tapers for future use
@@ -577,20 +602,20 @@ eigenCoefSineInstFrequency <- function(xt, N, k, deltat,
                                            penalty = 1,
                                            penaltyOnTapersStdInv = FALSE,
                                            penaltyType = "ScaledExp",
-                                           reduced = FALSE){
+                                           reduced = FALSE, pad = TRUE){
   if(is.null(passInSineUnder)){
     if(is.null(passInSineTapers)){ # need instFreq to create the sineTapers
       instFreq <- instFreqSine(xt = xt, N = N, k = k, deltat = deltat,
                                returnSineMat = TRUE, penalty = penalty,
                                penaltyType = penaltyType,
-                               penaltyOnTapersStdInv = penaltyOnTapersStdInv, reduced = reduced)
+                               penaltyOnTapersStdInv = penaltyOnTapersStdInv, reduced = reduced, pad = FALSE)
       sineTaper <- instFreq$SineMat
     }
     else{ # will pass in sinetapers to instFreq
       instFreq <- instFreqSine(xt = xt, N = N, k = k, deltat = deltat,
                                returnSineMat = FALSE, passInSineMat = passInSineTapers,
                                penalty = penalty, penaltyType = penaltyType,
-                               penaltyOnTapersStdInv = penaltyOnTapersStdInv,reduced = reduced)
+                               penaltyOnTapersStdInv = penaltyOnTapersStdInv,reduced = reduced, pad = FALSE)
       sineTaper <- passInSineTapers
     }
     v <- sineTaper
@@ -606,7 +631,7 @@ eigenCoefSineInstFrequency <- function(xt, N, k, deltat,
                                passInSineMat = passInSineTapers,
                                passInSineUnder = passInSineUnder,
                                penalty = penalty, penaltyType = penaltyType,
-                               penaltyOnTapersStdInv = penaltyOnTapersStdInv, reduced = reduced)
+                               penaltyOnTapersStdInv = penaltyOnTapersStdInv, reduced = reduced, pad = pad)
       sineTaper <- instFreq$SineMat
     }
     else{ # will pass in sinetapers to instFreq
@@ -615,7 +640,7 @@ eigenCoefSineInstFrequency <- function(xt, N, k, deltat,
                                passInSineMat = passInSineTapers,
                                passInSineUnder = passInSineUnder,
                                penalty = penalty, penaltyType = penaltyType,
-                               penaltyOnTapersStdInv = penaltyOnTapersStdInv, reduced = reduced)
+                               penaltyOnTapersStdInv = penaltyOnTapersStdInv, reduced = reduced, pad = pad)
       sineTaper <- passInSineTapers
     }
     v <- passInSineUnder
@@ -842,7 +867,7 @@ eigenCoefdpss <- function(n, k, w, Xt, f, deltat = 1, dpssRet = FALSE){
 #' @param Xt Time series
 #' @param passInDPSSMat For limiting the number of calculations of DPSS this is dpss$v
 #' @param deltat = 1 by default
-#' @param pad if true will zero padd automatically the Xt that is inputted into the function
+#' @param pad if true will zero padd automatically the Xt that is inputted into the function, if FALSE it will not do any zero padding.
 #' @param penalty 1 is no penalty , 0.2  would give seq(from =  1, to =  1/(0.2*k, length.out = k)
 #' penalty to each respective taper
 #'
@@ -872,8 +897,19 @@ eigenCoefdpssFFT <- function(n, k, w, Xt, deltat = 1, passInDPSSMat = NULL,
                                                           to = (-1/(n*deltat)),
                                                           by = 1/(n*deltat))))
   }else{
-    nFFT <- 2^ceiling(log2(2*n))
-    nextPowerOfTwo <- 2^ceiling(log2(2*n)-1)
+    if(pad != TRUE){
+      nFFT <- pad
+      rayleigh <- 1/(nFFT*deltat)
+      nyquist <- 1/(2*deltat)
+      freq <- seq(0,nyquist, by = rayleigh)
+      subBand <- which(freq < nyquist)
+      nextPowerOfTwo <- length(subBand) # this is equivilent to 2^ceiling(log2(x)-1) where x is the users choice instead of just 2*n
+    }else{
+      nFFT <- 2^ceiling(log2(2*n)) # this is the default
+      nextPowerOfTwo <- 2^ceiling(log2(2*n)-1)
+    }
+
+
     taper <- dp * Xt
     pad <- rbind(taper, matrix(0, nrow = nFFT - n, ncol = k))
     EigenCoef <- mvfft(pad)[1:(nextPowerOfTwo + 1), ,drop = FALSE]
@@ -963,7 +999,7 @@ standardInverseDPSSSingleFreq <- function(xt, N, w, k, f, deltat = 1, FFT = FALS
 #' @return returns standard inverse along with frequencies that are the columns
 standardInverseDPSS <- function(xt, N, k, w, deltat = 1, retDPSS = FALSE,
                                 passInDPSS = NULL, passInDPSSReduced = NULL,
-                                penalty = 1, penaltyType = "ScaledExp"){
+                                penalty = 1, penaltyType = "ScaledExp", pad = FALSE){
 
   if(is.null(passInDPSS)){
     dp <- multitaper::dpss(N, k, N*w)
@@ -978,7 +1014,7 @@ standardInverseDPSS <- function(xt, N, k, w, deltat = 1, retDPSS = FALSE,
     Y <- eigenCoefdpssFFT(N, k, w, xt, deltat = deltat, passInDPSSMat = v,
                           pad = FALSE, penalty = penalty, penaltyType = penaltyType)
   }else{
-    Y <- eigenCoefdpssFFT(N, k, w, xt, deltat = deltat, passInDPSSMat = v, pad = TRUE,
+    Y <- eigenCoefdpssFFT(N, k, w, xt, deltat = deltat, passInDPSSMat = v, pad = pad,
                           penalty = penalty, penaltyType = penaltyType)
   }
   #stdInverse <- matrix(nrow = N, ncol = length(Y$Freq))
@@ -1021,7 +1057,7 @@ standardInverseDPSS <- function(xt, N, k, w, deltat = 1, retDPSS = FALSE,
 #' if returnDPSS = TRUE will also return $DPSS which is the dpss object
 standardInverseDPSSFirstDir <- function(xt, N, w, k, deltat = 1, passInDPSS = NULL,
                                         returnDPSS = FALSE, passInDPSSReduced = NULL,
-                                        penalty = 1, penaltyType = "ScaledExp"){#, FirstDir = NULL){
+                                        penalty = 1, penaltyType = "ScaledExp", pad = TRUE){#, FirstDir = NULL){
   if(is.null(passInDPSSReduced)){
     if(is.null(passInDPSS)){
       FirstDir <- FirstDerTimeDomSlepians(N = N, w = w, k = k, returnDPSS = TRUE)
@@ -1046,7 +1082,7 @@ standardInverseDPSSFirstDir <- function(xt, N, w, k, deltat = 1, passInDPSS = NU
 
 
     Y <- eigenCoefdpssFFT(N, k, w, xt, deltat = deltat, passInDPSSMat = dp,
-                          penalty = penalty, penaltyType = penaltyType)
+                          penalty = penalty, penaltyType = penaltyType, pad = FALSE)
 
     stdInverse <- matrix(nrow = N, ncol = length(Y$Freq))
     #index <- 0
@@ -1068,7 +1104,7 @@ standardInverseDPSSFirstDir <- function(xt, N, w, k, deltat = 1, passInDPSS = NU
     }
 
 
-    Y <- eigenCoefdpssFFT(nrow(dp), k, w, xt, deltat = deltat, passInDPSSMat = dp, pad = TRUE, penalty = penalty)
+    Y <- eigenCoefdpssFFT(nrow(dp), k, w, xt, deltat = deltat, passInDPSSMat = dp, pad = pad, penalty = penalty)
 
     #stdInverse <- matrix(nrow = nrow(dp), ncol = length(Y$Freq))
     #index <- 0
@@ -1335,26 +1371,26 @@ FirstDerTimeDomSlepians <- function(N, w, k, passInFullDPSS = NULL, returnDPSS =
 #' @return list of $InstFreq and $Freq which is the column of instFreq
 #' if returnDPSS = TRUE then list of $InstFreq, $Freq, and $DPSS
 instFreqDPSS <- function(xt, N, k, w, deltat, passInDPSS = NULL, returnDPSS = FALSE,
-                         passInDPSSUnder = NULL, penalty = 1, penaltyType = "ScaledExp"){
+                         passInDPSSUnder = NULL, penalty = 1, penaltyType = "ScaledExp", pad = TRUE){
   if(is.null(passInDPSSUnder)){ # no undersampling will take place
     if(is.null(passInDPSS)){ # need to create dpss in stdInverse then pass into stdInvDer
 
 
       stdInv <- standardInverseDPSS(xt = xt, N = N, k = k, w = w, deltat = deltat,
-                                    retDPSS = TRUE, penalty = penalty, penaltyType = penaltyType)
+                                    retDPSS = TRUE, penalty = penalty, penaltyType = penaltyType, pad = pad)
       stdInvDer <- standardInverseDPSSFirstDir(xt = xt, N = N, w = w, k = k,
                                                deltat = deltat, passInDPSS = stdInv$DPSS,
-                                               penalty = penalty, penaltyType = penaltyType)
+                                               penalty = penalty, penaltyType = penaltyType, pad = pad)
 
       dp <- stdInv$DPSS
     }
     else{ # we already have dpss so we will pass into std, then into stdInvDer
       stdInv <- standardInverseDPSS(xt = xt, N = N, k = k, w = w, deltat = deltat,
                                     retDPSS = FALSE, passInDPSS = passInDPSS,
-                                    penalty = penalty, penaltyType = penaltyType)
+                                    penalty = penalty, penaltyType = penaltyType, pad = pad)
       stdInvDer <- standardInverseDPSSFirstDir(xt = xt, N = N, w = w, k = k,
                                                deltat = deltat, passInDPSS = passInDPSS,
-                                               penalty = penalty, penaltyType = penaltyType)
+                                               penalty = penalty, penaltyType = penaltyType, pad = pad)
       dp <- passInDPSS
     }
   }else{ #need to do some undersampling!
@@ -1363,11 +1399,11 @@ instFreqDPSS <- function(xt, N, k, w, deltat, passInDPSS = NULL, returnDPSS = FA
 
       stdInv <- standardInverseDPSS(xt = xt, N = N, k = k, w = w, deltat = deltat,
                                     retDPSS = TRUE, passInDPSSReduced = passInDPSSUnder,
-                                    penalty = penalty, penaltyType = penaltyType)
+                                    penalty = penalty, penaltyType = penaltyType, pad = pad)
       stdInvDer <- standardInverseDPSSFirstDir(xt = xt, N = N, w = w, k = k,
                                                deltat = deltat, passInDPSS = stdInv$DPSS,
                                                passInDPSSReduced = passInDPSSUnder,
-                                               penalty = penalty, penaltyType = penaltyType)
+                                               penalty = penalty, penaltyType = penaltyType, pad = pad)
 
       dp <- stdInv$DPSS
     }
@@ -1375,11 +1411,11 @@ instFreqDPSS <- function(xt, N, k, w, deltat, passInDPSS = NULL, returnDPSS = FA
       stdInv <- standardInverseDPSS(xt = xt, N = N, k = k, w = w, deltat = deltat,
                                     retDPSS = TRUE, passInDPSS = passInDPSS,
                                     passInDPSSReduced = passInDPSSUnder,
-                                    penalty = penalty, penaltyType = penaltyType)
+                                    penalty = penalty, penaltyType = penaltyType, pad = pad)
       stdInvDer <- standardInverseDPSSFirstDir(xt = xt, N = N, w = w, k = k,
                                                deltat = deltat, passInDPSS = stdInv$DPSS,
                                                passInDPSSReduced = passInDPSSUnder,
-                                               penalty = penalty, penaltyType = penaltyType)
+                                               penalty = penalty, penaltyType = penaltyType, pad = pad)
       dp <- passInDPSS
     }
   }
@@ -1415,22 +1451,24 @@ instFreqDPSS <- function(xt, N, k, w, deltat, passInDPSS = NULL, returnDPSS = FA
 #' @param passInDPSSUnder if dpss undersampling was calculated already
 #' @param penalty 1 is no penalty , 0.2  would give seq(from =  1, to =  1/(0.2*k, length.out = k)
 #' penalty to each respective taper
+#' @param penaltyType Default is 'ScaledExp', I left the option to add others in future work
+#' @param pad = TRUE by default, don't want to pad when not undersampling usually, the matrix gets too large
 #'
 #' @return returns $PSI kxn matrix, $Freq which are the columns of PSI.  If
 #' returnDPSS = TRUE, will also return tapers $v and $eigen for future use
 eigenCoefDPSSInstFrequency <- function(xt, N, k, w, deltat, nu = 0, returnDPSS = FALSE,
                                            passInDPSS = NULL, passInDPSSUnder = NULL,
-                                       penalty = 1, penaltyType = "ScaledExp"){
+                                       penalty = 1, penaltyType = "ScaledExp", pad = TRUE){
   if(is.null(passInDPSSUnder)){#runs with no under sampling
     if(is.null(passInDPSS)){ # need instFreq to create the dpss
       instFreq <- instFreqDPSS(xt = xt, N = N, k = k, w = w, deltat = deltat,
-                               returnDPSS = TRUE, penalty = penalty, penaltyType = penaltyType)
+                               returnDPSS = TRUE, penalty = penalty, penaltyType = penaltyType, pad = pad)
       dp <- instFreq$DPSS
     }
     else{ # will pass DPSS inot instFreq
       instFreq <- instFreqDPSS(xt = xt, N = N, k = k, w = w, deltat = deltat,
                                returnDPSS = FALSE, passInDPSS = passInDPSS,
-                               penalty = penalty, penaltyType = penaltyType)
+                               penalty = penalty, penaltyType = penaltyType, pad = pad)
       dp <- passInDPSS
     }
     #need to use the undersampling dpss here
@@ -1443,14 +1481,14 @@ eigenCoefDPSSInstFrequency <- function(xt, N, k, w, deltat, nu = 0, returnDPSS =
     if(is.null(passInDPSS)){ # need instFreq to create the dpss
       instFreq <- instFreqDPSS(xt = xt, N = N, k = k, w = w, deltat = deltat,
                                returnDPSS = TRUE, passInDPSSUnder = passInDPSSUnder,
-                               penalty = penalty, penaltyType = penaltyType)
+                               penalty = penalty, penaltyType = penaltyType, pad = pad)
       dp <- instFreq$DPSS
     }
     else{ # will pass DPSS inot instFreq
       instFreq <- instFreqDPSS(xt = xt, N = N, k = k, w = w, deltat = deltat,
                                returnDPSS = FALSE, passInDPSS = passInDPSS,
                                passInDPSSUnder = passInDPSSUnder, penalty = penalty,
-                               penaltyType = penaltyType)
+                               penaltyType = penaltyType, pad = pad)
       dp <- passInDPSS
     }
 
@@ -2112,6 +2150,7 @@ singleIterationForParallel4 <- function(xt, N, k, p, deltat = 1, w = NULL, dpss 
 #' eigenCoef's
 #' @param reduction if using sine tapers, can use reduction of removing last taper to improve the even odd behaviour of k's
 #' @param penaltyType ScaledExp is the default and the one we recommend using at this time
+#' @param pad adding custom zero padding if user wants to, if TRUE, than just standard amount of padding
 #'
 #' @return $F3Mod, $Freq, $significantFreq, $k
 
@@ -2121,7 +2160,7 @@ singleIterationForParallel <- function(xt, k, p, deltat = 1, w = NULL, dpss = FA
                                        # altSig = FALSE,
                                        returnFTestVars = FALSE,
                                        penalty = 1, penaltyType = "ScaledExp",
-                                       penaltyOnTapersStdInv = FALSE){
+                                       penaltyOnTapersStdInv = FALSE, pad = TRUE){
 
   N = length(xt)
   if(penaltyType == "mtm" & dpss == FALSE){
@@ -2141,7 +2180,7 @@ singleIterationForParallel <- function(xt, k, p, deltat = 1, w = NULL, dpss = FA
                                                   deltat = deltat,
                                                   returnDPSS = FALSE, passInDPSS = dp,
                                                   passInDPSSUnder = dpUnder, penalty = penalty,
-                                                  penaltyType = penaltyType)
+                                                  penaltyType = penaltyType, pad = pad)
       fStuff <- regressionDPSSInstFreq(N = N, k = k, w = w, instFreqEigen = instFreqEigen$PSI,
                                        p = p, passInDPSS = dp ,returnDPSS = FALSE,
                                        returnRp = FALSE, withoutzeroPoly = TRUE)
@@ -2164,7 +2203,7 @@ singleIterationForParallel <- function(xt, k, p, deltat = 1, w = NULL, dpss = FA
                                                   passInSineUnder = sineUnder, penalty = penalty,
                                                   penaltyType = penaltyType,
                                                   penaltyOnTapersStdInv = penaltyOnTapersStdInv,
-                                                  reduced = reduction)
+                                                  reduced = reduction, pad = pad)
 
       fStuff <- regressionSineInstFreq(N = N, k = k, instFreqEigen = instFreqEigen$PSI,
                                        p = p, returnSineTapers = FALSE,
@@ -2300,19 +2339,21 @@ singleIterationForParallel <- function(xt, k, p, deltat = 1, w = NULL, dpss = FA
 #' @param dpss = FALSE, if TRUE and using FPrime, it will still use sine tapers for the even K's as that is the only prime test set up
 #' @param penalty = 0.15, this is usually a good starting point, may need to be increased for prime test
 #' @param penaltyType = "ScaledExp", this is the best one at this point
+#' @param pad zero padding for alternative lengths
 #'
 #' @return  returns the Ftest, Freq it tested at, significantFrequencies, and the cut off FCutOff for the specific test
 singleIterationForParallelFPrime <- function(xt, k, p = p, deltat = 1,
                                              undersampleNumber = 100,
                                              confLevel = (1-(1/length(xt))),
                                              dpss = FALSE,
-                                             penalty = 1, penaltyType = "ScaledExp"){
+                                             penalty = 1, penaltyType = "ScaledExp",
+                                             pad = TRUE){
 
   if(k %% 2 == 1){ # even k we wnat to just run f3 or f4
     Ftest <- singleIterationForParallel(xt = xt, k = k, p = p, deltat = deltat,
                                dpss = dpss, undersampleNumber = undersampleNumber,
                                confLevel = confLevel, returnFTestVars = TRUE, w = (k+1)/(2*length(xt)),
-                               penalty = penalty, penaltyType = penaltyType)
+                               penalty = penalty, penaltyType = penaltyType, pad = pad)
     testStat <- Ftest$F3
     if(p == 1){
       significantFreq <- Ftest$significantFreq[[1]]
@@ -2326,7 +2367,7 @@ singleIterationForParallelFPrime <- function(xt, k, p = p, deltat = 1,
     Ftest <- singleIterationForParallel(xt = xt, k = k, p = p, deltat = deltat,reduction = TRUE,
                                         dpss = FALSE, undersampleNumber = undersampleNumber,
                                         confLevel = confLevel, returnFTestVars = TRUE, w = (k+1)/(2*length(xt)),
-                                        penalty = penalty, penaltyType = penaltyType)
+                                        penalty = penalty, penaltyType = penaltyType, pad = pad)
     testStat <- Ftest$F3
     if(p == 1){
       significantFreq <- Ftest$significantFreq[[1]]
@@ -2361,21 +2402,22 @@ singleIterationForParallelAllTypeSwitcher <- function(xt, k, p = p, deltat = 1, 
                                                       undersampleNumber = 100,
                                                       confLevel = (1-(1/length(xt))),
                                                       dpss = FALSE,
-                                                      penalty = 1, penaltyType = "ScaledExp"){
+                                                      penalty = 1, penaltyType = "ScaledExp",
+                                                      pad = TRUE){
 
   if(FPrime){
     if(k %% 2 == 1){ # even k we wnat to just run f3 or f4
       Ftest <- singleIterationForParallel(xt = xt, k = k, p = p, deltat = deltat,
                                           dpss = dpss, undersampleNumber = undersampleNumber,
                                           confLevel = confLevel, returnFTestVars = TRUE, w = (k+1)/(2*length(xt)),
-                                          penalty = penalty, penaltyType = penaltyType)
+                                          penalty = penalty, penaltyType = penaltyType, pad = pad)
 
       print("Used F3")
     }else{
       Ftest <- singleIterationForParallel(xt = xt, k = k, p = p, deltat = deltat,reduction = TRUE, # need to use sine tapers, thats why dpss = FALSE
                                           dpss = FALSE, undersampleNumber = undersampleNumber,
                                           confLevel = confLevel, returnFTestVars = TRUE, w = (k+1)/(2*length(xt)),
-                                          penalty = penalty, penaltyType = penaltyType)
+                                          penalty = penalty, penaltyType = penaltyType, pad = pad)
 
       print("Used FPrime")
     }
@@ -2383,7 +2425,7 @@ singleIterationForParallelAllTypeSwitcher <- function(xt, k, p = p, deltat = 1, 
     Ftest <- singleIterationForParallel(xt = xt, k = k, p = p, deltat = deltat, reduction = FALSE,
                                         dpss = dpss, undersampleNumber = undersampleNumber,
                                         confLevel = confLevel, returnFTestVars = TRUE, w = (k+1)/(2*length(xt)),
-                                        penalty = penalty, penaltyType = penaltyType)
+                                        penalty = penalty, penaltyType = penaltyType, pad = pad)
 
   }
 

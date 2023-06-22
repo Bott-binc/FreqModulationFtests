@@ -14,7 +14,9 @@ instFreqSine(
   passInSineUnder = NULL,
   penalty = 1,
   penaltyType = "ScaledExp",
-  penaltyOnTapersStdInv = FALSE
+  penaltyOnTapersStdInv = FALSE,
+  reduced = FALSE,
+  pad = TRUE
 )
 }
 \arguments{
@@ -35,8 +37,14 @@ instFreqSine(
 \item{penalty}{1 is no penalty , 0.2  would give seq(from =  1, to =  1/(0.2*k, length.out = k)
 penalty to each respective taper}
 
+\item{penaltyType}{= "ScaledExp" by default, allows for others to be created in the future}
+
 \item{penaltyOnTapersStdInv}{applys the penalty to all tapers in the calculation instead of just weighting the
 eigenCoef's}
+
+\item{reduced}{used when prime test is conducted}
+
+\item{pad}{= TRUE, but allows for user setable if they want a different amount of padding}
 }
 \value{
 list of $InstFreq and $Freq which is the column of instFreq

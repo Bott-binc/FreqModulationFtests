@@ -17,7 +17,8 @@ AggregateTest(
   penaltyType = "ScaledExp",
   R = 1,
   cores = 1,
-  confLevel = (1 - (1/length(xt)))
+  confLevel = (1 - (1/length(xt))),
+  returnEachKTest = FALSE
 )
 }
 \arguments{

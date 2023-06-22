@@ -13,7 +13,9 @@ standardInverseSineDer(
   returnSineMat = FALSE,
   passInSineUnder = NULL,
   penalty = 1,
-  penaltyType = "ScaledExp"
+  penaltyType = "ScaledExp",
+  reduced = FALSE,
+  pad = TRUE
 )
 }
 \arguments{
@@ -33,6 +35,12 @@ standardInverseSineDer(
 
 \item{penalty}{1 is no penalty , 0.2  would give seq(from =  1, to =  1/(0.2*k, length.out = k)
 penalty to each respective taper}
+
+\item{penaltyType}{= "ScaledExp" by default, allows for others to be created in the future}
+
+\item{reduced}{used when prime test is conducted}
+
+\item{pad}{= TRUE, but allows for user setable if they want a different amount of padding}
 }
 \value{
 list of $StdInverse and $Freq which are the columns of StdInverse,

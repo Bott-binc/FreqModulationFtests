@@ -17,7 +17,8 @@ singleIterationForParallel(
   returnFTestVars = FALSE,
   penalty = 1,
   penaltyType = "ScaledExp",
-  penaltyOnTapersStdInv = FALSE
+  penaltyOnTapersStdInv = FALSE,
+  pad = TRUE
 )
 }
 \arguments{
@@ -48,6 +49,8 @@ penalty to each respective taper}
 
 \item{penaltyOnTapersStdInv}{applys the penalty to all tapers in the calculation instead of just weighting the
 eigenCoef's}
+
+\item{pad}{adding custom zero padding if user wants to, if TRUE, than just standard amount of padding}
 }
 \value{
 $F3Mod, $Freq, $significantFreq, $k

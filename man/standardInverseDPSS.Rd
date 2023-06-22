@@ -14,7 +14,8 @@ standardInverseDPSS(
   passInDPSS = NULL,
   passInDPSSReduced = NULL,
   penalty = 1,
-  penaltyType = "ScaledExp"
+  penaltyType = "ScaledExp",
+  pad = FALSE
 )
 }
 \arguments{

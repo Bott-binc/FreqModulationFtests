@@ -14,7 +14,9 @@ eigenCoefSineInstFrequency(
   passInSineUnder = NULL,
   penalty = 1,
   penaltyOnTapersStdInv = FALSE,
-  penaltyType = "ScaledExp"
+  penaltyType = "ScaledExp",
+  reduced = FALSE,
+  pad = TRUE
 )
 }
 \arguments{
@@ -37,6 +39,12 @@ penalty to each respective taper}
 
 \item{penaltyOnTapersStdInv}{applys the penalty to all tapers in the calculation instead of just weighting the
 eigenCoef's}
+
+\item{penaltyType}{"ScaledExp is the default one right now}
+
+\item{reduced}{removes the lat taper when conducting the test, this is used in prime test}
+
+\item{pad}{sallows for user to set the pad}
 }
 \value{
 returns $PSI kxn matrix, $Freq which are the columns of PSI.  If

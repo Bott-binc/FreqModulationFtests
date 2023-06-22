@@ -15,7 +15,8 @@ eigenCoefDPSSInstFrequency(
   passInDPSS = NULL,
   passInDPSSUnder = NULL,
   penalty = 1,
-  penaltyType = "ScaledExp"
+  penaltyType = "ScaledExp",
+  pad = TRUE
 )
 }
 \arguments{
@@ -40,6 +41,10 @@ object of dpss both $v and $eigen}
 
 \item{penalty}{1 is no penalty , 0.2  would give seq(from =  1, to =  1/(0.2*k, length.out = k)
 penalty to each respective taper}
+
+\item{penaltyType}{Default is 'ScaledExp', I left the option to add others in future work}
+
+\item{pad}{= TRUE by default, don't want to pad when not undersampling usually, the matrix gets too large}
 }
 \value{
 returns $PSI kxn matrix, $Freq which are the columns of PSI.  If

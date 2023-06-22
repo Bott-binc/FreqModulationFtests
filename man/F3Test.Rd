@@ -15,7 +15,8 @@ F3Test(
   returnInstFreqAndRegression = FALSE,
   withoutZeroDegree = TRUE,
   undersample = FALSE,
-  undersampleNumber = NULL
+  undersampleNumber = NULL,
+  pad = TRUE
 )
 }
 \arguments{

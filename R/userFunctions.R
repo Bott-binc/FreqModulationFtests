@@ -641,7 +641,7 @@ F2Test <- function(xt, N, k, p, deltat = 1, w = NULL, dpss = FALSE, passInInstFr
 #' @export
 F3Test <- function(xt, N, k, p, deltat = 1, w = NULL, dpss = FALSE,
                    returnInstFreqAndRegression = FALSE, withoutZeroDegree = TRUE,
-                   undersample = FALSE, undersampleNumber = NULL){
+                   undersample = FALSE, undersampleNumber = NULL, pad = TRUE){
 
   if(!withoutZeroDegree){
     if(dpss){ # dpss is used
@@ -649,7 +649,7 @@ F3Test <- function(xt, N, k, p, deltat = 1, w = NULL, dpss = FALSE,
         stop("need to set w for dpss")
       }
         instFreqEigen <- eigenCoefDPSSInstFrequency(xt = xt, N = N, k = k, w = w, deltat = deltat,
-                                                        returnDPSS = TRUE)
+                                                        returnDPSS = TRUE, pad = pad)
         fStuff <- regressionDPSSInstFreq(N = N, k = k, w = w, instFreqEigen = instFreqEigen$PSI,
                                          p = p, passInDPSS = instFreqEigen$DPSS,returnDPSS = FALSE,
                                          returnRp = FALSE)
@@ -695,7 +695,7 @@ F3Test <- function(xt, N, k, p, deltat = 1, w = NULL, dpss = FALSE,
         }
 
         instFreqEigen <- eigenCoefDPSSInstFrequency(xt = xt, N = N, k = k, w = w, deltat = deltat,
-                                                        returnDPSS = TRUE)
+                                                        returnDPSS = TRUE, pad = pad)
         fStuff <- regressionDPSSInstFreq(N = N, k = k, w = w, instFreqEigen = instFreqEigen$PSI,
                                          p = p, passInDPSS = instFreqEigen$DPSS,returnDPSS = FALSE,
                                          returnRp = FALSE,  withoutzeroPoly = TRUE)
@@ -721,7 +721,7 @@ F3Test <- function(xt, N, k, p, deltat = 1, w = NULL, dpss = FALSE,
         dpUnder <- multitaper::dpss(n = undersampleNumber, k = k, nw = N*w)
         instFreqEigen <- eigenCoefDPSSInstFrequency(xt = xt, N = N, k = k, w = w, deltat = deltat,
                                                         returnDPSS = FALSE, passInDPSS = dp,
-                                                        passInDPSSUnder = dpUnder)
+                                                        passInDPSSUnder = dpUnder, pad = pad)
         fStuff <- regressionDPSSInstFreq(N = N, k = k, w = w, instFreqEigen = instFreqEigen$PSI,
                                          p = p, passInDPSS = dp ,returnDPSS = FALSE,
                                          returnRp = FALSE, withoutzeroPoly = TRUE)
@@ -731,7 +731,7 @@ F3Test <- function(xt, N, k, p, deltat = 1, w = NULL, dpss = FALSE,
         sineUnder <- sineTaperMatrix(N = undersampleNumber, k = k)
         instFreqEigen <- eigenCoefSineInstFrequency(xt = xt, N = N, k = k,deltat = deltat,
                                                         returnSineMat = FALSE, passInSineTapers = sine,
-                                                        passInSineUnder = sineUnder)
+                                                        passInSineUnder = sineUnder, pad = pad)
 
         fStuff <- regressionSineInstFreq(N = N, k = k, instFreqEigen = instFreqEigen$PSI,
                                          p = p, returnSineTapers = FALSE,
@@ -816,7 +816,7 @@ FtestCombined <- function(xt, N, k, p, deltat = 1, w = NULL, dpss = FALSE,
         }
 
         instFreqEigen <- eigenCoefDPSSInstFrequency(xt = xt, N = N, k = k, w = w, deltat = deltat,
-                                                        returnDPSS = TRUE)
+                                                        returnDPSS = TRUE, pad = false) # Not undersampling
         fStuff <- regressionDPSSInstFreq(N = N, k = k, w = w, instFreqEigen = instFreqEigen$PSI,
                                          p = p, passInDPSS = instFreqEigen$DPSS,returnDPSS = FALSE,
                                          returnRp = FALSE)
@@ -842,7 +842,7 @@ FtestCombined <- function(xt, N, k, p, deltat = 1, w = NULL, dpss = FALSE,
         dpUnder <- multitaper::dpss(n = undersampleNumber, k = k, nw = N*w)
         instFreqEigen <- eigenCoefDPSSInstFrequency(xt = xt, N = N, k = k, w = w, deltat = deltat,
                                                         returnDPSS = FALSE, passInDPSS = dp,
-                                                        passInDPSSUnder = dpUnder)
+                                                        passInDPSSUnder = dpUnder, pad = TRUE)
         fStuff <- regressionDPSSInstFreq(N = N, k = k, w = w, instFreqEigen = instFreqEigen$PSI,
                                          p = p, passInDPSS = dpUnder ,returnDPSS = FALSE,
                                          returnRp = FALSE)
@@ -868,7 +868,7 @@ FtestCombined <- function(xt, N, k, p, deltat = 1, w = NULL, dpss = FALSE,
         }
 
         instFreqEigen <- eigenCoefDPSSInstFrequency(xt = xt, N = N, k = k, w = w, deltat = deltat,
-                                                        returnDPSS = TRUE)
+                                                        returnDPSS = TRUE, pad = FALSE)
         fStuff <- regressionDPSSInstFreq(N = N, k = k, w = w, instFreqEigen = instFreqEigen$PSI,
                                          p = p, passInDPSS = instFreqEigen$DPSS,returnDPSS = FALSE,
                                          returnRp = TRUE)
@@ -896,7 +896,7 @@ FtestCombined <- function(xt, N, k, p, deltat = 1, w = NULL, dpss = FALSE,
         dpUnder <- multitaper::dpss(n = undersampleNumber, k = k, nw = N*w)
         instFreqEigen <- eigenCoefDPSSInstFrequency(xt = xt, N = N, k = k, w = w, deltat = deltat,
                                                         returnDPSS = FALSE, passInDPSS = dp,
-                                                        passInDPSSUnder = dpUnder)
+                                                        passInDPSSUnder = dpUnder, pad= TRUE)
         fStuff <- regressionDPSSInstFreq(N = N, k = k, w = w, instFreqEigen = instFreqEigen$PSI,
                                          p = p, passInDPSS = dpUnder ,returnDPSS = FALSE,
                                          returnRp = TRUE)
@@ -1000,12 +1000,13 @@ FtestCombined <- function(xt, N, k, p, deltat = 1, w = NULL, dpss = FALSE,
 #' @param penaltyType What type of penalty you want to use, "ScaledExp" is the most harsh and the best right now,
 #' "mtm" is for adaptive multitaper weighting, "Cos" is for a cosine weighting scheme, "Clip" is 1 for the number passed into penalty
 #' k's then is 0 for the rest.  The percentage is specified by a fraction in the penalty variable
+#' @param pad if you want to alter the zero pad amount, the default is 2^ceiling(log2(2*N)) == 2^ceiling(log2(N) + 1)
 #'
 #' @return F4 list conducted at each frequency and each k.  sigFreq is a binary list of all frequencies that are considered to be significant at the given cutoff FCutOff.  fTestVars are other information that may be usefull later.
 #' @export
 F4Test <- function(xt, k, p, N = length(xt), deltat = 1, dpss = FALSE, undersampleNumber = 100,
                    penalty = 0.1, penaltyType = "ScaledExp", cores = 1,
-                   confLevel = (1 - (1/length(xt)))){
+                   confLevel = (1 - (1/length(xt))), pad = TRUE){
 
   if(is.null(p)){
     stop("need to set a polynomial degree  = p")
@@ -1013,17 +1014,17 @@ F4Test <- function(xt, k, p, N = length(xt), deltat = 1, dpss = FALSE, undersamp
 
   if(dpss){
     fullDat <- parallel::mclapply(X = k,FUN = function(x){
-      return(singleIterationForParallel(xt = xt, k = x, w = ((x+1)/(2*length(xt))), p = p, deltat = deltat,
+      return(singleIterationForParallel(xt = xt, k = x, w = ((x + 1)/(2*length(xt))), p = p, deltat = deltat,
                                         undersampleNumber = undersampleNumber, dpss = TRUE,
                                         confLevel = confLevel, returnFTestVars = TRUE,
-                                        penalty = penalty, penaltyType = penaltyType))
+                                        penalty = penalty, penaltyType = penaltyType, pad = pad))
     }, mc.cores = cores, mc.cleanup = TRUE, mc.preschedule = TRUE)
   }else{#it is using the sine tapers
     fullDat <- parallel::mclapply(X = k,FUN = function(x){
       return(singleIterationForParallel(xt = xt, k = x, p = p, deltat = deltat, reduction = FALSE,
                                         undersampleNumber = undersampleNumber, dpss = FALSE,
                                         confLevel = confLevel, returnFTestVars = TRUE,
-                                        penalty = penalty, penaltyType = penaltyType))
+                                        penalty = penalty, penaltyType = penaltyType, pad = pad))
     }, mc.cores = cores, mc.cleanup = TRUE, mc.preschedule = TRUE)
   }
 
@@ -1081,7 +1082,7 @@ F4Test <- function(xt, k, p, N = length(xt), deltat = 1, dpss = FALSE, undersamp
 #' @export
 F4Prime <- function(xt, k, p, N = length(xt), deltat = 1, dpss = FALSE, undersampleNumber = 100,
                     penalty = 0.1, penaltyType = "ScaledExp", cores = 1,
-                    confLevel = (1 - (1/length(xt)))){
+                    confLevel = (1 - (1/length(xt))), pad = TRUE){
 
   if(is.null(p)){
     stop("need to set a polynomial degree  = p")
@@ -1092,14 +1093,14 @@ F4Prime <- function(xt, k, p, N = length(xt), deltat = 1, dpss = FALSE, undersam
       return(singleIterationForParallelFPrime(xt = xt, k = x, p = p, deltat = deltat,
                                         undersampleNumber = undersampleNumber, dpss = TRUE,
                                         confLevel = confLevel,
-                                        penalty = penalty, penaltyType = penaltyType))
+                                        penalty = penalty, penaltyType = penaltyType, pad = pad))
     }, mc.cores = cores, mc.cleanup = TRUE, mc.preschedule = TRUE)
   }else{#it is using the sine tapers
     fullDat <- parallel::mclapply(X = k,FUN = function(x){
       return(singleIterationForParallelFPrime(xt = xt, k = x, p = p, deltat = deltat,
                                         undersampleNumber = undersampleNumber, dpss = FALSE,
                                         confLevel = confLevel,
-                                        penalty = penalty, penaltyType = penaltyType))
+                                        penalty = penalty, penaltyType = penaltyType, pad = pad))
     }, mc.cores = cores, mc.cleanup = TRUE, mc.preschedule = TRUE)
   }
 
@@ -1154,7 +1155,7 @@ F4Prime <- function(xt, k, p, N = length(xt), deltat = 1, dpss = FALSE, undersam
 #' @export
 AggregateTest <- function(xt, k, p, N = length(xt), deltat = 1, dpss = FALSE, reduction = FALSE, undersampleNumber = 100,
                       penalty = 1, penaltyType = "ScaledExp", R = 1, cores = 1,
-                      confLevel = (1 - (1/length(xt))), returnEachKTest = FALSE){
+                      confLevel = (1 - (1/length(xt))), returnEachKTest = FALSE, pad = TRUE){
 
   if(is.null(p)){
     stop("need to set a polynomial degree amount = p")
@@ -1166,14 +1167,14 @@ AggregateTest <- function(xt, k, p, N = length(xt), deltat = 1, dpss = FALSE, re
       return(singleIterationForParallelAllTypeSwitcher(xt = xt, k = x, p = p, deltat = deltat, FPrime = FALSE,
                                                        undersampleNumber = undersampleNumber, dpss = TRUE,
                                                        confLevel = confLevel,
-                                                       penalty = penalty, penaltyType = penaltyType))
+                                                       penalty = penalty, penaltyType = penaltyType, pad = pad))
     }, mc.cores = cores, mc.cleanup = TRUE, mc.preschedule = TRUE)
   }else{ # using sine tapers
     fullDat <- parallel::mclapply(X = k,FUN = function(x){
       return(singleIterationForParallelAllTypeSwitcher(xt = xt, k = x, p = p, deltat = deltat, FPrime = reduction,
                                         undersampleNumber = undersampleNumber, dpss = FALSE,
                                         confLevel = confLevel,
-                                        penalty = penalty, penaltyType = penaltyType))
+                                        penalty = penalty, penaltyType = penaltyType, pad = pad))
     }, mc.cores = cores, mc.cleanup = TRUE, mc.preschedule = TRUE)
   }
 

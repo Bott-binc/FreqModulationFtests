@@ -13,7 +13,8 @@ eigenCoefSineFFT(
   returnSineMat = FALSE,
   pad = TRUE,
   penalty = 1,
-  penaltyType = "ScaledExp"
+  penaltyType = "ScaledExp",
+  reduced = FALSE
 )
 }
 \arguments{
@@ -33,6 +34,10 @@ eigenCoefSineFFT(
 
 \item{penalty}{1 is no penalty , 0.2  would give seq(from =  1, to =  1/(0.2*k, length.out = k)
 penalty to each respective taper}
+
+\item{penaltyType}{= "ScaledExp" by default, allows for others to be created in the future}
+
+\item{reduced}{used when prime test is conducted}
 }
 \value{
 Matrix of $EigenCoef for each frequency, as well as the frequencies under $Freq in the list

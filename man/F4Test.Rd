@@ -15,7 +15,8 @@ F4Test(
   penalty = 0.1,
   penaltyType = "ScaledExp",
   cores = 1,
-  confLevel = (1 - (1/length(xt)))
+  confLevel = (1 - (1/length(xt))),
+  pad = TRUE
 )
 }
 \arguments{
@@ -43,6 +44,8 @@ k's then is 0 for the rest.  The percentage is specified by a fraction in the pe
 \item{cores}{must be 1 if on windows, number of cores used for parallelization}
 
 \item{confLevel}{default is 1-1/N, level of confidence used in the Ftest}
+
+\item{pad}{if you want to alter the zero pad amount, the default is 2^ceiling(log2(2*N)) == 2^ceiling(log2(N) + 1)}
 }
 \value{
 F4 list conducted at each frequency and each k.  sigFreq is a binary list of all frequencies that are considered to be significant at the given cutoff FCutOff.  fTestVars are other information that may be usefull later.

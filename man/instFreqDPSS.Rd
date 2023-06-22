@@ -14,7 +14,8 @@ instFreqDPSS(
   returnDPSS = FALSE,
   passInDPSSUnder = NULL,
   penalty = 1,
-  penaltyType = "ScaledExp"
+  penaltyType = "ScaledExp",
+  pad = TRUE
 )
 }
 \arguments{

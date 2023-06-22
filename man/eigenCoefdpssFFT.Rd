@@ -29,7 +29,7 @@ eigenCoefdpssFFT(
 
 \item{passInDPSSMat}{For limiting the number of calculations of DPSS this is dpss$v}
 
-\item{pad}{if true will zero padd automatically the Xt that is inputted into the function}
+\item{pad}{if true will zero padd automatically the Xt that is inputted into the function, if FALSE it will not do any zero padding.}
 
 \item{penalty}{1 is no penalty , 0.2  would give seq(from =  1, to =  1/(0.2*k, length.out = k)
 penalty to each respective taper}
