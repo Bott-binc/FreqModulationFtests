@@ -15,7 +15,8 @@ F4Prime(
   penalty = 0.1,
   penaltyType = "ScaledExp",
   cores = 1,
-  confLevel = (1 - (1/length(xt)))
+  confLevel = (1 - (1/length(xt))),
+  pad = TRUE
 )
 }
 \arguments{

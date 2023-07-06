@@ -18,7 +18,8 @@ AggregateTest(
   R = 1,
   cores = 1,
   confLevel = (1 - (1/length(xt))),
-  returnEachKTest = FALSE
+  returnEachKTest = FALSE,
+  pad = TRUE
 )
 }
 \arguments{

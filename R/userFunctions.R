@@ -1155,28 +1155,38 @@ F4Prime <- function(xt, k, p, N = length(xt), deltat = 1, dpss = FALSE, undersam
 #' @export
 AggregateTest <- function(xt, k, p, N = length(xt), deltat = 1, dpss = FALSE, reduction = FALSE, undersampleNumber = 100,
                       penalty = 1, penaltyType = "ScaledExp", R = 1, cores = 1,
-                      confLevel = (1 - (1/length(xt))), returnEachKTest = FALSE, pad = TRUE){
+                      confLevel = (1 - (1/length(xt))), returnEachKTest = FALSE, pad = TRUE, singleCore){
 
   if(is.null(p)){
     stop("need to set a polynomial degree amount = p")
   }
-
-
-  if(dpss){
-    fullDat <- parallel::mclapply(X = k,FUN = function(x){
-      return(singleIterationForParallelAllTypeSwitcher(xt = xt, k = x, p = p, deltat = deltat, FPrime = FALSE,
-                                                       undersampleNumber = undersampleNumber, dpss = TRUE,
-                                                       confLevel = confLevel,
-                                                       penalty = penalty, penaltyType = penaltyType, pad = pad))
-    }, mc.cores = cores, mc.cleanup = TRUE, mc.preschedule = TRUE)
-  }else{ # using sine tapers
-    fullDat <- parallel::mclapply(X = k,FUN = function(x){
-      return(singleIterationForParallelAllTypeSwitcher(xt = xt, k = x, p = p, deltat = deltat, FPrime = reduction,
-                                        undersampleNumber = undersampleNumber, dpss = FALSE,
-                                        confLevel = confLevel,
-                                        penalty = penalty, penaltyType = penaltyType, pad = pad))
-    }, mc.cores = cores, mc.cleanup = TRUE, mc.preschedule = TRUE)
+  if(singleCore){
+    fullDat <- list()
+    for(i in 1:length(k)){
+      fullDat[[i]] <- singleIterationForParallelAllTypeSwitcher(xt = xt, k = k[i], p = p, deltat = deltat, FPrime = reduction,
+                                                undersampleNumber = undersampleNumber, dpss = dpss,
+                                                confLevel = confLevel,
+                                                penalty = penalty, penaltyType = penaltyType, pad = pad)
+    }
+  }else{
+    if(dpss){
+      fullDat <- parallel::mclapply(X = k,FUN = function(x){
+        return(singleIterationForParallelAllTypeSwitcher(xt = xt, k = x, p = p, deltat = deltat, FPrime = FALSE,
+                                                         undersampleNumber = undersampleNumber, dpss = TRUE,
+                                                         confLevel = confLevel,
+                                                         penalty = penalty, penaltyType = penaltyType, pad = pad))
+      }, mc.cores = cores, mc.cleanup = TRUE, mc.preschedule = TRUE)
+    }else{ # using sine tapers
+      fullDat <- parallel::mclapply(X = k,FUN = function(x){
+        return(singleIterationForParallelAllTypeSwitcher(xt = xt, k = x, p = p, deltat = deltat, FPrime = reduction,
+                                                         undersampleNumber = undersampleNumber, dpss = FALSE,
+                                                         confLevel = confLevel,
+                                                         penalty = penalty, penaltyType = penaltyType, pad = pad))
+      }, mc.cores = cores, mc.cleanup = TRUE, mc.preschedule = TRUE)
+    }
   }
+
+
 
   Freq = fullDat[[1]]$Freq
 

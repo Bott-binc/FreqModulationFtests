@@ -14,7 +14,8 @@ singleIterationForParallelAllTypeSwitcher(
   confLevel = (1 - (1/length(xt))),
   dpss = FALSE,
   penalty = 1,
-  penaltyType = "ScaledExp"
+  penaltyType = "ScaledExp",
+  pad = TRUE
 )
 }
 \arguments{

@@ -13,7 +13,8 @@ singleIterationForParallelFPrime(
   confLevel = (1 - (1/length(xt))),
   dpss = FALSE,
   penalty = 1,
-  penaltyType = "ScaledExp"
+  penaltyType = "ScaledExp",
+  pad = TRUE
 )
 }
 \arguments{
@@ -34,6 +35,8 @@ singleIterationForParallelFPrime(
 \item{penalty}{= 0.15, this is usually a good starting point, may need to be increased for prime test}
 
 \item{penaltyType}{= "ScaledExp", this is the best one at this point}
+
+\item{pad}{zero padding for alternative lengths}
 }
 \value{
 returns the Ftest, Freq it tested at, significantFrequencies, and the cut off FCutOff for the specific test
