@@ -2362,7 +2362,7 @@ singleIterationForParallelFPrime <- function(xt, k, p = p, deltat = 1,
     }
 
     FCutOff <- Ftest$FcutOff
-    print("Used F3")
+    #print("Used F3")
   }else{
     Ftest <- singleIterationForParallel(xt = xt, k = k, p = p, deltat = deltat,reduction = TRUE,
                                         dpss = FALSE, undersampleNumber = undersampleNumber,
@@ -2375,7 +2375,7 @@ singleIterationForParallelFPrime <- function(xt, k, p = p, deltat = 1,
       significantFreq <- Ftest$significantFreq
     }
     FCutOff <- Ftest$FcutOff
-    print("Used FPrime")
+    #print("Used FPrime")
   }
 
   return(list(Ftest = testStat, Freq = Ftest$Freq, significantFreq = significantFreq,
@@ -2412,14 +2412,14 @@ singleIterationForParallelAllTypeSwitcher <- function(xt, k, p = p, deltat = 1, 
                                           confLevel = confLevel, returnFTestVars = TRUE, w = (k+1)/(2*length(xt)),
                                           penalty = penalty, penaltyType = penaltyType, pad = pad)
 
-      print("Used F3")
+      #print("Used F3")
     }else{
       Ftest <- singleIterationForParallel(xt = xt, k = k, p = p, deltat = deltat,reduction = TRUE, # need to use sine tapers, thats why dpss = FALSE
                                           dpss = FALSE, undersampleNumber = undersampleNumber,
                                           confLevel = confLevel, returnFTestVars = TRUE, w = (k+1)/(2*length(xt)),
                                           penalty = penalty, penaltyType = penaltyType, pad = pad)
 
-      print("Used FPrime")
+      #print("Used FPrime")
     }
   }else{
     Ftest <- singleIterationForParallel(xt = xt, k = k, p = p, deltat = deltat, reduction = FALSE,
